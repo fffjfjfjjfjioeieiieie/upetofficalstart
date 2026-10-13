@@ -170,6 +170,20 @@ function App() {
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const stage = document.querySelector('.public-preview-shell .profile-stage');
+    if (!stage) return undefined;
+    const fitShowcase = () => {
+      const { width, height } = stage.getBoundingClientRect();
+      const scale = Math.max(0.1, Math.min(1, (width - 24) / 360, (height - 16) / 460));
+      stage.style.setProperty('--mobile-showcase-scale', String(scale));
+    };
+    const observer = new ResizeObserver(fitShowcase);
+    observer.observe(stage);
+    fitShowcase();
+    return () => observer.disconnect();
+  }, [isAdmin, pathname]);
+
   const navigateTo = (path, { replace = false } = {}) => {
     window.history[replace ? 'replaceState' : 'pushState']({}, '', path);
     setPathname(path);
@@ -673,8 +687,9 @@ function App() {
                 Buy Sell Flex with your <span className="headline-user">user</span><span className="headline-pet">.pet</span>
               </h1>
               <p className="hero-copy">
-                user.pet is a customizeable profile site with a bit of a twist. you have the option to sell whatever, whenever for FREE. how bout it?
+                user.pet is currently unavailable, but we're cooking. Join the Discord instead?
               </p>
+              <a className="discord-button" href="https://discord.gg/upet" target="_blank" rel="noopener noreferrer">Join the Discord <span aria-hidden="true">&#8599;</span></a>
             </section>
 
             <div className="profile-stage">
@@ -697,7 +712,7 @@ function App() {
       </>
 
       <footer className="footer">
-        <span>user.pet&nbsp; / &nbsp;building something worth opening</span>
+        <span className="footer-message"><span className="footer-brand">user.pet</span><span className="footer-tagline"> / building something worth opening</span></span>
         <span className="version">&gt;_ &nbsp;v0.1.0</span>
       </footer>
 
