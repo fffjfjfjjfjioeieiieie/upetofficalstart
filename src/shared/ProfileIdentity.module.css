@@ -1,0 +1,29 @@
+.identity {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.identity h1,
+.identity h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 680;
+  line-height: 1.08;
+}
+
+.identity span {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.start {
+  align-items: flex-start;
+  margin-top: 0;
+  text-align: left;
+}

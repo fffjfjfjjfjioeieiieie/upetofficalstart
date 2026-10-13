@@ -1,1 +1,9 @@
 node_modules/
+discord-bot/.env
+dist/
+.firebase/
+.env*
+!.env.example
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

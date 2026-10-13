@@ -1,0 +1,184 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email in ['zurihcs@gmail.com', 'lampjustlamp123@gmail.com', 'iamjayvonlol@gmail.com'];
+    }
+
+    function validUsername(username) {
+      return username is string
+        && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$');
+    }
+
+    match /usernames/{username} {
+      // Public availability checks are allowed; enumerating all handles is not.
+      allow get: if signedIn();
+      allow list: if false;
+
+      // A claim and its account profile must be created together in one transaction.
+      allow create: if signedIn()
+        && validUsername(username)
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt'])
+        && request.resource.data.keys().hasAll(['uid', 'username', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+
+      // Handles are permanent; clients cannot transfer or delete them.
+      allow update, delete: if false;
+    }
+
+    match /users/{uid} {
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && validUsername(request.resource.data.username)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
+
+      // Account identifiers stay fixed while profile editing is being built.
+      allow update, delete: if false;
+    }
+
+    // A request is stored under its recipient, with the sender UID as the
+    // document ID. The IDs make duplicate requests for the same pair impossible.
+    match /friendRequests/{toUid}/incoming/{fromUid} {
+      allow get: if signedIn()
+        && (request.auth.uid == toUid || request.auth.uid == fromUid);
+      allow list: if signedIn() && request.auth.uid == toUid;
+
+      allow create: if signedIn()
+        && request.auth.uid == fromUid
+        && fromUid != toUid
+        && request.resource.data.keys().hasOnly([
+          'fromUid', 'fromUsername', 'toUid', 'toUsername', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'fromUid', 'fromUsername', 'toUid', 'toUsername', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.fromUid == fromUid
+        && request.resource.data.toUid == toUid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.fromUsername == get(/databases/$(database)/documents/users/$(fromUid)).data.username
+        && request.resource.data.toUsername == get(/databases/$(database)/documents/users/$(toUid)).data.username
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && (!exists(/databases/$(database)/documents/friendRequests/$(fromUid)/incoming/$(toUid))
+          || get(/databases/$(database)/documents/friendRequests/$(fromUid)/incoming/$(toUid)).data.status != 'pending')
+        && !exists(/databases/$(database)/documents/friendships/$(fromUid)/friends/$(toUid))
+        && !exists(/databases/$(database)/documents/friendships/$(toUid)/friends/$(fromUid));
+
+      allow update: if signedIn()
+        && resource.data.fromUid == fromUid
+        && resource.data.toUid == toUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && (
+          (request.auth.uid == toUid
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'declined')
+          || (request.auth.uid == toUid
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'accepted'
+            && getAfter(/databases/$(database)/documents/friendships/$(toUid)/friends/$(fromUid)).data.friendUid == fromUid
+            && getAfter(/databases/$(database)/documents/friendships/$(fromUid)/friends/$(toUid)).data.friendUid == toUid)
+          || (request.auth.uid == fromUid
+            && resource.data.status == 'declined'
+            && request.resource.data.status == 'pending')
+        );
+
+      allow delete: if false;
+    }
+
+    // This rule also permits a sender-scoped collection-group query for their
+    // outgoing requests. The query must constrain fromUid to the signed-in UID.
+    match /{path=**}/incoming/{requestId} {
+      allow list: if signedIn() && resource.data.fromUid == request.auth.uid;
+    }
+
+    match /friendships/{uid}/friends/{friendUid} {
+      allow get, list: if signedIn() && request.auth.uid == uid;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'friendUid', 'friendUsername', 'createdAt'])
+        && request.resource.data.keys().hasAll(['uid', 'friendUid', 'friendUsername', 'createdAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.friendUid == friendUid
+        && request.resource.data.friendUsername == get(/databases/$(database)/documents/users/$(friendUid)).data.username
+        && request.resource.data.createdAt == request.time
+        && (
+          (request.auth.uid == uid
+            && get(/databases/$(database)/documents/friendRequests/$(uid)/incoming/$(friendUid)).data.status == 'pending'
+            && getAfter(/databases/$(database)/documents/friendRequests/$(uid)/incoming/$(friendUid)).data.status == 'accepted')
+          || (request.auth.uid == friendUid
+            && get(/databases/$(database)/documents/friendRequests/$(friendUid)/incoming/$(uid)).data.status == 'pending'
+            && getAfter(/databases/$(database)/documents/friendRequests/$(friendUid)/incoming/$(uid)).data.status == 'accepted')
+        );
+
+      allow update, delete: if false;
+    }
+
+    match /chats/{memberA}/with/{memberB} {
+      function isFriendPair() {
+        return signedIn()
+          && memberA < memberB
+          && request.auth.uid in [memberA, memberB]
+          && exists(/databases/$(database)/documents/friendships/$(memberA)/friends/$(memberB))
+          && exists(/databases/$(database)/documents/friendships/$(memberB)/friends/$(memberA));
+      }
+
+      allow get: if isFriendPair();
+      allow list: if false;
+
+      allow create: if isFriendPair()
+        && request.resource.data.keys().hasOnly(['members', 'createdAt'])
+        && request.resource.data.keys().hasAll(['members', 'createdAt'])
+        && request.resource.data.members == [memberA, memberB]
+        && request.resource.data.createdAt == request.time
+        && request.auth.uid in request.resource.data.members;
+
+      allow update, delete: if false;
+
+      match /typing/{uid} {
+        allow get: if isFriendPair();
+        allow list: if false;
+
+        allow create, update: if isFriendPair()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['isTyping', 'updatedAt'])
+          && request.resource.data.keys().hasAll(['isTyping', 'updatedAt'])
+          && request.resource.data.isTyping is bool
+          && request.resource.data.updatedAt == request.time;
+
+        allow delete: if false;
+      }
+
+      match /messages/{messageId} {
+        function isChatMember() {
+          return signedIn()
+            && get(/databases/$(database)/documents/chats/$(memberA)/with/$(memberB)).data.members.hasAny([request.auth.uid]);
+        }
+
+        allow get, list: if isChatMember();
+        allow create: if isChatMember()
+          && request.resource.data.keys().hasOnly(['senderId', 'text', 'createdAt'])
+          && request.resource.data.keys().hasAll(['senderId', 'text', 'createdAt'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
-  "name": "userpet-coming-soon",
+  "name": "userpet-construction",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,10 +9,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "@fft-visualizer/react": "^1.0.0",
+    "@tsparticles/react": "^4.4.0",
+    "@tsparticles/slim": "^4.4.0",
+    "@use-gesture/react": "^10.3.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "firebase": "^12.19.0",
+    "gsap": "^3.15.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.1",
+    "react-avatar-editor": "^15.2.0",
+    "react-colorful": "^5.8.1",
+    "react-dom": "^19.1.1",
+    "react-dropzone": "^20.1.2",
+    "react-hot-toast": "^2.6.1",
+    "vite": "^7.1.7"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
 }

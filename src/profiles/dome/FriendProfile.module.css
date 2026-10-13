@@ -1,0 +1,448 @@
+.preview {
+  position: absolute;
+  z-index: 2;
+  top: -82px;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  height: var(--viewport-height, 100vh);
+  overflow: visible;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.motion {
+  position: absolute;
+  top: max(330px, calc(var(--viewport-height, 100vh) - 550px));
+  right: clamp(10px, calc(50vw - 590px), 24vw);
+  width: 520px;
+  height: 640px;
+  isolation: isolate;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.motion::before {
+  position: absolute;
+  z-index: -1;
+  inset: 22px -15px 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+  content: '';
+  filter: blur(38px);
+  pointer-events: none;
+}
+
+.card {
+  display: flex;
+  width: 520px;
+  height: 640px;
+  align-items: center;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 52px 42px 34px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: #000;
+  color: #f7f7f7;
+  box-shadow: 0 0 34px rgba(255, 255, 255, 0.035), 0 18px 44px rgba(0, 0, 0, 0.42);
+  text-align: center;
+  transform: rotate(0deg);
+}
+
+.avatar {
+  display: block;
+  width: 144px;
+  height: 144px;
+  flex: 0 0 144px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.055);
+}
+
+.displayName {
+  margin: 17px 0 0;
+  color: #fff;
+  font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  font-size: 29px;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  line-height: 1.08;
+  -webkit-text-stroke: 0.7px rgba(255, 255, 255, 0.92);
+  text-shadow: 0 0 4px rgba(255, 72, 82, 0.32), 0 0 12px rgba(255, 42, 58, 0.14);
+}
+
+.username {
+  margin: 5px 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 780;
+  letter-spacing: 0.015em;
+  line-height: 1.25;
+}
+
+.badges {
+  position: relative;
+  width: 70px;
+  height: 32px;
+  flex: 0 0 32px;
+  overflow: visible;
+  margin: 7px 0 0;
+  line-height: 0;
+}
+
+.badges img {
+  position: absolute;
+  top: calc(50% + 6px);
+  left: calc(50% + 3.5px);
+  width: 52px;
+  height: 52px;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 2px rgba(255, 218, 112, 0.48)) drop-shadow(0 0 5px rgba(255, 185, 55, 0.2));
+}
+
+.bio {
+  margin: 8px 0 0;
+  background: linear-gradient(90deg, #ff7979 0%, #ffb86f 20%, #ffe88a 39%, #8eecb0 57%, #7bcfff 76%, #c49aff 100%);
+  background-clip: text;
+  color: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.divider {
+  --spectrum-width: 164px;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin-top: 15px;
+}
+
+.divider::before,
+.divider::after {
+  position: absolute;
+  z-index: 2;
+  top: 66%;
+  width: calc((100% - var(--spectrum-width)) / 2 - 4px);
+  height: 1px;
+  content: '';
+  pointer-events: none;
+}
+
+.divider::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(255, 92, 105, 0.17), rgba(255, 92, 105, 0.32));
+}
+
+.divider::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(255, 92, 105, 0.32), rgba(255, 92, 105, 0.17));
+}
+
+.spectrum {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 50%;
+  width: var(--spectrum-width);
+  height: 100%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  filter: drop-shadow(0 0 4px rgba(255, 63, 79, 0.08));
+}
+
+.spectrum :global(.fft-visualizer) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.socialIcons {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.spotifyIcon,
+.robloxIcon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.robloxIcon {
+  filter: grayscale(1) contrast(1.12);
+  opacity: 0.88;
+}
+
+.musicButton {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  gap: 11px;
+  margin-top: 16px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 92, 105, 0.2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  text-align: left;
+}
+
+.musicButton:hover {
+  border-color: rgba(255, 92, 105, 0.34);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.musicButton:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.82);
+  outline-offset: 3px;
+}
+
+.musicIcon,
+.playIcon {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(255, 92, 105, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.playIcon {
+  flex-basis: 30px;
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+}
+
+.trackDetails {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trackDetails strong {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.trackDetails span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playbackStatus {
+  min-height: 16px;
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+}
+
+.shopButton {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 6px;
+  background: #050505;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 11px;
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.shopButton:disabled {
+  opacity: 0.58;
+}
+
+@media (max-width: 1200px) {
+  .preview {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: min(100%, 430px);
+    height: 650px;
+    margin: 8px auto 0;
+    overflow: visible;
+  }
+
+  .motion {
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 650px;
+  }
+
+  .card {
+    width: 100%;
+    height: 650px;
+    transform: rotate(0deg);
+  }
+
+}
+
+@media (max-width: 650px) {
+  .preview {
+    width: min(52vw, 300px);
+    height: 460px;
+    margin: 0;
+  }
+
+  .motion {
+    height: 460px;
+  }
+
+  .card {
+    width: 100%;
+    height: 460px;
+    padding: 26px 14px 18px;
+    transform: rotate(0deg);
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    flex-basis: 72px;
+  }
+
+  .displayName {
+    margin-top: 9px;
+    font-size: 22px;
+  }
+
+  .username {
+    margin-top: 3px;
+  }
+
+  .badges {
+    width: 64px;
+    height: 28px;
+    flex-basis: 28px;
+    margin-top: 5px;
+  }
+
+  .badges img {
+    top: calc(50% + 5.75px);
+    left: calc(50% + 3px);
+    width: 40px;
+    height: 40px;
+  }
+
+  .bio {
+    margin-top: 6px;
+    font-size: 11px;
+  }
+
+  .divider {
+    --spectrum-width: min(144px, calc(100% - 24px));
+    height: 26px;
+    margin-top: 8px;
+  }
+
+  .socialIcons {
+    min-height: 28px;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .spotifyIcon,
+  .robloxIcon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .musicButton {
+    min-height: 48px;
+    gap: 7px;
+    margin-top: 10px;
+    padding: 6px 7px;
+  }
+
+  .musicIcon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .playIcon {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .trackDetails strong {
+    font-size: 10px;
+  }
+
+  .trackDetails span {
+    font-size: 8px;
+  }
+
+  .playbackStatus {
+    min-height: 12px;
+    margin-top: 3px;
+  }
+
+  .shopButton {
+    min-height: 32px;
+    margin-top: 6px;
+  }
+}
+
+@media (min-width: 1201px) {
+  .preview {
+    top: 0;
+  }
+
+  .motion {
+    top: 0;
+    left: auto;
+    right: auto;
+    left: calc(50vw - 260px);
+    scale: 1;
+    transform-origin: top center;
+    will-change: transform;
+  }
+
+  .card {
+    transform: rotate(0deg);
+    scale: var(--profile-base-scale, 1);
+    transform-origin: center;
+    will-change: transform, scale;
+  }
+}
+
+@media (min-width: 1201px) and (max-width: 1399px) {
+  .motion { --profile-base-scale: 0.72; }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .motion { --profile-base-scale: 0.82; }
+}
+
+@media (min-width: 1600px) and (max-width: 1799px) {
+  .motion { --profile-base-scale: 0.9; }
+}
