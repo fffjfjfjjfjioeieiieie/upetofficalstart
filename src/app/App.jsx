@@ -567,6 +567,10 @@ function App() {
     </section>
   );
 
+  if (pathname.replace(/\/+$/, '') === '/dome') {
+    return <FriendProfile key="dome-public" standalone isOwner={isAdmin && claimedUsername === 'dome'} />;
+  }
+
   if (isAdmin && pathname === '/create-account') {
     return (
       <div className="page-shell auth-page-shell" data-theme={theme}>

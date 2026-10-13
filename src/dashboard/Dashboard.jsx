@@ -61,6 +61,7 @@ export function DashboardHeader({ activePage, username, onLogout, onNavigate, th
 
       <nav className={styles.navigation} aria-label="dashboard navigation">
         {navigation.map(({ label, icon: Icon, path }) => {
+          if (label === 'profile' && username === 'dome') path = '/dome';
           const active = activePage === label;
           return (
             <button
@@ -100,9 +101,10 @@ export function DashboardHeader({ activePage, username, onLogout, onNavigate, th
 export default function Dashboard({ username, user, onLogout, onNavigate, theme, onToggleTheme }) {
   const [copyProfileStatus, setCopyProfileStatus] = useState('idle');
   const handle = username || 'your username';
-  const displayName = user?.displayName?.trim() || 'add a display name';
-  const avatarUrl = user?.photoURL;
-  const profileUrl = `user.pet/@${handle}`;
+  const isDome = username === 'dome';
+  const displayName = isDome ? 'dome' : user?.displayName?.trim() || 'add a display name';
+  const avatarUrl = isDome ? '/domespfp.png' : user?.photoURL;
+  const profileUrl = `https://user.pet/${handle}`;
 
   const copyProfileUrl = async () => {
     try {
@@ -173,7 +175,7 @@ export default function Dashboard({ username, user, onLogout, onNavigate, theme,
             <div className={styles.profileDetails}>
               <div className={styles.detailBlock}>
                 <span>bio</span>
-                <p>add a little about yourself...</p>
+                <p>{isDome ? 'what is disssss?' : 'add a little about yourself...'}</p>
               </div>
               <div className={`${styles.detailBlock} ${styles.profileUrlBlock}`}>
                 <span>profile url</span>
@@ -196,7 +198,7 @@ export default function Dashboard({ username, user, onLogout, onNavigate, theme,
             <div className={styles.profileFooter}>
               <div className={styles.profileNote}><span className={styles.noteDot} /> your profile starts here</div>
               <div className={styles.buttonGroup}>
-                <ComingSoonButton className={styles.secondaryButton}>view profile <ArrowUpRight size={14} /></ComingSoonButton>
+                <ComingSoonButton className={styles.secondaryButton} onClick={isDome ? () => onNavigate('/dome') : undefined}>view profile <ArrowUpRight size={14} /></ComingSoonButton>
                 <ComingSoonButton className={styles.primaryButton}>customize <ArrowRight size={14} /></ComingSoonButton>
               </div>
             </div>

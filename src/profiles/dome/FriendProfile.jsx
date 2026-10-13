@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Music2, Pause, Play, ShoppingBag } from 'lucide-react';
+import { ArrowUpRight, Check, Copy, Music2, Pause, Play, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
 import { FFTVisualizer } from '@fft-visualizer/react';
 import '@fft-visualizer/react/style.css';
 import styles from './FriendProfile.module.css';
@@ -13,7 +13,7 @@ const VISUALIZER_GRADIENT = [
   { stop: 1, color: '#ffc0c5' },
 ];
 
-export default function FriendProfile({ active = true }) {
+export default function FriendProfile({ active = true, standalone = false, isOwner = false }) {
   const audioRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -24,6 +24,36 @@ export default function FriendProfile({ active = true }) {
   const visualizerDataRef = useRef(new Uint8Array(VISUALIZER_BANDS));
   const [playing, setPlaying] = useState(false);
   const [playbackError, setPlaybackError] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.5);
+  const [muted, setMuted] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
+  const Heading = standalone ? 'h1' : 'h2';
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+
+  useEffect(() => {
+    if (!standalone) return undefined;
+    const previousTitle = document.title;
+    document.title = 'dome (@15ry) | user.pet';
+    return () => { document.title = previousTitle; };
+  }, [standalone]);
+
+  useEffect(() => {
+    if (standalone && audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = muted;
+    }
+  }, [standalone, volume, muted]);
+
+  const copyProfile = async () => {
+    try {
+      await navigator.clipboard.writeText('https://user.pet/dome');
+      setCopyStatus('Link copied');
+    } catch {
+      setCopyStatus('Copy this link: https://user.pet/dome');
+    }
+  };
 
   const cancelEqualizerAnimation = () => {
     if (animationFrameRef.current !== null) {
@@ -162,12 +192,13 @@ export default function FriendProfile({ active = true }) {
     }
   };
 
-  return (
-    <aside className={styles.preview} aria-label="15ry profile">
+  const profile = (
+    <aside className={`${styles.preview}${standalone ? ` ${styles.standalone}` : ''}`} aria-label="Dome's profile">
       <div className={styles.motion}>
         <article className={styles.card} data-profile-surface="" aria-labelledby="friend-profile-name">
+          {standalone && <div className={styles.profileLabel}><span>user<span className={styles.petAccent}>.pet</span> / dome</span><span className={styles.labelDot} aria-hidden="true" /></div>}
           <img className={styles.avatar} src="/domespfp.png" alt="dome's profile picture" />
-          <h2 className={styles.displayName} id="friend-profile-name">dome</h2>
+          <Heading className={styles.displayName} id="friend-profile-name">{standalone ? 'dome' : <a className={styles.profileLink} href="/dome" aria-label="Open Dome's profile">dome</a>}</Heading>
           <p className={styles.username}>@15ry</p>
           <p className={styles.badges}>
             <img src="/badge.png" alt="Profile badge" />
@@ -214,6 +245,26 @@ export default function FriendProfile({ active = true }) {
               {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
             </span>
           </button>
+          {standalone && (
+            <div className={styles.playerControls}>
+              <div className={styles.seekRow}>
+                <span>{formatTime(elapsed)}</span>
+                <input type="range" min="0" max={duration || 1} step="0.1" value={elapsed} disabled={!duration} aria-label="Seek Lucid Dreams" aria-valuetext={`${formatTime(elapsed)} of ${formatTime(duration)}`} onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (audioRef.current) audioRef.current.currentTime = next;
+                  setElapsed(next);
+                }} />
+                <span>{formatTime(duration)}</span>
+              </div>
+              <div className={styles.volumeRow}>
+                <span className={styles.nowPlaying}>{playing ? 'now playing' : 'press play, stay a while'}</span>
+                <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? 'Unmute music' : 'Mute music'} aria-pressed={muted}>
+                  {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                </button>
+                <input type="range" min="0" max="1" step="0.01" value={muted ? 0 : volume} aria-label="Music volume" aria-valuetext={`${Math.round((muted ? 0 : volume) * 100)} percent`} onChange={(event) => { setVolume(Number(event.target.value)); setMuted(false); }} />
+              </div>
+            </div>
+          )}
           <span className={styles.playbackStatus} role="status" aria-live="polite">
             {playbackError}
           </span>
@@ -226,13 +277,16 @@ export default function FriendProfile({ active = true }) {
           >
             <ShoppingBag size={14} aria-hidden="true" />
             <span>Shop</span>
+            {standalone && <span className={styles.comingSoon}>coming soon</span>}
           </button>
 
           <audio
             ref={audioRef}
             data-profile-audio=""
             src={MUSIC_SRC}
-            preload="none"
+            preload={standalone ? 'metadata' : 'none'}
+            onLoadedMetadata={() => setDuration(Number.isFinite(audioRef.current?.duration) ? audioRef.current.duration : 0)}
+            onTimeUpdate={() => { if (standalone) setElapsed(audioRef.current?.currentTime || 0); }}
             onPlay={() => {
               pauseOtherProfileAudio(audioRef.current);
               setPlaying(true);
@@ -258,5 +312,23 @@ export default function FriendProfile({ active = true }) {
         </article>
       </div>
     </aside>
+  );
+
+  if (!standalone) return profile;
+
+  return (
+    <div className={styles.profilePage}>
+      <div className={styles.atmosphere} aria-hidden="true" />
+      <header className={styles.pageHeader}>
+        <a href="/" className={styles.homeLink} aria-label="user.pet home"><img src="/upetlogoleft.png" alt="user.pet" /></a>
+        <div className={styles.headerActions}>
+          {isOwner && <a className={styles.ownerLink} href="/dashboard">your dashboard <ArrowUpRight size={14} /></a>}
+          <button className={styles.shareButton} type="button" onClick={copyProfile}>{copyStatus === 'Link copied' ? <Check size={15} /> : <Copy size={15} />}<span>{copyStatus === 'Link copied' ? 'copied' : 'share profile'}</span></button>
+        </div>
+      </header>
+      <main className={styles.profileMain}>{profile}</main>
+      <footer className={styles.pageFooter}><a href="/">a little space on user<span>.pet</span><ArrowUpRight size={12} /></a><span>just dome.</span></footer>
+      <span className={styles.shareStatus} role="status">{copyStatus}</span>
+    </div>
   );
 }
