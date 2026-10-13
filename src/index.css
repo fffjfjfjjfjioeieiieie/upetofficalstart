@@ -1,0 +1,192 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111d36;
+  background: #f7f9ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+
+body { min-height: 100vh; }
+
+a { color: inherit; }
+
+.page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.75) 38%, transparent 70%),
+    #f7f9ff;
+}
+
+.topbar {
+  position: relative;
+  z-index: 2;
+  height: 96px;
+  padding: 0 clamp(22px, 4.5vw, 72px);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e7ecf7;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  text-decoration: none;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+}
+
+.brand-paw { width: 43px; height: 43px; color: #3974ff; }
+
+.hero {
+  z-index: 1;
+  width: min(100% - 36px, 760px);
+  margin: auto;
+  padding: 72px 0 95px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.hero-paw {
+  width: 118px;
+  height: 118px;
+  color: #3974ff;
+  margin-bottom: 37px;
+  filter: drop-shadow(0 8px 14px rgba(57,116,255,.12));
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #3974ff;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .32em;
+}
+
+h1 {
+  margin: 0;
+  color: #111d36;
+  font-size: clamp(58px, 9vw, 94px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -.075em;
+}
+
+.message {
+  margin: 43px 0 13px;
+  color: #6f7f9f;
+  font-size: clamp(18px, 2.2vw, 23px);
+  font-weight: 500;
+}
+
+.updates {
+  margin: 0;
+  color: #6f7f9f;
+  font-size: clamp(16px, 2vw, 21px);
+  font-weight: 500;
+}
+
+.updates span { color: #3974ff; font-weight: 700; }
+
+.discord-button {
+  margin-top: 45px;
+  min-height: 72px;
+  min-width: 273px;
+  padding: 0 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  border-radius: 999px;
+  background: #3974ff;
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 12px 28px rgba(57,116,255,.18);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.discord-button svg { width: 25px; height: 25px; }
+.discord-button .arrow { font-size: 24px; font-weight: 400; margin-left: 2px; }
+.discord-button:hover { transform: translateY(-2px); background: #2865f4; box-shadow: 0 16px 34px rgba(57,116,255,.25); }
+.discord-button:focus-visible { outline: 3px solid #111d36; outline-offset: 4px; }
+
+.footer {
+  z-index: 1;
+  padding: 0 20px 43px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  color: #8492b0;
+  font-size: 14px;
+}
+
+.footer-dot { color: #9aabc9; }
+
+.paw-decoration {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  opacity: .09;
+  pointer-events: none;
+}
+
+.paw-decoration::before,
+.paw-decoration::after {
+  content: "";
+  position: absolute;
+  background: #3974ff;
+  border-radius: 50%;
+}
+
+.paw-decoration::before {
+  width: 70px;
+  height: 90px;
+  left: 82px;
+  top: 90px;
+  transform: rotate(35deg);
+  box-shadow: -63px -34px 0 -7px #3974ff, -23px -82px 0 -7px #3974ff, 28px -83px 0 -7px #3974ff, 66px -42px 0 -7px #3974ff;
+}
+
+.paw-decoration::after {
+  width: 90px;
+  height: 72px;
+  left: 80px;
+  top: 137px;
+  transform: rotate(-20deg);
+}
+
+.paw-decoration-one { left: -80px; bottom: -28px; transform: rotate(-35deg) scale(1.25); }
+.paw-decoration-two { right: -95px; top: 70px; transform: rotate(145deg) scale(1.05); }
+
+@media (max-width: 600px) {
+  .topbar { height: 76px; }
+  .brand { font-size: 23px; }
+  .brand-paw { width: 36px; height: 36px; }
+  .hero { padding: 55px 0 70px; }
+  .hero-paw { width: 88px; height: 88px; margin-bottom: 28px; }
+  .eyebrow { font-size: 14px; letter-spacing: .28em; }
+  .message { margin-top: 31px; }
+  .discord-button { margin-top: 34px; min-height: 62px; min-width: 240px; }
+  .footer { padding-bottom: 26px; }
+  .paw-decoration { opacity: .055; }
+}
