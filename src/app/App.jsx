@@ -499,7 +499,7 @@ function App() {
 
   const usernameClaimForm = (
     <section className="claim-section" aria-label="Claim your user.pet username">
-      <form className="claim-form" onSubmit={claimUsernameForAccount}>
+      <form className="claim-form" onSubmit={(event) => event.preventDefault()}>
         <label className="claim-label" htmlFor="claim-username">Claim your user.pet/</label>
         <input
           id="claim-username"
@@ -519,7 +519,7 @@ function App() {
           }}
           aria-describedby={claimMessage ? 'claim-message' : undefined}
         />
-        <button className="claim-button" type="submit" disabled={claimingUsername || claimUsername.trim().length < 3}>
+        <button className="claim-button" type="submit" disabled title="Coming soon">
           {claimingUsername ? 'Checking…' : 'Claim'}
         </button>
       </form>
@@ -536,11 +536,12 @@ function App() {
       <button
         type="button"
         className="home-account-action home-account-action-primary"
-        onClick={() => navigateTo('/dashboard')}
+        disabled
+        title="Coming soon"
       >
         Dashboard
       </button>
-      <button type="button" className="home-account-action" onClick={() => navigateTo('/friends')}>
+      <button type="button" className="home-account-action" disabled title="Coming soon">
         Friends
       </button>
     </section>
@@ -631,7 +632,7 @@ function App() {
         </a>
         {isAdmin && <nav className="main-nav" aria-label="Main navigation">
           {['Explore', 'Marketplace', 'How it works'].map((label) => (
-            <button key={label} type="button" className="header-placeholder nav-placeholder">
+            <button key={label} type="button" className="header-placeholder nav-placeholder" disabled title="Coming soon">
               {label}
             </button>
           ))}
@@ -639,7 +640,7 @@ function App() {
         <div className="header-actions">
           {currentUser ? (
             <>
-              <button type="button" className="header-account" aria-label={`Signed in as ${accountLabel}`}>
+              <button type="button" className="header-account" disabled title="Coming soon" aria-label={`Signed in as ${accountLabel}`}>
                 {currentUser.photoURL ? (
                   <img src={currentUser.photoURL} alt="" />
                 ) : (
@@ -690,9 +691,11 @@ function App() {
                 Buy Sell Flex with your <span className="headline-user">user</span><span className="headline-pet">.pet</span>
               </h1>
               <p className="hero-copy">
-                user.pet is currently unavailable, but we're cooking. Join the Discord instead?
+                {isAdmin
+                  ? 'user.pet is a customizable profile site with a bit of a twist. you have the option to sell whatever, whenever for FREE. how bout it?'
+                  : "user.pet is currently unavailable, but we're cooking. Join the Discord instead?"}
               </p>
-              <a className="discord-button" href="https://discord.gg/upet" target="_blank" rel="noopener noreferrer">Join the Discord <span aria-hidden="true">&#8599;</span></a>
+              {!isAdmin && <a className="discord-button" href="https://discord.gg/upet" target="_blank" rel="noopener noreferrer">Join the Discord <span aria-hidden="true">&#8599;</span></a>}
             </section>
 
             <div className="profile-stage">
