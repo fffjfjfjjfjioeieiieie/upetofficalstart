@@ -2607,7 +2607,7 @@ a:focus-visible {
     top: 50%;
     left: 50%;
     display: flex;
-    width: 360px;
+    width: var(--mobile-pair-width, 400px);
     height: 460px;
     margin: 0;
     transform: translate(-50%, -50%) scale(var(--mobile-showcase-scale, 0.6));
@@ -2616,13 +2616,13 @@ a:focus-visible {
   .public-preview-shell .profile-pair > aside {
     position: relative;
     inset: auto;
-    flex: 0 0 190px;
-    width: 190px;
+    flex: 0 0 var(--mobile-card-width, 210px);
+    width: var(--mobile-card-width, 210px);
     height: 460px;
     margin: 0;
   }
   .public-preview-shell .profile-pair > aside:nth-child(2) { margin-left: -20px; }
-  .public-preview-shell .profile-pair > aside > div { width: 190px; height: 460px; }
+  .public-preview-shell .profile-pair > aside > div { width: var(--mobile-card-width, 210px); height: 460px; }
   .public-preview-shell .profile-pair > .sadlizze-preview { display: none; }
   .public-preview-shell .footer {
     position: relative;

@@ -175,7 +175,10 @@ function App() {
     if (!stage) return undefined;
     const fitShowcase = () => {
       const { width, height } = stage.getBoundingClientRect();
-      const scale = Math.max(0.1, Math.min(1, (width - 24) / 360, (height - 16) / 460));
+      const scale = Math.max(0.1, Math.min(1, (height - 16) / 460));
+      const cardWidth = Math.min(340, Math.max(210, (Math.min(width + 8, 460) / scale + 20) / 2));
+      stage.style.setProperty('--mobile-card-width', cardWidth + 'px');
+      stage.style.setProperty('--mobile-pair-width', (cardWidth * 2 - 20) + 'px');
       stage.style.setProperty('--mobile-showcase-scale', String(scale));
     };
     const observer = new ResizeObserver(fitShowcase);
