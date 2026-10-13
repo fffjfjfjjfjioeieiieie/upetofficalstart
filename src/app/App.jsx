@@ -42,7 +42,7 @@ function getFriendlyAuthError(error) {
     'auth/wrong-password': 'Email or password is incorrect.',
     'auth/weak-password': 'Choose a password with at least 6 characters.',
     'auth/operation-not-allowed': 'Enable Email/Password in Firebase Authentication sign-in providers.',
-    'auth/too-many-requests': 'Too many attempts. Wait a little and try again.',
+    'auth/too-many-requests': 'Firebase has temporarily blocked login attempts from this browser or device. Stop retrying for now and try again later.',
     'auth/network-request-failed': 'Check your internet connection and try again.',
     'auth/unauthorized-domain': 'Add this website domain under Firebase Authentication → Settings → Authorized domains.',
   };
@@ -73,6 +73,18 @@ function App() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const authRequestPending = useRef(false);
+  const [loginPauseUntil, setLoginPauseUntil] = useState(() => {
+    try { return Number(window.sessionStorage.getItem('userpet-login-pause')) || 0; } catch { return 0; }
+  });
+  const [loginPauseSeconds, setLoginPauseSeconds] = useState(0);
+  useEffect(() => {
+    const updatePause = () => setLoginPauseSeconds(Math.max(0, Math.ceil((loginPauseUntil - Date.now()) / 1000)));
+    updatePause();
+    if (loginPauseUntil <= Date.now()) return undefined;
+    const timer = window.setInterval(updatePause, 1000);
+    return () => window.clearInterval(timer);
+  }, [loginPauseUntil]);
   const [authReady, setAuthReady] = useState(false);
   const [lampMusicPlaying, setLampMusicPlaying] = useState(false);
   const [shopMusicAvailable, setShopMusicAvailable] = useState(false);
@@ -264,6 +276,7 @@ function App() {
 
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
+    if (authRequestPending.current || Date.now() < loginPauseUntil) return;
     if (!auth || !firebaseConfigured) {
       setAuthError('Firebase web app settings are missing from .env.local.');
       return;
@@ -296,6 +309,7 @@ function App() {
       return;
     }
 
+    authRequestPending.current = true;
     setAuthLoading(true);
     setAuthError('');
     try {
@@ -332,8 +346,14 @@ function App() {
         }
       }
     } catch (authFailure) {
+      if (authFailure?.code === 'auth/too-many-requests') {
+        const pauseUntil = Date.now() + 60000;
+        setLoginPauseUntil(pauseUntil);
+        try { window.sessionStorage.setItem('userpet-login-pause', String(pauseUntil)); } catch {}
+      }
       setAuthError(getFriendlyAuthError(authFailure));
     } finally {
+      authRequestPending.current = false;
       setAuthLoading(false);
     }
   };
@@ -476,9 +496,9 @@ function App() {
           <button
             className="submit-button"
             type="submit"
-            disabled={!firebaseConfigured || authLoading || !authReady}
+            disabled={!firebaseConfigured || authLoading || !authReady || loginPauseSeconds > 0}
           >
-            {authLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Log in'}
+            {loginPauseSeconds > 0 ? `Pause ${loginPauseSeconds}s` : authLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Log in'}
           </button>
         </form>
         {isAdmin && <p className="auth-mode-switch">
@@ -719,7 +739,7 @@ function App() {
 
       <footer className="footer">
         <span className="footer-message"><span className="footer-brand">user.pet</span><span className="footer-tagline"> / building something worth opening</span></span>
-        <span className="version">&gt;_ &nbsp;v0.1.0</span>
+        <span className="version">&gt;_ &nbsp;v0.1.01</span>
       </footer>
 
       {loginDialog}
