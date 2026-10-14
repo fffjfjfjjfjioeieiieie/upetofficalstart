@@ -518,7 +518,7 @@
 .shareButton:hover, .ownerLink:hover { background: #ffffff0b; color: white; }
 .profileMain { display: grid; flex: 1; width: 100%; place-items: center; padding: 24px 20px 44px; }
 .standalone.preview { position: relative; inset: auto; width: min(100%, 500px); height: auto; margin: 0; pointer-events: auto; }
-.standalone .motion { position: relative; inset: auto; width: 100%; height: auto; scale: 1; will-change: auto; }
+.standalone .motion { position: relative; inset: auto; width: 100%; height: auto; scale: 1; will-change: auto; perspective: 1200px; }
 .standalone .motion::before { inset: 50px 0; background: #b1243512; filter: blur(70px); }
 .standalone .card {
   position: relative;
@@ -534,7 +534,6 @@
   transform: none;
   scale: 1;
   will-change: auto;
-  animation: profileArrive 650ms ease-out both;
 }
 .profileLabel { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-bottom: 30px; color: #9d97a6; font-size: 11px; letter-spacing: 0.07em; }
 .petAccent { color: #2196f3; }
@@ -555,13 +554,21 @@
 .standalone .trackDetails span { font-size: 11px; }
 .playerControls { width: 100%; margin-top: 10px; }
 .seekRow { display: flex; align-items: center; gap: 10px; color: #9a94a3; font-size: 10px; font-variant-numeric: tabular-nums; }
-.seekRow input { flex: 1; min-width: 0; }
-.playerControls input { height: 24px; margin: 0; accent-color: #eda1ae; cursor: pointer; }
+.slider { position: relative; display: flex; flex: 1; min-width: 0; height: 30px; align-items: center; touch-action: none; user-select: none; cursor: pointer; }
+.sliderTrack { position: relative; flex: 1; height: 3px; overflow: hidden; border-radius: 20px; background: #ffffff16; }
+.sliderRange { position: absolute; height: 100%; border-radius: inherit; background: #eda1ae; }
+.sliderThumb { display: block; width: 11px; height: 11px; border-radius: 50%; background: #ffe3e8; box-shadow: 0 0 10px #e99aa62b; }
+.sliderThumb:focus-visible, .socialPlaceholder:focus-visible { outline: 2px solid #eda1ae; outline-offset: 5px; }
+.slider[data-disabled] { opacity: 0.4; cursor: default; }
 .volumeRow { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
 .nowPlaying { margin-right: auto; color: #a79eaf; font-size: 10px; letter-spacing: 0.025em; text-align: left; }
 .volumeRow button { display: grid; flex-shrink: 0; width: 44px; height: 44px; padding: 0; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #b6a9bd; }
 .volumeRow button:hover { background: #ffffff08; }
-.volumeRow input { width: 72px; }
+.volumeSlider { width: 72px; flex: 0 0 72px; }
+.socialPlaceholder { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid #ffffff0d; border-radius: 12px; background: #ffffff03; transition: background 180ms ease, border-color 180ms ease; }
+.socialPlaceholder:hover, .socialPlaceholder:focus-visible { border-color: #e99aa62b; background: #ffffff08; }
+.tooltip { z-index: 20; padding: 8px 12px; border: 1px solid #ffffff1a; border-radius: 8px; background: #1b1923; color: #e7dfe9; font-size: 11px; box-shadow: 0 8px 20px #0004; }
+.tooltipArrow { fill: #1b1923; }
 .standalone .playbackStatus:empty { display: none; }
 .standalone .playbackStatus { font-size: 12px; }
 .standalone .shopButton { min-height: 44px; margin-top: 20px; border-radius: 10px; background: #ffffff03; color: #a6a1ae; opacity: 0.65; }
@@ -572,7 +579,6 @@
 .pageFooter a span { color: #2196f3; margin-left: -4px; }
 .shareStatus { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border: 1px solid #ffffff20; border-radius: 10px; background: #141822; color: #eee; font-size: 12px; max-width: calc(100% - 24px); text-align: center; }
 .shareStatus:empty { display: none; }
-@keyframes profileArrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 600px) {
   .pageHeader, .pageFooter { width: calc(100% - 32px); }
   .pageHeader { min-height: 76px; }
@@ -589,5 +595,5 @@
   .pageFooter { min-height: 54px; font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .standalone .card { animation: none; }
+  .socialPlaceholder { transition: none; }
 }

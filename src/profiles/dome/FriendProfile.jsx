@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, Copy, Music2, Pause, Play, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
 import { FFTVisualizer } from '@fft-visualizer/react';
+import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
+import * as Slider from '@radix-ui/react-slider';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import '@fft-visualizer/react/style.css';
 import styles from './FriendProfile.module.css';
 import { pauseOtherProfileAudio } from '../../shared/profileAudio.js';
@@ -30,6 +33,12 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
   const [muted, setMuted] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const Heading = standalone ? 'h1' : 'h2';
+  const Surface = standalone ? motion.article : 'article';
+  const reduceMotion = useReducedMotion();
+  const tiltX = useMotionValue(0);
+  const tiltY = useMotionValue(0);
+  const rotateX = useSpring(tiltX, { stiffness: 160, damping: 24 });
+  const rotateY = useSpring(tiltY, { stiffness: 160, damping: 24 });
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -54,6 +63,21 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
       setCopyStatus('Copy this link: https://user.pet/dome');
     }
   };
+
+  useEffect(() => {
+    if (!copyStatus) return undefined;
+    const timer = window.setTimeout(() => setCopyStatus(''), 4500);
+    return () => window.clearTimeout(timer);
+  }, [copyStatus]);
+
+  const updateTilt = (event) => {
+    if (reduceMotion || event.pointerType !== 'mouse') return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    tiltX.set((0.5 - (event.clientY - bounds.top) / bounds.height) * 3);
+    tiltY.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 3);
+  };
+
+  const resetTilt = () => { tiltX.set(0); tiltY.set(0); };
 
   const cancelEqualizerAnimation = () => {
     if (animationFrameRef.current !== null) {
@@ -195,7 +219,15 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
   const profile = (
     <aside className={`${styles.preview}${standalone ? ` ${styles.standalone}` : ''}`} aria-label="Dome's profile">
       <div className={styles.motion}>
-        <article className={styles.card} data-profile-surface="" aria-labelledby="friend-profile-name">
+        <Surface className={styles.card} data-profile-surface="" aria-labelledby="friend-profile-name" {...(standalone ? {
+          initial: reduceMotion ? false : { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.55, ease: 'easeOut' },
+          style: reduceMotion ? undefined : { rotateX, rotateY },
+          onPointerMove: updateTilt,
+          onPointerLeave: resetTilt,
+          onPointerDown: resetTilt,
+        } : {})}>
           {standalone && <div className={styles.profileLabel}><span>user<span className={styles.petAccent}>.pet</span> / dome</span><span className={styles.labelDot} aria-hidden="true" /></div>}
           <img className={styles.avatar} src="/domespfp.png" alt="dome's profile picture" />
           <Heading className={styles.displayName} id="friend-profile-name">{standalone ? 'dome' : <a className={styles.profileLink} href="/dome" aria-label="Open Dome's profile">dome</a>}</Heading>
@@ -225,8 +257,14 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
           </div>
 
           <div className={styles.socialIcons} role="group" aria-label="Spotify and Roblox">
-            <img className={styles.spotifyIcon} src="/spotify.png" alt="Spotify" />
-            <img className={styles.robloxIcon} src="/roblox.png" alt="Roblox" />
+            {standalone ? <Tooltip.Provider delayDuration={150}>
+              {[['Spotify', '/spotify.png', styles.spotifyIcon], ['Roblox', '/roblox.png', styles.robloxIcon]].map(([label, src, iconClass]) => (
+                <Tooltip.Root key={label}>
+                  <Tooltip.Trigger asChild><span className={styles.socialPlaceholder} tabIndex={0} aria-label={`${label}: link coming soon`}><img className={iconClass} src={src} alt="" /></span></Tooltip.Trigger>
+                  <Tooltip.Portal><Tooltip.Content className={styles.tooltip} sideOffset={8}>{label} · link coming soon<Tooltip.Arrow className={styles.tooltipArrow} /></Tooltip.Content></Tooltip.Portal>
+                </Tooltip.Root>
+              ))}
+            </Tooltip.Provider> : <><img className={styles.spotifyIcon} src="/spotify.png" alt="Spotify" /><img className={styles.robloxIcon} src="/roblox.png" alt="Roblox" /></>}
           </div>
 
           <button
@@ -249,11 +287,10 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
             <div className={styles.playerControls}>
               <div className={styles.seekRow}>
                 <span>{formatTime(elapsed)}</span>
-                <input type="range" min="0" max={duration || 1} step="0.1" value={elapsed} disabled={!duration} aria-label="Seek Lucid Dreams" aria-valuetext={`${formatTime(elapsed)} of ${formatTime(duration)}`} onChange={(event) => {
-                  const next = Number(event.target.value);
+                <Slider.Root className={styles.slider} min={0} max={duration || 1} step={0.1} value={[elapsed]} disabled={!duration} onValueChange={([next]) => {
                   if (audioRef.current) audioRef.current.currentTime = next;
                   setElapsed(next);
-                }} />
+                }}><Slider.Track className={styles.sliderTrack}><Slider.Range className={styles.sliderRange} /></Slider.Track><Slider.Thumb className={styles.sliderThumb} aria-label="Seek Lucid Dreams" aria-valuetext={`${formatTime(elapsed)} of ${formatTime(duration)}`} /></Slider.Root>
                 <span>{formatTime(duration)}</span>
               </div>
               <div className={styles.volumeRow}>
@@ -261,7 +298,7 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
                 <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? 'Unmute music' : 'Mute music'} aria-pressed={muted}>
                   {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
                 </button>
-                <input type="range" min="0" max="1" step="0.01" value={muted ? 0 : volume} aria-label="Music volume" aria-valuetext={`${Math.round((muted ? 0 : volume) * 100)} percent`} onChange={(event) => { setVolume(Number(event.target.value)); setMuted(false); }} />
+                <Slider.Root className={`${styles.slider} ${styles.volumeSlider}`} min={0} max={1} step={0.01} value={[muted ? 0 : volume]} onValueChange={([next]) => { setVolume(next); setMuted(false); }}><Slider.Track className={styles.sliderTrack}><Slider.Range className={styles.sliderRange} /></Slider.Track><Slider.Thumb className={styles.sliderThumb} aria-label="Music volume" aria-valuetext={`${Math.round((muted ? 0 : volume) * 100)} percent`} /></Slider.Root>
               </div>
             </div>
           )}
@@ -309,7 +346,7 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
               setPlaybackError('Music could not be loaded.');
             }}
           />
-        </article>
+        </Surface>
       </div>
     </aside>
   );
