@@ -29,6 +29,7 @@ const ADMIN_EMAILS = new Set([
   'iamjayvonlol@gmail.com',
 ]);
 const isApprovedAdmin = (user) => ADMIN_EMAILS.has((user?.email || '').trim().toLowerCase());
+console.log('Signed-in email:', user?.email);
 
 function getHeaderAccountName(user, preferredUsername = '') {
   try {
@@ -322,6 +323,10 @@ function App() {
     try {
       await persistAuthLocally();
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+
+        console.log('Firebase email:', credential.user.email);
+        console.log('Founder approved:', isApprovedAdmin(credential.user));
+
       if (!isApprovedAdmin(credential.user)) {
         await signOut(auth);
         throw new Error('This email does not have founder access.');
