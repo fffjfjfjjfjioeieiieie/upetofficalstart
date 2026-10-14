@@ -1,5 +1,6 @@
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '../app/firebase.js';
+import { createDefaultProfile } from '../shared/profileDefaults.js';
 
 const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 
@@ -28,16 +29,27 @@ export async function claimUsername(user, rawUsername) {
 
   const usernameRef = doc(firestore, 'usernames', username);
   const accountRef = doc(firestore, 'users', user.uid);
+  const profileRef = doc(firestore, 'profiles', username);
 
   const result = await runTransaction(firestore, async (transaction) => {
-    const [usernameSnapshot, accountSnapshot] = await Promise.all([
+    const [usernameSnapshot, accountSnapshot, profileSnapshot] = await Promise.all([
       transaction.get(usernameRef),
       transaction.get(accountRef),
+      transaction.get(profileRef),
     ]);
 
     if (accountSnapshot.exists()) {
       const existingUsername = accountSnapshot.data().username;
-      if (existingUsername === username) return { username, alreadyOwned: true };
+      if (existingUsername === username) {
+        if (!profileSnapshot.exists()) {
+          transaction.set(profileRef, {
+            ...createDefaultProfile({ uid: user.uid, username }),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+        return { username, alreadyOwned: true };
+      }
       throw new UsernameAlreadyClaimedError(existingUsername);
     }
 
@@ -51,6 +63,11 @@ export async function claimUsername(user, rawUsername) {
     transaction.set(accountRef, {
       uid: user.uid,
       username,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    transaction.set(profileRef, {
+      ...createDefaultProfile({ uid: user.uid, username }),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

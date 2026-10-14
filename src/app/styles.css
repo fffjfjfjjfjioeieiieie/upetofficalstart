@@ -813,6 +813,19 @@ a:focus-visible {
   font-weight: 650;
 }
 
+.auth-recovery {
+  display: block;
+  margin: 10px auto 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .password-toggle {
   display: grid;
   width: 42px;

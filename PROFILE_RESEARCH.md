@@ -1,6 +1,6 @@
 # Profile design reference for user.pet
 
-Researched 2026-10-13. The user asked to study and remember how guns.lol and similar sites look, feel, and work. This file is durable project context for future profile/dashboard work; it is research, not an instruction to implement every feature.
+Researched 2026-10-13 and updated with REA runtime captures on 2026-10-14. The user asked to study and remember how guns.lol and similar sites look, feel, and work. This file is durable project context for future profile/dashboard work.
 
 ## Evidence and limits
 
@@ -9,6 +9,7 @@ Researched 2026-10-13. The user asked to study and remember how guns.lol and sim
 - Read fakecrime's official homepage and indexed public profile content. Live browser access hit a security verification page; actual interactions and mobile behavior remain unverified.
 - Read E-Z.bio's homepage and indexed entrance text. Its live profile hit Cloudflare verification. Do not claim its post-entry layout or player was tested.
 - Visually inspected Linktree's official template gallery and read its Artemis template description. Did not test a logged-in editor or purchase any products.
+- Used REA 6.4.0 browser scenarios at a 390x844 viewport to capture the current guns.lol login and first registration step. Both captures retained complete final DOM and accessibility artifacts, though REA reported that its owned Chromium cleanup could not be confirmed within the one-second cleanup window. No credentials were entered, so authenticated dashboard behavior remains unobserved.
 - Competitor content and feature availability can change. Recheck before using this as a current entitlement/pricing specification.
 
 ## Main design lesson
@@ -38,6 +39,14 @@ The [layout guide](https://help.guns.lol/premium-guides/layout-settings) describ
 The [audio guide](https://help.guns.lol/how-to-guides/profile-audio) describes uploading tracks with a title and optional cover, then enabling a visible player separately. Sound selection and player visibility are distinct options.
 
 The [changelog](https://help.guns.lol/changelog) adds context beyond the layout guide: a Portfolio layout with modules, animated borders, timezone and weather/widget options, and customizable entrance content. Documentation pages are not always updated together; do not assume the older layout guide lists every current option.
+
+### Login and registration flow observed with REA
+
+The mobile login page uses one focused card with email and password fields, a primary Log in action, Google and Discord alternatives, account recovery, and a path to registration. Its copy tells users what they regain access to instead of presenting an admin-only gate.
+
+Registration begins with the public identity: a single `guns.lol/username` field and a disabled Continue button until the first step is valid. The supporting copy promises a profile, links, and customization. This confirms a useful onboarding order for user.pet: claim the public path first, then create or connect the account, then enter the profile studio.
+
+The REA captures observed only unauthenticated screens. Dashboard structure, provider callbacks, validation responses, and post-login transitions remain unknown from runtime evidence; the implementation should not claim to reproduce those internals.
 
 ## Other references
 
@@ -80,7 +89,7 @@ These are our design recommendations, not claims about competitor implementation
 
 ## Session constraints to preserve
 
-- Research does not authorize a redesign or deployment.
+- The user has since authorized the account, public profile, and customization implementation. Deployment remains a separate action.
 - Keep local preview/hosting off unless the user requests otherwise.
 - Keep Shop actions disabled under the current user instructions.
 - Do not reset Firestore or alter login accounts for research.

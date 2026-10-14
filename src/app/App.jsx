@@ -2,10 +2,11 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
-import { LockKeyhole, ChevronDown, Moon, Sun, X } from 'lucide-react';
+import { ChevronDown, Moon, Sun } from 'lucide-react';
 import ProfilePreview from '../profiles/lamp/ProfilePreview.jsx';
 import FriendProfile from '../profiles/dome/FriendProfile.jsx';
 import SadlizzeProfile from '../profiles/sadlizze/SadlizzeProfile.jsx';
@@ -14,12 +15,15 @@ import LampShop from '../shop/LampShop.jsx';
 import SadlizzeShop from '../shop/SadlizzeShop.jsx';
 import Dashboard from '../dashboard/Dashboard.jsx';
 import Friends from '../dashboard/Friends.jsx';
-import { claimUsername as saveClaimedUsername, getAccountForUser, isUsernameAvailable } from '../data/accountStore.js';
+import PublicProfileRoute from '../profiles/PublicProfileRoute.jsx';
+import { claimUsername as saveClaimedUsername, getAccountForUser } from '../data/accountStore.js';
 import {
   auth,
   firebaseConfigured,
   persistAuthLocally,
 } from './firebase.js';
+
+const ProfileEditor = React.lazy(() => import('../dashboard/ProfileEditor.jsx'));
 
 function getHeaderAccountName(user, preferredUsername = '') {
   try {
@@ -51,9 +55,6 @@ function getFriendlyAuthError(error) {
     || 'Authentication could not finish. Check your Firebase Authentication settings and try again.';
 }
 
-const ADMIN_EMAILS = ['zurihcs@gmail.com', 'lampjustlamp123@gmail.com', 'iamjayvonlol@gmail.com'];
-const isAdminUser = (user) => Boolean(user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase()));
-
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [claimedUsername, setClaimedUsername] = useState(() => {
@@ -63,11 +64,14 @@ function App() {
       return '';
     }
   });
-  const isAdmin = isAdminUser(currentUser);
   const [theme, setTheme] = useState('dark');
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [loginOpen, setLoginOpen] = useState(() => window.location.pathname === '/create-account');
-  const [authMode, setAuthMode] = useState('login');
+  const [authMode, setAuthMode] = useState(() => (
+    window.location.pathname === '/create-account' && new URLSearchParams(window.location.search).has('username')
+      ? 'signup'
+      : 'login'
+  ));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -124,7 +128,7 @@ function App() {
       setPathname(nextPath);
       setPendingClaimUsername(new URLSearchParams(window.location.search).get('username')?.toLowerCase() ?? '');
       if (nextPath === '/create-account') {
-        setAuthMode('login');
+        setAuthMode(new URLSearchParams(window.location.search).has('username') ? 'signup' : 'login');
         setLoginOpen(true);
       } else {
         setLoginOpen(false);
@@ -152,9 +156,9 @@ function App() {
     let active = true;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!active) return;
-      setCurrentUser(isAdminUser(user) ? user : null);
+      setCurrentUser(user);
       setAuthReady(true);
-      if (isAdminUser(user)) {
+      if (user) {
         getAccountForUser(user).then((account) => {
           if (!active || auth.currentUser?.uid !== user.uid) return;
           if (!account?.username) {
@@ -197,11 +201,11 @@ function App() {
     observer.observe(stage);
     fitShowcase();
     return () => observer.disconnect();
-  }, [isAdmin, pathname]);
+  }, [currentUser, pathname]);
 
   const navigateTo = (path, { replace = false } = {}) => {
     window.history[replace ? 'replaceState' : 'pushState']({}, '', path);
-    setPathname(path);
+    setPathname(window.location.pathname);
     window.scrollTo(0, 0);
   };
 
@@ -212,10 +216,10 @@ function App() {
   const accountLabel = claimedUsername ? `@${claimedUsername}` : accountName;
 
   useEffect(() => {
-    if ((pathname === '/dashboard' || pathname === '/friends' || pathname === '/welcome') && authReady && !isAdmin) navigateTo('/');
-  }, [pathname, authReady, isAdmin]);
+    if ((pathname === '/dashboard' || pathname === '/friends' || pathname === '/welcome' || pathname === '/customize') && authReady && !currentUser) navigateTo('/');
+  }, [pathname, authReady, currentUser]);
   const openLogin = (mode = 'login') => {
-    setAuthMode(isAdmin ? mode : 'login');
+    setAuthMode(mode);
     setAuthError('');
     setLoginOpen(true);
   };
@@ -283,10 +287,6 @@ function App() {
     }
 
     const normalizedEmail = email.trim();
-    if (!ADMIN_EMAILS.includes(normalizedEmail.toLowerCase())) {
-      setAuthError('This account does not have admin access.');
-      return;
-    }
     if (!normalizedEmail) {
       setAuthError('Enter your email address to continue.');
       return;
@@ -318,11 +318,6 @@ function App() {
         ? await createUserWithEmailAndPassword(auth, email.trim(), password)
         : await signInWithEmailAndPassword(auth, email.trim(), password);
 
-      if (!isAdminUser(credential.user)) {
-        await signOut(auth);
-        throw new Error('This account does not have admin access.');
-      }
-
       // Set this immediately so protected routes do not redirect during Firebase's auth callback.
       setCurrentUser(credential.user);
       setAuthReady(true);
@@ -330,19 +325,21 @@ function App() {
       setPassword('');
       setConfirmPassword('');
 
-      if (isAdmin && pendingClaimUsername) {
+      if (pendingClaimUsername) {
         await claimAndOpenWelcome(credential.user, pendingClaimUsername);
       } else if (authMode === 'login') {
-        navigateTo('/');
         try {
           const account = await getAccountForUser(credential.user);
           if (account?.username) {
             window.localStorage.setItem('userpet-username', account.username);
             setClaimedUsername(account.username);
+            navigateTo('/dashboard');
+          } else {
             navigateTo('/');
           }
         } catch {
           // Login still succeeds if Firestore has not been enabled yet.
+          navigateTo('/');
         }
       }
     } catch (authFailure) {
@@ -355,6 +352,20 @@ function App() {
     } finally {
       authRequestPending.current = false;
       setAuthLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setAuthError('Enter your email address first, then choose reset password.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, normalizedEmail);
+      setAuthError('Password reset email sent. Check your inbox.');
+    } catch (error) {
+      setAuthError(getFriendlyAuthError(error));
     }
   };
 
@@ -376,26 +387,7 @@ function App() {
     }
 
     if (!currentUser) {
-      setClaimingUsername(true);
       setClaimMessage(null);
-      try {
-        const available = await isUsernameAvailable(username);
-        if (!available) {
-          setClaimMessage({ type: 'error', text: `user.pet/${username} has already been claimed.` });
-          return;
-        }
-      } catch (error) {
-        const message = error?.code === 'permission-denied'
-          ? 'Firestore rules need to be deployed before usernames can be checked.'
-          : error?.message?.toLowerCase().includes('firestore api')
-            ? 'Enable the Cloud Firestore API before claiming a username.'
-            : 'Could not check that username right now. Please try again.';
-        setClaimMessage({ type: 'error', text: message });
-        return;
-      } finally {
-        setClaimingUsername(false);
-      }
-
       setPendingClaimUsername(username);
       openLogin('signup');
       navigateTo(`/create-account?username=${encodeURIComponent(username)}`);
@@ -422,14 +414,9 @@ function App() {
       }}
     >
       <section className="login-modal" role="dialog" aria-modal={pathname === '/create-account' ? undefined : true} aria-labelledby="login-title">
-        <button className="close-button" onClick={closeAccountDialog} aria-label="Close account dialog">
-          <X size={18} />
-        </button>
-        <div className="modal-icon"><LockKeyhole size={18} /></div>
-        <p className="modal-kicker">{isAdmin ? 'your user.pet account' : 'user.pet team'}</p>
-        <h2 id="login-title">{!isAdmin ? 'Admin login.' : authMode === 'signup' ? 'Create your account.' : 'Welcome back.'}</h2>
+        <h2 id="login-title">{authMode === 'signup' ? 'Create your account.' : 'Welcome back.'}</h2>
         <p className="modal-copy">
-          {!isAdmin ? 'Sign in with your team email and password.' : pendingClaimUsername
+          {pendingClaimUsername
             ? `Create an account or sign in to claim user.pet/${pendingClaimUsername}.`
             : 'Your account stays signed in on this device until you log out.'}
         </p>
@@ -501,7 +488,7 @@ function App() {
             {loginPauseSeconds > 0 ? `Pause ${loginPauseSeconds}s` : authLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Log in'}
           </button>
         </form>
-        {isAdmin && <p className="auth-mode-switch">
+        <p className="auth-mode-switch">
           {authMode === 'signup' ? 'Already have an account?' : 'New to user.pet?'}{' '}
           <button
             type="button"
@@ -512,14 +499,15 @@ function App() {
           >
             {authMode === 'signup' ? 'Log in' : 'Create account'}
           </button>
-        </p>}
+        </p>
+        {authMode === 'login' && <button className="auth-recovery" type="button" onClick={handlePasswordReset}>Forgot your password?</button>}
       </section>
     </div>
   );
 
   const usernameClaimForm = (
     <section className="claim-section" aria-label="Claim your user.pet username">
-      <form className="claim-form" onSubmit={(event) => event.preventDefault()}>
+      <form className="claim-form" onSubmit={claimUsernameForAccount}>
         <label className="claim-label" htmlFor="claim-username">Claim your user.pet/</label>
         <input
           id="claim-username"
@@ -539,7 +527,7 @@ function App() {
           }}
           aria-describedby={claimMessage ? 'claim-message' : undefined}
         />
-        <button className="claim-button" type="submit" disabled title="Coming soon">
+        <button className="claim-button" type="submit" disabled={claimingUsername}>
           {claimingUsername ? 'Checking…' : 'Claim'}
         </button>
       </form>
@@ -556,22 +544,23 @@ function App() {
       <button
         type="button"
         className="home-account-action home-account-action-primary"
-        disabled
-        title="Coming soon"
+        onClick={() => navigateTo('/dashboard')}
       >
         Dashboard
       </button>
-      <button type="button" className="home-account-action" disabled title="Coming soon">
+      <button type="button" className="home-account-action" onClick={() => navigateTo('/friends')}>
         Friends
       </button>
     </section>
   );
 
-  if (pathname.replace(/\/+$/, '') === '/dome') {
-    return <FriendProfile key="dome-public" standalone isOwner={isAdmin && claimedUsername === 'dome'} />;
+  const publicUsername = pathname.match(/^\/([a-z0-9][a-z0-9._-]{2,19})\/?$/)?.[1];
+  const reservedPaths = new Set(['dashboard', 'friends', 'welcome', 'customize', 'create-account']);
+  if (publicUsername && !reservedPaths.has(publicUsername)) {
+    return <PublicProfileRoute username={publicUsername} currentUser={currentUser} onNavigate={navigateTo} />;
   }
 
-  if (isAdmin && pathname === '/create-account') {
+  if (pathname === '/create-account') {
     return (
       <div className="page-shell auth-page-shell" data-theme={theme}>
         <header className="topbar">
@@ -583,7 +572,7 @@ function App() {
     );
   }
 
-  if (isAdmin && pathname === '/dashboard') {
+  if (currentUser && pathname === '/dashboard') {
     return (
       <div className="page-shell dashboard-shell" data-theme={theme}>
         <Dashboard
@@ -599,7 +588,11 @@ function App() {
     );
   }
 
-  if (isAdmin && pathname === '/friends') {
+  if (currentUser && claimedUsername && pathname === '/customize') {
+    return <React.Suspense fallback={<div className="page-shell" data-theme={theme} />}><ProfileEditor username={claimedUsername} user={currentUser} onNavigate={navigateTo} /></React.Suspense>;
+  }
+
+  if (currentUser && pathname === '/friends') {
     return (
       <div className="page-shell dashboard-shell" data-theme={theme}>
         <Friends
@@ -615,7 +608,7 @@ function App() {
     );
   }
 
-  if (isAdmin && pathname === '/welcome') {
+  if (currentUser && pathname === '/welcome') {
     return (
       <div className="page-shell welcome-shell" data-theme={theme}>
         <main className="welcome-screen">
@@ -636,7 +629,7 @@ function App() {
   }
 
   return (
-    <div className={`page-shell${!isAdmin ? ' public-preview-shell' : ''}${isShopPage ? ' shop-page-shell' : ' home-page-shell'}${isSadlizzeShopPage ? ' sadlizze-shop-shell' : ''}`} data-theme={theme}>
+    <div className={`page-shell${!currentUser ? ' public-preview-shell' : ''}${isShopPage ? ' shop-page-shell' : ' home-page-shell'}${isSadlizzeShopPage ? ' sadlizze-shop-shell' : ''}`} data-theme={theme}>
       {isLampShopPage && (
         <div className="shop-page-background" aria-hidden="true">
           <ProfileBackground src="/ok.mp4" />
@@ -654,7 +647,7 @@ function App() {
         >
           <span className="brand-logo"><img src={theme === 'light' ? '/upetlogoleftlightmode.png' : '/upetlogoleft.png'} alt="user.pet" /></span>
         </a>
-        {isAdmin && <nav className="main-nav" aria-label="Main navigation">
+        {currentUser && <nav className="main-nav" aria-label="Main navigation">
           {['Explore', 'Marketplace', 'How it works'].map((label) => (
             <button key={label} type="button" className="header-placeholder nav-placeholder" disabled title="Coming soon">
               {label}
@@ -679,7 +672,7 @@ function App() {
             </>
           ) : (
             <button type="button" className="header-placeholder header-login-placeholder" onClick={() => openLogin('login')}>
-              Admin login
+              Log in
             </button>
           )}
           <button
@@ -715,15 +708,15 @@ function App() {
                 Buy Sell Flex with your <span className="headline-user">user</span><span className="headline-pet">.pet</span>
               </h1>
               <p className="hero-copy">
-                {isAdmin
+                {currentUser
                   ? 'user.pet is a customizable profile site with a bit of a twist. you have the option to sell whatever, whenever for FREE. how bout it?'
                   : "user.pet is currently unavailable, but we're cooking. Join the Discord instead?"}
               </p>
-              {!isAdmin && <a className="discord-button" href="https://discord.gg/upet" target="_blank" rel="noopener noreferrer">Join the Discord <span aria-hidden="true">&#8599;</span></a>}
+              {!currentUser && <a className="discord-button" href="https://discord.gg/upet" target="_blank" rel="noopener noreferrer">Join the Discord <span aria-hidden="true">&#8599;</span></a>}
             </section>
 
             <div className="profile-stage">
-              {isAdmin && (currentUser && claimedUsername ? signedInHomeActions : usernameClaimForm)}
+              {(currentUser && claimedUsername) ? signedInHomeActions : usernameClaimForm}
               <div className="profile-stage-inner">
                 <div className="hero-layout">
                   <div className="profile-pair">

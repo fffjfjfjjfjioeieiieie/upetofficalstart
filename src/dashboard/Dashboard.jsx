@@ -20,16 +20,16 @@ import styles from './Dashboard.module.css';
 
 const navigation = [
   { label: 'dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'profile', icon: UserRound },
-  { label: 'customize', icon: Palette },
+  { label: 'profile', icon: UserRound, profilePath: true },
+  { label: 'customize', icon: Palette, path: '/customize' },
   { label: 'friends', icon: UsersRound, path: '/friends' },
   { label: 'shop', icon: ShoppingBag },
   { label: 'marketplace', icon: Compass },
 ];
 
 const quickActions = [
-  { label: 'customize profile', detail: 'shape your page', icon: Palette },
-  { label: 'edit profile', detail: 'name, bio and status', icon: UserRound },
+  { label: 'customize profile', detail: 'shape your page', icon: Palette, path: '/customize' },
+  { label: 'edit profile', detail: 'name, bio and status', icon: UserRound, path: '/customize' },
   { label: 'create listing', detail: 'add something to your shop', icon: Plus },
   { label: 'view shop', detail: 'your public storefront', icon: ShoppingBag },
   { label: 'find friends', detail: 'grow your circle', icon: UsersRound, path: '/friends' },
@@ -60,8 +60,8 @@ export function DashboardHeader({ activePage, username, onLogout, onNavigate, th
       </button>
 
       <nav className={styles.navigation} aria-label="dashboard navigation">
-        {navigation.map(({ label, icon: Icon, path }) => {
-          if (label === 'profile' && username === 'dome') path = '/dome';
+        {navigation.map(({ label, icon: Icon, path, profilePath }) => {
+          if (profilePath && username && username !== 'your username') path = `/${username}`;
           const active = activePage === label;
           return (
             <button
@@ -198,8 +198,8 @@ export default function Dashboard({ username, user, onLogout, onNavigate, theme,
             <div className={styles.profileFooter}>
               <div className={styles.profileNote}><span className={styles.noteDot} /> your profile starts here</div>
               <div className={styles.buttonGroup}>
-                <ComingSoonButton className={styles.secondaryButton} onClick={isDome ? () => onNavigate('/dome') : undefined}>view profile <ArrowUpRight size={14} /></ComingSoonButton>
-                <ComingSoonButton className={styles.primaryButton}>customize <ArrowRight size={14} /></ComingSoonButton>
+                <ComingSoonButton className={styles.secondaryButton} onClick={username ? () => onNavigate(`/${username}`) : undefined}>view profile <ArrowUpRight size={14} /></ComingSoonButton>
+                <ComingSoonButton className={styles.primaryButton} onClick={username ? () => onNavigate('/customize') : undefined}>customize <ArrowRight size={14} /></ComingSoonButton>
               </div>
             </div>
           </section>
@@ -246,7 +246,7 @@ export default function Dashboard({ username, user, onLogout, onNavigate, theme,
                 <h3>customize your profile</h3>
                 <p>build a page that feels like yours, from the background up.</p>
               </div>
-              <ComingSoonButton className={styles.previewAction} aria-label="Customize your profile">
+              <ComingSoonButton className={styles.previewAction} aria-label="Customize your profile" onClick={() => onNavigate('/customize')}>
                 <ArrowUpRight size={17} />
               </ComingSoonButton>
             </div>
