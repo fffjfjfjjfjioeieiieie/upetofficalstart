@@ -24,7 +24,7 @@ import {
 
 const ProfileEditor = React.lazy(() => import('../dashboard/ProfileEditor.jsx'));
 const ADMIN_EMAILS = new Set([
-  'zurihcs@gmail.com',
+  'zurhics@gmail.com',
   'lampjustlamp123@gmail.com',
   'iamjayvonlol@gmail.com',
 ]);
