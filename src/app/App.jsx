@@ -29,7 +29,7 @@ const ADMIN_EMAILS = new Set([
   'iamjayvonlol@gmail.com',
 ]);
 const isApprovedAdmin = (user) => ADMIN_EMAILS.has((user?.email || '').trim().toLowerCase());
-console.log('Signed-in email:', user?.email);
+
 
 function getHeaderAccountName(user, preferredUsername = '') {
   try {
