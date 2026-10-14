@@ -1,0 +1,33 @@
+{
+  "url": "https://guns.lol/login?returnUri=%2Fcustomize",
+  "title": "guns.lol | Login",
+  "text": "Log in to your account\n\nAccess your profile, links, and premium settings with the same account everywhere.\n\nEmail\nPassword\n\nLog in\nOR\nContinue with Google\nContinue with Discord\nLost account access? Recover account\nAre you new to guns.lol? Create an account",
+  "scripts": [
+    "https://guns.lol/_next/static/chunks/4bd1b696-6b5c0c72b0eadc5f.js",
+    "https://guns.lol/_next/static/chunks/3794-5ebac7925c230024.js",
+    "https://guns.lol/_next/static/chunks/main-app-082cd9849c9757d5.js",
+    "https://guns.lol/_next/static/chunks/polyfills-42372ed130431b0a.js",
+    "https://guns.lol/cdn-cgi/challenge-platform/scripts/precursor/main.js",
+    "https://guns.lol/_next/static/chunks/webpack-93d27dc867eff11c.js",
+    "https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920",
+    "https://sa.guns.lol/latest.js",
+    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+  ],
+  "images": [
+    {
+      "alt": "guns.lol",
+      "src": "https://assets.guns.lol/guns_logo_no_background_cropped.png"
+    }
+  ],
+  "styles": [
+    "https://guns.lol/_next/static/css/d7e6683f4ddf5385.css",
+    "https://guns.lol/_next/static/css/3ae64682afe3c0e8.css",
+    "https://assets.guns.lol/fonts/X6XYTKIVDUW7GZTZPZNN4EUM5KH54KHF.css",
+    "https://assets.guns.lol/fonts/X6XYTKIVDUW7GZTZPZNN4EUM5KH54KHF.css",
+    "https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500&display=swap"
+  ],
+  "fonts": [
+    "Satoshi, sans-serif"
+  ],
+  "error": ""
+}

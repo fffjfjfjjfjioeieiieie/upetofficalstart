@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -24,6 +23,12 @@ import {
 } from './firebase.js';
 
 const ProfileEditor = React.lazy(() => import('../dashboard/ProfileEditor.jsx'));
+const ADMIN_EMAILS = new Set([
+  'zurihcs@gmail.com',
+  'lampjustlamp123@gmail.com',
+  'iamjayvonlol@gmail.com',
+]);
+const isApprovedAdmin = (user) => ADMIN_EMAILS.has((user?.email || '').trim().toLowerCase());
 
 function getHeaderAccountName(user, preferredUsername = '') {
   try {
@@ -67,11 +72,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [loginOpen, setLoginOpen] = useState(() => window.location.pathname === '/create-account');
-  const [authMode, setAuthMode] = useState(() => (
-    window.location.pathname === '/create-account' && new URLSearchParams(window.location.search).has('username')
-      ? 'signup'
-      : 'login'
-  ));
+  const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -128,7 +129,7 @@ function App() {
       setPathname(nextPath);
       setPendingClaimUsername(new URLSearchParams(window.location.search).get('username')?.toLowerCase() ?? '');
       if (nextPath === '/create-account') {
-        setAuthMode(new URLSearchParams(window.location.search).has('username') ? 'signup' : 'login');
+        setAuthMode('login');
         setLoginOpen(true);
       } else {
         setLoginOpen(false);
@@ -156,6 +157,12 @@ function App() {
     let active = true;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!active) return;
+      if (user && !isApprovedAdmin(user)) {
+        setCurrentUser(null);
+        signOut(auth).catch(() => {});
+        setAuthReady(true);
+        return;
+      }
       setCurrentUser(user);
       setAuthReady(true);
       if (user) {
@@ -314,9 +321,11 @@ function App() {
     setAuthError('');
     try {
       await persistAuthLocally();
-      const credential = authMode === 'signup'
-        ? await createUserWithEmailAndPassword(auth, email.trim(), password)
-        : await signInWithEmailAndPassword(auth, email.trim(), password);
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (!isApprovedAdmin(credential.user)) {
+        await signOut(auth);
+        throw new Error('This email does not have founder access.');
+      }
 
       // Set this immediately so protected routes do not redirect during Firebase's auth callback.
       setCurrentUser(credential.user);
@@ -414,11 +423,11 @@ function App() {
       }}
     >
       <section className="login-modal" role="dialog" aria-modal={pathname === '/create-account' ? undefined : true} aria-labelledby="login-title">
-        <h2 id="login-title">{authMode === 'signup' ? 'Create your account.' : 'Welcome back.'}</h2>
+        <h2 id="login-title">Admin login.</h2>
         <p className="modal-copy">
           {pendingClaimUsername
-            ? `Create an account or sign in to claim user.pet/${pendingClaimUsername}.`
-            : 'Your account stays signed in on this device until you log out.'}
+            ? `Sign in with an approved founder account to claim user.pet/${pendingClaimUsername}.`
+            : 'Sign in with an approved founder email and password.'}
         </p>
 
         {!firebaseConfigured && (
@@ -488,18 +497,6 @@ function App() {
             {loginPauseSeconds > 0 ? `Pause ${loginPauseSeconds}s` : authLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Log in'}
           </button>
         </form>
-        <p className="auth-mode-switch">
-          {authMode === 'signup' ? 'Already have an account?' : 'New to user.pet?'}{' '}
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode((mode) => mode === 'signup' ? 'login' : 'signup');
-              setAuthError('');
-            }}
-          >
-            {authMode === 'signup' ? 'Log in' : 'Create account'}
-          </button>
-        </p>
         {authMode === 'login' && <button className="auth-recovery" type="button" onClick={handlePasswordReset}>Forgot your password?</button>}
       </section>
     </div>
@@ -672,7 +669,7 @@ function App() {
             </>
           ) : (
             <button type="button" className="header-placeholder header-login-placeholder" onClick={() => openLogin('login')}>
-              Log in
+              Admin login
             </button>
           )}
           <button
@@ -716,7 +713,7 @@ function App() {
             </section>
 
             <div className="profile-stage">
-              {(currentUser && claimedUsername) ? signedInHomeActions : usernameClaimForm}
+              {currentUser ? (claimedUsername ? signedInHomeActions : usernameClaimForm) : null}
               <div className="profile-stage-inner">
                 <div className="hero-layout">
                   <div className="profile-pair">

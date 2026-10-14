@@ -1,0 +1,72 @@
+{
+  "url": "https://help.guns.lol/getting-started/customization",
+  "title": "Customize Your Profile",
+  "text": "Skip to Content\nguns.lol Help Center\nCTRL K\nHome\nChangelog\nGetting Started\nIntroduction\nCustomize Your Profile\nAdding Your Social Media\nShare Your Profile\nExplore Premium\nGeneral\nAccount Support\nTroubleshooting & Issues\nPolicies & Security\nContact Support\nProfile Analytics\nHow-To Guides\nList of Guides\nDiscord Connection\nProfile Assets\nProfile Audio\nProfile Badges\nImage Host\nVerified Badge\nTemplates\nProfile Views\nCustom Badges\nPremium Guides\nList of Guides\nSecond Tab\nCursor & Profile Effects\nLayout Settings\nMetadata & SEO\nText Fonts\nTypewriter Description\n\nOn This Page\n\nAssets Uploader\nGeneral Customization\nColor Customization\nOther Customization\nScroll to top\nGetting Started\nCustomize Your Profile\nCustomize Your Profile\n\nguns.lol allows you to fully customize your profile to make it unique and visually appealing. Here’s a breakdown of all the free customization options available.\n\nAssets Uploader\n\nYou can upload custom assets to your profile, including:\n\nBackground Image & Video\nProfile Avatar\nAudios using the Audio Manager\nCustom Cursor\n\nFor more information on how to upload assets, check out our guide below:\n\nHow To Upload Assets\nGeneral Customization\n\nYou can customize the following elements of your profile:\n\nDescription: Add a short bio or description.\nDiscord Presence: Show your Discord status on your profile.\nBackground Effects: Add background effects to your profile.\nUsername Effects: Add effects to your profile username.\nProfile Opacity: Adjust the opacity of your profile box.\nProfile Blur: Add a blur effect to your profile box.\nLocation: Add your location to your profile.\nGlow Settings: Customize the glow effect on your profile.\nColor Customization\n\nAccent & Background Colors\n\nSet a highlight color for accents.\nCustomize your background color.\n\nText & Icon Colors\n\nAdjust text color to match your theme.\nChange icon colors to your liking.\n\nYou can also enable Profile Gradient to add a gradient effect to your profile box.\n\nOther Customization\n\nYou can also change the following preferences:\n\nMonochrome Icons: Display every icon in a single color.\nAnimated Title: Animate the title of your profile page.\nSwap Box Colors: Sets the accent color as the widget background instead of the text color.\nVolume Control: Display a volume control button.\nUse Discord Avatar: Use your Discord avatar as your profile picture.\nDiscord Avatar Decoration: Display your Discord avatar decoration.\n\nDon’t forget to click Save Changes after customizing your profile!\n\nIntroduction\nAdding Your Social Media\nguns.lol\nCreate feature-rich, customizable and modern link-in-bio pages with guns.lol.\nCopyright © 2026 guns.lol - All Rights Reserved.\nPopular Articles\nHow-To Guides\nGetting Started\nAdding Your Social Media\nExplore guns.lol Premium\nLink Your Discord Account\nShare Your Profile\nContact\nDiscord Server \nsupport@guns.lol\nbusiness@guns.lol\nlegal@guns.lol\nLegal\nTerms of Service \nPrivacy Policy \nCopyright Policy ",
+  "scripts": [
+    "https://help.guns.lol/_next/static/chunks/82abf2d65f5428ae.js",
+    "https://help.guns.lol/_next/static/chunks/69be39811437728d.js",
+    "https://help.guns.lol/_next/static/chunks/d702a24e2b6c48fa.js",
+    "https://help.guns.lol/_next/static/chunks/turbopack-aaed34b75ab2c011.js",
+    "https://help.guns.lol/_next/static/chunks/ff1a16fafef87110.js",
+    "https://help.guns.lol/_next/static/chunks/d2be314c3ece3fbe.js",
+    "https://help.guns.lol/_next/static/chunks/a2d1530248772f1f.js",
+    "https://help.guns.lol/_next/static/chunks/252dcd2bfff09757.js",
+    "https://help.guns.lol/_next/static/chunks/f750c56e3b757ece.js",
+    "https://help.guns.lol/_next/static/chunks/a6dad97d9634a72d.js",
+    "https://help.guns.lol/cdn-cgi/challenge-platform/scripts/precursor/main.js",
+    "https://help.guns.lol/_next/static/chunks/f1b9e471450789fd.js",
+    "https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920",
+    "https://sa.guns.lol/latest.js"
+  ],
+  "images": [
+    {
+      "alt": "",
+      "src": "https://assets.guns.lol/guns_logo_no_background_cropped.png"
+    },
+    {
+      "alt": "Assets Uploader",
+      "src": "https://assets.guns.lol/help-center/upload_assets.png"
+    },
+    {
+      "alt": "General Customization",
+      "src": "https://assets.guns.lol/help-center/general_customization.png"
+    },
+    {
+      "alt": "Color Customization",
+      "src": "https://assets.guns.lol/help-center/color_customization.png"
+    },
+    {
+      "alt": "Other Customization",
+      "src": "https://assets.guns.lol/help-center/other_customization.png"
+    },
+    {
+      "alt": "",
+      "src": "https://assets.guns.lol/guns_logo_no_background_cropped.png"
+    },
+    {
+      "alt": "Assets Uploader",
+      "src": "https://assets.guns.lol/help-center/upload_assets.png"
+    },
+    {
+      "alt": "General Customization",
+      "src": "https://assets.guns.lol/help-center/general_customization.png"
+    },
+    {
+      "alt": "Color Customization",
+      "src": "https://assets.guns.lol/help-center/color_customization.png"
+    },
+    {
+      "alt": "Other Customization",
+      "src": "https://assets.guns.lol/help-center/other_customization.png"
+    }
+  ],
+  "styles": [
+    "https://help.guns.lol/_next/static/chunks/010472316ffdf84e.css",
+    "https://help.guns.lol/_next/static/chunks/46adf966acff1fc9.css",
+    "https://assets.guns.lol/fonts/X6XYTKIVDUW7GZTZPZNN4EUM5KH54KHF.css"
+  ],
+  "fonts": [
+    "Satoshi, sans-serif"
+  ],
+  "error": ""
+}

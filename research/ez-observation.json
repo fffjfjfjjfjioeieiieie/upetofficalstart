@@ -1,0 +1,15 @@
+{
+  "url": "https://e-z.bio/",
+  "title": "Just a moment...",
+  "text": "",
+  "scripts": [
+    "https://e-z.bio/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1?ray=a4a9e556bbbe887f",
+    "https://challenges.cloudflare.com/turnstile/v0/g/4df4a60fa397/api.js?onload=zeEi4&render=explicit"
+  ],
+  "images": [],
+  "styles": [],
+  "fonts": [
+    "Poppins, sans-serif"
+  ],
+  "error": ""
+}
