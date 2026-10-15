@@ -19,5 +19,5 @@ export default function PublicProfileRoute({ username, currentUser, onNavigate }
 
   if (state.loading) return <div className={styles.routeState}>loading user.pet/{username}…</div>;
   if (!state.profile) return <div className={styles.routeState}><strong>user.pet/{username}</strong><span>{state.error || 'This profile does not exist yet.'}</span><button type="button" onClick={() => onNavigate('/')}>back home</button></div>;
-  return <PublicProfile profile={state.profile} owner={currentUser?.uid === state.profile.uid} onNavigate={onNavigate} />;
+  return <PublicProfile key={username} profile={state.profile} owner={currentUser?.uid === state.profile.uid} onNavigate={onNavigate} />;
 }

@@ -5,18 +5,18 @@ import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/reac
 import * as Slider from '@radix-ui/react-slider';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '@fft-visualizer/react/style.css';
-import styles from './FriendProfile.module.css';
+import styles from './DomeShowcase.module.css';
 import { pauseOtherProfileAudio } from '../../shared/profileAudio.js';
 
 const MUSIC_SRC = '/Juice-WRLD-Lucid-Dreams-(HipHopKit.com)_[cut_90sec].mp3';
 const VISUALIZER_BANDS = 40;
 const VISUALIZER_GRADIENT = [
-  { stop: 0, color: '#641a21' },
-  { stop: 0.48, color: '#e64a56' },
-  { stop: 1, color: '#ffc0c5' },
+  { stop: 0, color: '#12355f' },
+  { stop: 0.48, color: '#28a8f6' },
+  { stop: 1, color: '#a7ddff' },
 ];
 
-export default function FriendProfile({ active = true, standalone = false, isOwner = false }) {
+export default function DomeShowcase({ active = true, standalone = false, isOwner = false }) {
   const audioRef = useRef(null);
   const visualizerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -219,7 +219,7 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
   const profile = (
     <aside className={`${styles.preview}${standalone ? ` ${styles.standalone}` : ''}`} aria-label="Dome's profile">
       <div className={styles.motion}>
-        <Surface className={styles.card} data-profile-surface="" aria-labelledby="friend-profile-name" {...(standalone ? {
+        <Surface className={styles.card} data-profile-surface="" aria-labelledby="dome-showcase-name" {...(standalone ? {
           initial: reduceMotion ? false : { opacity: 0, y: 12 },
           animate: { opacity: 1, y: 0 },
           transition: { duration: 0.55, ease: 'easeOut' },
@@ -230,7 +230,7 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
         } : {})}>
           {standalone && <div className={styles.profileLabel}><span>user<span className={styles.petAccent}>.pet</span> / dome</span><span className={styles.labelDot} aria-hidden="true" /></div>}
           <img className={styles.avatar} src="/domespfp.png" alt="dome's profile picture" />
-          <Heading className={styles.displayName} id="friend-profile-name">{standalone ? 'dome' : <a className={styles.profileLink} href="/dome" aria-label="Open Dome's profile">dome</a>}</Heading>
+          <Heading className={styles.displayName} id="dome-showcase-name">{standalone ? 'dome' : <a className={styles.profileLink} href="/dome" aria-label="Open Dome's profile">dome</a>}</Heading>
           <p className={styles.username}>@15ry</p>
           <p className={styles.badges}>
             <img src="/badge.png" alt="Profile badge" />
@@ -369,3 +369,4 @@ export default function FriendProfile({ active = true, standalone = false, isOwn
     </div>
   );
 }
+

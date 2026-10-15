@@ -1,0 +1,4 @@
+import React from 'react';
+export default function StudioToolbar({ username, onNavigate, onSave, onPublish, onUndo, onRedo, canUndo, canRedo, state, busy }) {
+  return <header className="studio-toolbar"><button type="button" onClick={() => onNavigate('/dashboard')}>← Dashboard</button><div className="studio-toolbar-title"><span>user.pet/{username}</span><strong>Profile studio</strong></div><div className="studio-toolbar-actions"><span role="status">{state}</span><button type="button" onClick={onUndo} disabled={!canUndo || busy} aria-label="Undo">↶</button><button type="button" onClick={onRedo} disabled={!canRedo || busy} aria-label="Redo">↷</button><button type="button" onClick={() => onNavigate(`/${username}`)}>View live ↗</button><button type="button" onClick={onSave} disabled={busy}>Save draft</button><button className="studio-primary" type="button" onClick={onPublish} disabled={busy}>Publish</button></div></header>;
+}

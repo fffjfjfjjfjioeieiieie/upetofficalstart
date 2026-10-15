@@ -7,39 +7,29 @@ import {
 } from 'firebase/auth';
 import { ChevronDown, Moon, Sun } from 'lucide-react';
 import ProfilePreview from '../profiles/lamp/ProfilePreview.jsx';
-import FriendProfile from '../profiles/dome/FriendProfile.jsx';
+import DomeShowcase from '../profiles/dome/DomeShowcase.jsx';
 import SadlizzeProfile from '../profiles/sadlizze/SadlizzeProfile.jsx';
 import ProfileBackground from '../shared/ProfileBackground.jsx';
 import LampShop from '../shop/LampShop.jsx';
 import SadlizzeShop from '../shop/SadlizzeShop.jsx';
-import Dashboard from '../dashboard/Dashboard.jsx';
-import PublicProfileRoute from '../profiles/PublicProfileRoute.jsx';
-import { claimUsername as saveClaimedUsername, getAccountForUser } from '../data/accountStore.js';
+import AuthGate from './AuthGate.jsx';
+import FounderGate, { isApprovedFounder } from './FounderGate.jsx';
+import { resolveAppRoute } from './AppRouter.jsx';
+import { claimUsername as saveClaimedUsername, getAccountForUser, isUsernameAvailable, normalizeUsername } from '../data/accountStore.js';
 import {
   auth,
   firebaseConfigured,
   persistAuthLocally,
 } from './firebase.js';
 
-const ProfileEditor = React.lazy(() => import('../dashboard/ProfileEditor.jsx'));
-const ADMIN_EMAILS = new Set([
-  'zurihcs@gmail.com',
-  'lampjustlamp123@gmail.com',
-  'iamjayvonlol@gmail.com',
-]);
-const isApprovedAdmin = (user) => ADMIN_EMAILS.has((user?.email || '').trim().toLowerCase());
+const ProfileEditor = React.lazy(() => import('../studio/ProfileStudio.jsx'));
+const Dashboard = React.lazy(() => import('../dashboard/Dashboard.jsx'));
+const PublicProfileRoute = React.lazy(() => import('../profiles/PublicProfileRoute.jsx'));
+const isApprovedAdmin = isApprovedFounder;
 
 
 function getHeaderAccountName(user, preferredUsername = '') {
-  try {
-    return preferredUsername
-      || window.localStorage.getItem('userpet-username')
-      || user?.displayName?.split(/\s+/)[0]
-      || user?.email?.split('@')[0]
-      || 'Account';
-  } catch {
-    return preferredUsername || user?.displayName?.split(/\s+/)[0] || 'Account';
-  }
+  return preferredUsername || user?.displayName?.split(/\s+/)[0] || user?.email?.split('@')[0] || 'Account';
 }
 
 function getFriendlyAuthError(error) {
@@ -62,20 +52,14 @@ function getFriendlyAuthError(error) {
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [claimedUsername, setClaimedUsername] = useState(() => {
-    try {
-      return window.localStorage.getItem('userpet-username') || '';
-    } catch {
-      return '';
-    }
-  });
+  const [claimedUsername, setClaimedUsername] = useState('');
+  const [accountReady, setAccountReady] = useState(false);
+  const [accountError, setAccountError] = useState('');
   const [theme, setTheme] = useState('dark');
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [loginOpen, setLoginOpen] = useState(() => window.location.pathname === '/create-account');
-  const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const authRequestPending = useRef(false);
@@ -99,10 +83,23 @@ function App() {
   ));
   const [claimMessage, setClaimMessage] = useState(null);
   const [claimingUsername, setClaimingUsername] = useState(false);
+  const [claimAvailability, setClaimAvailability] = useState('');
   const usernamePattern = /^[a-z0-9][a-z0-9._-]{2,19}$/;
   const lampMusicPlayingRef = useRef(false);
   const lampMusicControlRef = useRef(null);
   lampMusicPlayingRef.current = lampMusicPlaying;
+
+  useEffect(() => {
+    if (!currentUser || pathname !== '/claim' || !claimUsername) { setClaimAvailability(''); return undefined; }
+    try { normalizeUsername(claimUsername); }
+    catch { setClaimAvailability('Use 3–20 letters, numbers, dots, underscores, or hyphens.'); return undefined; }
+    setClaimAvailability('Checking availability…');
+    let active = true;
+    const timer = setTimeout(() => isUsernameAvailable(claimUsername, currentUser).then((available) => {
+      if (active) setClaimAvailability(available ? 'Available' : 'This username is taken.');
+    }).catch(() => { if (active) setClaimAvailability('Could not check availability. Try again.'); }), 350);
+    return () => { active = false; clearTimeout(timer); };
+  }, [claimUsername, currentUser, pathname]);
 
   useEffect(() => {
     setShopMusicAvailable(pathname === '/lamp/shop' && lampMusicPlayingRef.current);
@@ -159,6 +156,8 @@ function App() {
       if (!active) return;
       if (user && !isApprovedAdmin(user)) {
         setCurrentUser(null);
+        setClaimedUsername('');
+        setAccountReady(true);
         signOut(auth).catch(() => {});
         setAuthReady(true);
         return;
@@ -166,10 +165,13 @@ function App() {
       setCurrentUser(user);
       setAuthReady(true);
       if (user) {
+        setAccountReady(false);
+        setAccountError('');
         getAccountForUser(user).then((account) => {
           if (!active || auth.currentUser?.uid !== user.uid) return;
           if (!account?.username) {
             setClaimedUsername('');
+            setAccountReady(true);
             try { window.localStorage.removeItem('userpet-username'); } catch {}
             return;
           }
@@ -179,11 +181,11 @@ function App() {
             // Firestore remains authoritative if local storage is unavailable.
           }
           setClaimedUsername(account.username);
-        }).catch(() => {
-          // Fall back to the saved username or email if the profile is unavailable.
-        });
+          setAccountReady(true);
+        }).catch(() => { if (active) { setAccountError('Could not load your account. Check your connection and reload.'); setAccountReady(true); } });
       } else {
         setClaimedUsername('');
+        setAccountReady(true);
       }
     });
 
@@ -224,9 +226,10 @@ function App() {
 
   useEffect(() => {
     if ((pathname === '/dashboard' || pathname === '/welcome' || pathname === '/customize' || pathname === '/analytics' || pathname === '/settings' || pathname === '/claim') && authReady && !currentUser) navigateTo('/');
-  }, [pathname, authReady, currentUser]);
-  const openLogin = (mode = 'login') => {
-    setAuthMode(mode);
+    if (authReady && accountReady && currentUser && !accountError && !claimedUsername && ['/dashboard', '/customize', '/analytics', '/settings'].includes(pathname)) navigateTo('/claim', { replace: true });
+    if (authReady && accountReady && currentUser && claimedUsername && pathname === '/claim') navigateTo('/dashboard', { replace: true });
+  }, [pathname, authReady, accountReady, currentUser, claimedUsername, accountError]);
+  const openLogin = () => {
     setAuthError('');
     setLoginOpen(true);
   };
@@ -265,6 +268,7 @@ function App() {
         // Firestore remains authoritative if local storage is unavailable.
       }
       setClaimedUsername(result.username);
+      setAccountReady(true);
       navigateTo('/welcome', { replace: pathname === '/create-account' });
       setPendingClaimUsername('');
       return true;
@@ -306,16 +310,6 @@ function App() {
       setAuthError('Enter your password to continue.');
       return;
     }
-    if (authMode === 'signup' && password.length < 6) {
-      setAuthError('Choose a password with at least 6 characters.');
-      return;
-    }
-
-    if (authMode === 'signup' && password !== confirmPassword) {
-      setAuthError('Those passwords do not match.');
-      return;
-    }
-
     authRequestPending.current = true;
     setAuthLoading(true);
     setAuthError('');
@@ -332,19 +326,21 @@ function App() {
       setAuthReady(true);
       setLoginOpen(false);
       setPassword('');
-      setConfirmPassword('');
 
       if (pendingClaimUsername) {
         await claimAndOpenWelcome(credential.user, pendingClaimUsername);
-      } else if (authMode === 'login') {
+      } else {
         try {
           const account = await getAccountForUser(credential.user);
           if (account?.username) {
             window.localStorage.setItem('userpet-username', account.username);
             setClaimedUsername(account.username);
+            setAccountReady(true);
             navigateTo('/dashboard');
           } else {
-            navigateTo('/');
+            setClaimedUsername('');
+            setAccountReady(true);
+            navigateTo('/claim');
           }
         } catch {
           // Login still succeeds if Firestore has not been enabled yet.
@@ -398,8 +394,7 @@ function App() {
     if (!currentUser) {
       setClaimMessage(null);
       setPendingClaimUsername(username);
-      openLogin('signup');
-      navigateTo(`/create-account?username=${encodeURIComponent(username)}`);
+      openLogin();
       return;
     }
 
@@ -458,7 +453,7 @@ function App() {
             <input
               id="account-password"
               type="password"
-              autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
               minLength={6}
               required
               value={password}
@@ -469,35 +464,15 @@ function App() {
               placeholder="At least 6 characters"
             />
           </div>
-          {authMode === 'signup' && (
-            <>
-              <label htmlFor="account-confirm-password">Confirm password</label>
-              <div className="password-row">
-                <input
-                  id="account-confirm-password"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={6}
-                  required
-                  value={confirmPassword}
-                  onChange={(event) => {
-                    setConfirmPassword(event.target.value);
-                    if (authError) setAuthError('');
-                  }}
-                  placeholder="Enter your password again"
-                />
-              </div>
-            </>
-          )}
           <button
             className="submit-button"
             type="submit"
             disabled={!firebaseConfigured || authLoading || !authReady || loginPauseSeconds > 0}
           >
-            {loginPauseSeconds > 0 ? `Pause ${loginPauseSeconds}s` : authLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Log in'}
+            {loginPauseSeconds > 0 ? `Pause ${loginPauseSeconds}s` : authLoading ? 'Please wait...' : 'Log in'}
           </button>
         </form>
-        {authMode === 'login' && <button className="auth-recovery" type="button" onClick={handlePasswordReset}>Forgot your password?</button>}
+        <button className="auth-recovery" type="button" onClick={handlePasswordReset}>Forgot your password?</button>
       </section>
     </div>
   );
@@ -519,15 +494,16 @@ function App() {
           placeholder="username"
           value={claimUsername}
           onChange={(event) => {
-            setClaimUsername(event.target.value.toLowerCase());
+            setClaimUsername(event.target.value.trim().toLowerCase());
             if (claimMessage) setClaimMessage(null);
           }}
           aria-describedby={claimMessage ? 'claim-message' : undefined}
         />
-        <button className="claim-button" type="submit" disabled={claimingUsername}>
+        <button className="claim-button" type="submit" disabled={claimingUsername || claimAvailability === 'This username is taken.'}>
           {claimingUsername ? 'Checking…' : 'Claim'}
         </button>
       </form>
+      <p className="claim-message" role="status" aria-live="polite">{claimAvailability || '\u00a0'}</p>
       {claimMessage && (
         <p id="claim-message" className={`claim-message claim-message-${claimMessage.type}`} role="status">
           {claimMessage.text}
@@ -548,10 +524,9 @@ function App() {
     </section>
   );
 
-  const publicUsername = pathname.match(/^\/([a-z0-9][a-z0-9._-]{2,19})\/?$/)?.[1];
-  const reservedPaths = new Set(['dashboard', 'welcome', 'customize', 'analytics', 'settings', 'claim', 'create-account']);
-  if (publicUsername && !reservedPaths.has(publicUsername)) {
-    return <PublicProfileRoute username={publicUsername} currentUser={currentUser} onNavigate={navigateTo} />;
+  const route = resolveAppRoute(pathname);
+  if (route.kind === 'profile') {
+    return <React.Suspense fallback={<div className="route-auth-loading" role="status">Opening user.pet/{route.username}…</div>}><PublicProfileRoute username={route.username} currentUser={currentUser} onNavigate={navigateTo} /></React.Suspense>;
   }
 
   if (pathname === '/create-account') {
@@ -566,24 +541,31 @@ function App() {
     );
   }
 
-  if (currentUser && pathname === '/dashboard') {
+  if (currentUser && !accountReady && route.protected) return <AuthGate ready={false} user={currentUser} />;
+
+  if (currentUser && accountError && route.protected) return <div className="route-auth-loading" role="alert">{accountError}</div>;
+
+  if (currentUser && pathname === '/claim' && !claimedUsername) return <AuthGate ready={accountReady} user={currentUser}><FounderGate user={currentUser}><div className="page-shell auth-page-shell" data-theme={theme}><header className="topbar"><button type="button" className="header-logout" onClick={() => navigateTo('/')}>Back home</button></header><main className="claim-page"><div className="claim-panel"><span className="claim-eyebrow">FOUNDERS / FIRST STEP</span><h1>Claim your space.</h1><p>Choose the link that will become your public profile. You can build the page after claiming.</p>{usernameClaimForm}<small>Signed in as {currentUser.email}</small></div></main></div></FounderGate></AuthGate>;
+
+  if (currentUser && claimedUsername && ['/dashboard', '/analytics', '/settings'].includes(pathname)) {
     return (
       <div className="page-shell dashboard-shell" data-theme={theme}>
-        <Dashboard
+        <AuthGate ready={authReady && accountReady} user={currentUser}><FounderGate user={currentUser}><React.Suspense fallback={<div className="route-auth-loading" role="status">Opening workspace…</div>}><Dashboard
           username={claimedUsername}
           user={currentUser}
+          activePage={pathname.slice(1) || 'dashboard'}
           theme={theme}
           onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
           onLogout={logout}
           onNavigate={navigateTo}
-        />
+        /></React.Suspense></FounderGate></AuthGate>
         {loginDialog}
       </div>
     );
   }
 
   if (currentUser && claimedUsername && pathname === '/customize') {
-    return <React.Suspense fallback={<div className="page-shell" data-theme={theme} />}><ProfileEditor username={claimedUsername} user={currentUser} onNavigate={navigateTo} /></React.Suspense>;
+    return <AuthGate ready={authReady && accountReady} user={currentUser}><FounderGate user={currentUser}><React.Suspense fallback={<div className="page-shell" data-theme={theme} />}><ProfileEditor username={claimedUsername} user={currentUser} onNavigate={navigateTo} theme={theme} onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')} onLogout={logout} /></React.Suspense></FounderGate></AuthGate>;
   }
 
   if (currentUser && pathname === '/welcome') {
@@ -694,7 +676,7 @@ function App() {
             </section>
 
             <div className="profile-stage">
-              {currentUser ? (claimedUsername ? signedInHomeActions : usernameClaimForm) : null}
+              {currentUser ? (claimedUsername ? signedInHomeActions : <button className="home-account-action home-account-action-primary" type="button" onClick={() => navigateTo('/claim')}>Claim your username</button>) : null}
               <div className="profile-stage-inner">
                 <div className="hero-layout">
                   <div className="profile-pair">
@@ -702,7 +684,7 @@ function App() {
                       musicControlRef={lampMusicControlRef}
                       onMusicStateChange={setLampMusicPlaying}
                     />
-                    <FriendProfile active={!isShopPage} />
+                    <DomeShowcase active={!isShopPage} />
                     <SadlizzeProfile />
                   </div>
                 </div>

@@ -1,81 +1,43 @@
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '../app/firebase.js';
-import { createDefaultProfile } from '../shared/profileDefaults.js';
-
-const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,19}$/;
+import { canClaimSpecialUsername, normalizeUsername } from '../shared/username.js';
+export { normalizeUsername } from '../shared/username.js';
 
 export class UsernameAlreadyTakenError extends Error {
-  constructor(username) {
-    super(`user.pet/${username} has already been claimed.`);
-    this.name = 'UsernameAlreadyTakenError';
-  }
+  constructor(username) { super(`user.pet/${username} has already been claimed.`); this.name = 'UsernameAlreadyTakenError'; }
 }
 
 export class UsernameAlreadyClaimedError extends Error {
-  constructor(username) {
-    super(`This account already owns user.pet/${username}.`);
-    this.name = 'UsernameAlreadyClaimedError';
-  }
+  constructor(username) { super(`This account already owns user.pet/${username}.`); this.name = 'UsernameAlreadyClaimedError'; }
 }
 
 export async function claimUsername(user, rawUsername) {
   if (!firestore) throw new Error('Username claiming is not configured yet.');
   if (!user?.uid) throw new Error('Sign in before claiming a username.');
-
-  const username = rawUsername.trim().toLowerCase();
-  if (!USERNAME_PATTERN.test(username)) {
-    throw new Error('Use 3–20 characters: letters, numbers, dots, underscores, or hyphens.');
-  }
+  const username = normalizeUsername(rawUsername);
+  if (!canClaimSpecialUsername(username, user.email)) throw new UsernameAlreadyTakenError(username);
 
   const usernameRef = doc(firestore, 'usernames', username);
   const accountRef = doc(firestore, 'users', user.uid);
   const profileRef = doc(firestore, 'profiles', username);
-
-  const result = await runTransaction(firestore, async (transaction) => {
+  return runTransaction(firestore, async (transaction) => {
     const [usernameSnapshot, accountSnapshot, profileSnapshot] = await Promise.all([
-      transaction.get(usernameRef),
-      transaction.get(accountRef),
-      transaction.get(profileRef),
+      transaction.get(usernameRef), transaction.get(accountRef), transaction.get(profileRef),
     ]);
-
     if (accountSnapshot.exists()) {
       const existingUsername = accountSnapshot.data().username;
       if (existingUsername === username) {
-        if (!profileSnapshot.exists()) {
-          transaction.set(profileRef, {
-            ...createDefaultProfile({ uid: user.uid, username }),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        }
+        if (usernameSnapshot.exists() && usernameSnapshot.data().uid !== user.uid) throw new UsernameAlreadyTakenError(username);
+        if (!usernameSnapshot.exists()) transaction.set(usernameRef, { uid: user.uid, username, createdAt: serverTimestamp() });
         return { username, alreadyOwned: true };
       }
       throw new UsernameAlreadyClaimedError(existingUsername);
     }
-
-    if (usernameSnapshot.exists()) throw new UsernameAlreadyTakenError(username);
-
-    transaction.set(usernameRef, {
-      uid: user.uid,
-      username,
-      createdAt: serverTimestamp(),
-    });
-    transaction.set(accountRef, {
-      uid: user.uid,
-      username,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    transaction.set(profileRef, {
-      ...createDefaultProfile({ uid: user.uid, username }),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
+    if ((usernameSnapshot.exists() && usernameSnapshot.data().uid !== user.uid) || (profileSnapshot.exists() && (profileSnapshot.data().ownerUid || profileSnapshot.data().uid) !== user.uid)) throw new UsernameAlreadyTakenError(username);
+    if (!usernameSnapshot.exists()) transaction.set(usernameRef, { uid: user.uid, username, createdAt: serverTimestamp() });
+    transaction.set(accountRef, { uid: user.uid, email: String(user.email || '').toLowerCase(), role: 'founder', username, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     return { username, alreadyOwned: false };
   });
-
-  return result;
 }
 
 export async function getAccountForUser(user) {
@@ -84,10 +46,14 @@ export async function getAccountForUser(user) {
   return snapshot.exists() ? snapshot.data() : null;
 }
 
-export async function isUsernameAvailable(rawUsername) {
+export async function isUsernameAvailable(rawUsername, user) {
   if (!firestore) throw new Error('Username claiming is not configured yet.');
-  const username = rawUsername.trim().toLowerCase();
-  if (!USERNAME_PATTERN.test(username)) return false;
-  const snapshot = await getDoc(doc(firestore, 'usernames', username));
-  return !snapshot.exists();
+  let username;
+  try { username = normalizeUsername(rawUsername); } catch { return false; }
+  const [claim, profile] = await Promise.all([
+    getDoc(doc(firestore, 'usernames', username)), getDoc(doc(firestore, 'profiles', username)),
+  ]);
+  if (claim.exists()) return claim.data().uid === user?.uid;
+  if (profile.exists()) return (profile.data().ownerUid || profile.data().uid) === user?.uid;
+  return true;
 }

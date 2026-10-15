@@ -6,18 +6,29 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function founder() {
+      return signedIn()
+        && request.auth.token.email in [
+          'zurihcs@gmail.com',
+          'lampjustlamp123@gmail.com',
+          'iamjayvonlol@gmail.com'
+        ];
+    }
+
     function validUsername(username) {
       return username is string
-        && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$');
+        && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
+        && !(username in ['dashboard', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
+        && (username != 'dome' || request.auth.token.email == 'zurihcs@gmail.com');
     }
 
     match /usernames/{username} {
       // Public availability checks are allowed; enumerating all handles is not.
-      allow get: if signedIn();
+      allow get: if founder();
       allow list: if false;
 
       // A claim and its account profile must be created together in one transaction.
-      allow create: if signedIn()
+      allow create: if founder()
         && validUsername(username)
         && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt'])
         && request.resource.data.keys().hasAll(['uid', 'username', 'createdAt'])
@@ -31,14 +42,16 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow get: if signedIn();
+      allow get: if founder() && request.auth.uid == uid;
       allow list: if false;
 
-      allow create: if signedIn()
+      allow create: if founder()
         && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt', 'updatedAt'])
-        && request.resource.data.keys().hasAll(['uid', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'founder'
         && validUsername(request.resource.data.username)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
@@ -49,21 +62,76 @@ service cloud.firestore {
     }
 
     match /profiles/{username} {
-      allow get: if true;
+      // Drafts now live in owner-only profileDrafts. Legacy documents that still
+      // contain a draft stay private until their owner republishes them.
+      allow get: if !('draft' in resource.data)
+        || (founder() && (resource.data.get('ownerUid', '') == request.auth.uid || resource.data.get('uid', '') == request.auth.uid));
       allow list: if false;
 
-      allow create: if signedIn()
+      allow create: if founder()
         && validUsername(username)
-        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'status', 'published', 'publishedAt', 'updatedAt', 'createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.username == username
+        && request.resource.data.status == 'published'
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.published.schemaVersion == 1
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
 
-      allow update: if signedIn()
-        && resource.data.uid == request.auth.uid
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.username == resource.data.username;
+      allow update: if founder()
+        && (resource.data.get('ownerUid', '') == request.auth.uid || resource.data.get('uid', '') == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'status', 'published', 'publishedAt', 'updatedAt', 'createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.status == 'published'
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.published.schemaVersion == 1
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
 
       allow delete: if false;
+    }
+
+    match /profileDrafts/{uid} {
+      allow get: if founder() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if founder()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'document', 'updatedAt'])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.username == get(/databases/$(database)/documents/users/$(uid)).data.username
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.document.schemaVersion == 1;
+      allow delete: if founder() && request.auth.uid == uid;
+    }
+
+    match /profileEvents/{username}/events/{eventId} {
+      allow get, list: if founder()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+      allow create: if exists(/databases/$(database)/documents/profiles/$(username))
+        && request.resource.data.keys().hasOnly(['kind', 'linkId', 'day', 'device', 'referrer', 'createdAt'])
+        && request.resource.data.kind in ['view', 'click']
+        && request.resource.data.linkId is string
+        && request.resource.data.linkId.size() <= 80
+        && request.resource.data.day is string
+        && request.resource.data.day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.device in ['mobile', 'desktop']
+        && request.resource.data.referrer is string
+        && request.resource.data.referrer.size() <= 100
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /profileRevisions/{username}/revisions/{revisionId} {
+      allow get, list: if founder()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+      allow create: if founder()
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'document', 'publishedAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.document.schemaVersion == 1
+        && getAfter(/databases/$(database)/documents/profiles/$(username)).data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
     }
 
   }

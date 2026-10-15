@@ -57,6 +57,7 @@ export function createDefaultProfile({ uid = '', username = '' } = {}) {
     usernameEffect: 'glow',
     bioEffect: 'none',
     links: [],
+    blocks: [],
     badges: [],
   };
 }
@@ -72,10 +73,10 @@ export const domeProfilePreset = {
   audioUrl: '/Juice-WRLD-Lucid-Dreams-(HipHopKit.com)_[cut_90sec].mp3',
   trackTitle: 'Lucid Dreams',
   trackArtist: 'Juice WRLD',
-  accentColor: '#e99aa6',
-  visualizerColor: '#e64a56',
-  secondaryColor: '#6a5cff',
-  surfaceColor: '#12111a',
+  accentColor: '#48bcff',
+  visualizerColor: '#1ea6ff',
+  secondaryColor: '#657bff',
+  surfaceColor: '#0b152a',
   font: 'playful',
   layout: 'spotlight',
   cardWidth: 560,
