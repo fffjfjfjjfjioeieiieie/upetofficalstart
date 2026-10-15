@@ -6,7 +6,6 @@ import {
   CircleUserRound,
   Clock3,
   Copy,
-  Compass,
   LayoutDashboard,
   Moon,
   Palette,
@@ -14,17 +13,14 @@ import {
   ShoppingBag,
   Sun,
   UserRound,
-  UsersRound,
 } from 'lucide-react';
 import styles from './Dashboard.module.css';
 
 const navigation = [
   { label: 'dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'profile', icon: UserRound, profilePath: true },
   { label: 'customize', icon: Palette, path: '/customize' },
-  { label: 'friends', icon: UsersRound, path: '/friends' },
-  { label: 'shop', icon: ShoppingBag },
-  { label: 'marketplace', icon: Compass },
+  { label: 'analytics', icon: Clock3 },
+  { label: 'settings', icon: UserRound },
 ];
 
 const quickActions = [
@@ -32,7 +28,6 @@ const quickActions = [
   { label: 'edit profile', detail: 'name, bio and status', icon: UserRound, path: '/customize' },
   { label: 'create listing', detail: 'add something to your shop', icon: Plus },
   { label: 'view shop', detail: 'your public storefront', icon: ShoppingBag },
-  { label: 'find friends', detail: 'grow your circle', icon: UsersRound, path: '/friends' },
 ];
 
 function ComingSoonButton({ children, className = '', onClick, ...buttonProps }) {
@@ -54,47 +49,34 @@ export function DashboardHeader({ activePage, username, onLogout, onNavigate, th
   const handle = username || 'your username';
 
   return (
-    <header className={styles.topNav}>
-      <button className={styles.brand} type="button" onClick={() => onNavigate('/')} aria-label="user.pet home">
-        <span className="brand-logo"><img src={theme === 'light' ? '/upetlogoleftlightmode.png' : '/upetlogoleft.png'} alt="user.pet" /></span>
-      </button>
-
-      <nav className={styles.navigation} aria-label="dashboard navigation">
-        {navigation.map(({ label, icon: Icon, path, profilePath }) => {
-          if (profilePath && username && username !== 'your username') path = `/${username}`;
-          const active = activePage === label;
-          return (
-            <button
-              key={label}
-              type="button"
-              className={`${styles.navItem}${active ? ` ${styles.navItemActive}` : ''}`}
-              aria-current={active ? 'page' : undefined}
-              disabled={!path}
-              title={path ? undefined : 'coming soon'}
-              onClick={path ? () => onNavigate(path) : undefined}
-            >
-              <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className={styles.accountArea}>
-        <span className={styles.accountHandle}>@{handle}</span>
-        <button
-          className={styles.themeButton}
-          type="button"
-          onClick={onToggleTheme}
-          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          title={`${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          <span>{theme === 'dark' ? 'light mode' : 'dark mode'}</span>
+    <div className={styles.chrome}>
+      <aside className={styles.sidebar}>
+        <button className={styles.brand} type="button" onClick={() => onNavigate('/')} aria-label="user.pet home">
+          <span className="brand-logo"><img src={theme === 'light' ? '/upetlogoleftlightmode.png' : '/upetlogoleft.png'} alt="user.pet" /></span>
         </button>
-        <button className={styles.logoutButton} type="button" onClick={onLogout}>log out</button>
-      </div>
-    </header>
+        <div className={styles.profileSwitcher}>
+          <span className={styles.switcherAvatar}>{handle.slice(0, 1).toUpperCase()}</span>
+          <span><strong>@{handle}</strong><small>founder profile</small></span>
+        </div>
+        <nav className={styles.navigation} aria-label="dashboard navigation">
+          <span className={styles.navGroupLabel}>profile</span>
+          {navigation.slice(0, 2).map(({ label, icon: Icon, path }) => {
+            const active = activePage === label;
+            return <button key={label} type="button" className={`${styles.navItem}${active ? ` ${styles.navItemActive}` : ''}`} aria-current={active ? 'page' : undefined} onClick={() => onNavigate(path)}><Icon size={15} strokeWidth={1.8} aria-hidden="true" /><span>{label}</span></button>;
+          })}
+          <span className={styles.navGroupLabel}>account</span>
+          {navigation.slice(2).map(({ label, icon: Icon }) => <button key={label} type="button" className={`${styles.navItem}${activePage === label ? ` ${styles.navItemActive}` : ''}`} disabled title="coming soon"><Icon size={15} strokeWidth={1.8} aria-hidden="true" /><span>{label}</span></button>)}
+        </nav>
+        <div className={styles.sidebarFooter}>
+          <button className={styles.themeButton} type="button" onClick={onToggleTheme}>{theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}<span>{theme === 'dark' ? 'light mode' : 'dark mode'}</span></button>
+          <button className={styles.logoutButton} type="button" onClick={onLogout}>log out</button>
+        </div>
+      </aside>
+      <header className={styles.topNav}>
+        <div><span className={styles.topEyebrow}>user.pet / workspace</span><strong>{activePage === 'customize' ? 'Customization' : 'Account'}</strong></div>
+        <div className={styles.accountArea}><span className={styles.accountHandle}>@{handle}</span><button className={styles.viewProfileButton} type="button" onClick={() => onNavigate(`/${handle}`)}>view profile <ArrowUpRight size={13} /></button></div>
+      </header>
+    </div>
   );
 }
 

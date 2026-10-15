@@ -24,6 +24,9 @@ const presets = [
   { name: 'Afterdark', colors: ['#ff4f81', '#ff9f43', '#11090e'], values: { accentColor: '#ff4f81', secondaryColor: '#ff9f43', surfaceColor: '#11090e', textColor: '#fff1f6', backgroundEffect: 'stars', usernameEffect: 'gradient', font: 'sora', enableGrain: true } },
 ];
 
+const effectChoices = ['none', 'typewriter', 'shake', 'rainbow', 'sparkle', 'shine', 'glow', 'glitch', 'scramble', 'flicker', 'loading', 'blackout', 'neon', 'reactive'];
+const effectLabels = { none: 'None', typewriter: 'Typewriter', shake: 'Shake', rainbow: 'Rainbow', sparkle: 'White sparkle', shine: 'Shine', glow: 'Glow', glitch: 'Glitch', scramble: 'Scramble', flicker: 'Flicker', loading: 'Loading', blackout: 'Blackout', neon: 'Neon aurora', reactive: 'Reactive' };
+
 function Field({ label, hint, children }) {
   return <label className={styles.field}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
@@ -49,6 +52,8 @@ export default function ProfileEditor({ username, user, onNavigate }) {
   const [status, setStatus] = useState('');
   const [uploads, setUploads] = useState({});
   const [previewDevice, setPreviewDevice] = useState('desktop');
+  const [effectTarget, setEffectTarget] = useState('');
+  const [effectSearch, setEffectSearch] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -104,6 +109,14 @@ export default function ProfileEditor({ username, user, onNavigate }) {
 
   if (loading) return <div className={styles.loading}>loading your canvas…</div>;
 
+  const effectValue = effectTarget === 'displayName' ? profile.usernameEffect : effectTarget === 'bio' ? profile.bioEffect : profile.backgroundEffect;
+  const chooseEffect = (value) => {
+    if (effectTarget === 'displayName') patch({ usernameEffect: value });
+    if (effectTarget === 'bio') patch({ bioEffect: value });
+    if (effectTarget === 'background') patch({ backgroundEffect: value });
+    setEffectTarget('');
+  };
+
   return <div className={styles.page}>
     <header className={styles.header}><button type="button" onClick={() => onNavigate('/dashboard')}><ArrowLeft size={15} /> dashboard</button><div><span>user.pet/{username}</span><strong>profile studio</strong></div><div className={styles.headerActions}><button type="button" onClick={() => onNavigate(`/${username}`)}>view live <ExternalLink size={13} /></button><button className={styles.saveButton} type="button" onClick={save} disabled={saving}>{saving ? <LoaderCircle size={15} /> : <Save size={15} />}{saving ? 'saving' : 'save changes'}</button></div></header>
     <div className={styles.workspace}>
@@ -118,6 +131,9 @@ export default function ProfileEditor({ username, user, onNavigate }) {
             <Field label="Status"><input value={profile.statusText} maxLength={48} placeholder="online" onChange={(e) => patch({ statusText: e.target.value })} /></Field>
             <Field label="Badges" hint="Comma-separated, up to six"><input value={(profile.badges || []).join(', ')} maxLength={120} placeholder="founder, artist, verified" onChange={(e) => patch({ badges: e.target.value.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 6) })} /></Field>
             <DropAsset kind="avatar" accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.gif'] }} icon={ImagePlus} value={profile.avatarUrl} uploading={uploads.avatar} onFile={(file) => upload('avatar', file)} />
+            <NumberSlider label="Avatar zoom" value={profile.avatarZoom || 100} min={100} max={180} suffix="%" onChange={(avatarZoom) => patch({ avatarZoom })} />
+            <NumberSlider label="Crop X" value={profile.avatarCropX ?? 50} min={0} max={100} suffix="%" onChange={(avatarCropX) => patch({ avatarCropX })} />
+            <NumberSlider label="Crop Y" value={profile.avatarCropY ?? 50} min={0} max={100} suffix="%" onChange={(avatarCropY) => patch({ avatarCropY })} />
           </Tabs.Content>
           <Tabs.Content value="appearance" className={styles.tabContent}>
             <div className={styles.sectionIntro}><span>02</span><div><h1>Set the whole mood.</h1><p>Color, type, glass, and geometry update instantly.</p></div></div>
@@ -161,12 +177,16 @@ export default function ProfileEditor({ username, user, onNavigate }) {
             <Field label="Background effect"><select value={profile.backgroundEffect} onChange={(e) => patch({ backgroundEffect: e.target.value })}><option value="glow">soft glow</option><option value="aurora">aurora</option><option value="stars">stars</option><option value="grid">cyber grid</option><option value="none">none</option></select></Field>
             <Field label="Username effect"><select value={profile.usernameEffect} onChange={(e) => patch({ usernameEffect: e.target.value })}><option value="glow">glow</option><option value="gradient">animated gradient</option><option value="none">none</option></select></Field>
             <Field label="Bio effect"><select value={profile.bioEffect} onChange={(e) => patch({ bioEffect: e.target.value })}><option value="none">none</option><option value="typewriter">typewriter</option></select></Field>
+            <div className={styles.effectTargetList}>
+              {[['displayName', 'Display name', profile.usernameEffect], ['bio', 'Bio text', profile.bioEffect], ['background', 'Background', profile.backgroundEffect]].map(([target, label, value]) => <button className={styles.effectTarget} type="button" key={target} onClick={() => { setEffectTarget(target); setEffectSearch(''); }}><span><strong>{label}</strong><small>{effectLabels[value] || value}</small></span><Sparkles size={15} /></button>)}
+            </div>
           </Tabs.Content>
           <p className={styles.status} role="status">{status}</p>
         </div>
       </Tabs.Root>
-      <aside className={styles.preview}><div className={styles.previewBar}><span>live preview</span><div><button type="button" data-active={previewDevice === 'desktop'} onClick={() => setPreviewDevice('desktop')} aria-label="Desktop preview"><Monitor size={13} /></button><button type="button" data-active={previewDevice === 'mobile'} onClick={() => setPreviewDevice('mobile')} aria-label="Mobile preview"><Smartphone size={13} /></button></div></div><div className={styles.previewStage} data-device={previewDevice}><div className={styles.previewFrame}><PublicProfile profile={{ ...profile, showEnterScreen: false, customCursor: false }} owner={false} onNavigate={() => {}} /></div></div></aside>
+      <aside className={styles.preview}><div className={styles.previewBar}><span>real-time profile preview</span><div><button type="button" data-active={previewDevice === 'desktop'} onClick={() => setPreviewDevice('desktop')} aria-label="Desktop preview"><Monitor size={13} /></button><button type="button" data-active={previewDevice === 'mobile'} onClick={() => setPreviewDevice('mobile')} aria-label="Mobile preview"><Smartphone size={13} /></button></div></div><div className={styles.previewStage} data-device={previewDevice}><div className={styles.previewFrame}><PublicProfile profile={{ ...profile, showEnterScreen: false, customCursor: false }} owner={false} onNavigate={() => {}} /></div></div></aside>
     </div>
+    {effectTarget && <div className={styles.effectModalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEffectTarget(''); }}><section className={styles.effectModal} role="dialog" aria-modal="true" aria-labelledby="effect-picker-title"><header><div><span>effects</span><h2 id="effect-picker-title">Text effects</h2><p>Preview each treatment on your profile before selecting it.</p></div><button type="button" onClick={() => setEffectTarget('')} aria-label="Close effect picker">×</button></header><div className={styles.effectModalTools}><strong>{effectLabels[effectValue] || 'None'}</strong><input value={effectSearch} onChange={(event) => setEffectSearch(event.target.value)} placeholder="Search effects…" aria-label="Search effects" /></div><div className={styles.effectGrid}>{effectChoices.filter((choice) => effectLabels[choice].toLowerCase().includes(effectSearch.toLowerCase())).map((choice) => <button type="button" key={choice} className={`${styles.effectTile}${effectValue === choice ? ` ${styles.effectTileSelected}` : ''}`} onClick={() => chooseEffect(choice)}><span data-effect-preview={choice}>{profile.displayName || 'your name'}</span><small>{effectLabels[choice]}</small>{effectValue === choice && <b>✓</b>}</button>)}</div><footer>Click a tile to apply it. Choose None to remove the effect.</footer></section></div>}
   </div>;
 }
 

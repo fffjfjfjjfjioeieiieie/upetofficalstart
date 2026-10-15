@@ -1223,3 +1223,66 @@
 }
 
 .dashboardPage[data-theme='dark'] { background-color: #080e1b; background-image: radial-gradient(ellipse at 86% 18%, rgba(181, 154, 232, 0.055), transparent 34%); }
+
+/* Studio-style account shell: a quiet rail, compact header, and outlined work panels. */
+.dashboardPage {
+  --dash-text: #f4f5f7;
+  --dash-muted: #8d93a1;
+  --dash-quiet: #5e6470;
+  --dash-border: rgba(255, 255, 255, 0.09);
+  --dash-border-soft: rgba(255, 255, 255, 0.055);
+  --dash-surface: #101218;
+  --dash-surface-raised: #14171e;
+  --dash-purple: #a98bea;
+  --dash-purple-soft: rgba(169, 139, 234, 0.14);
+  background: #08090c;
+  overflow-x: hidden;
+}
+.chrome { position: relative; z-index: 4; }
+.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 10; display: flex; width: 224px; flex-direction: column; padding: 22px 14px 16px; border-right: 1px solid var(--dash-border-soft); background: #0c0e13; }
+.brand { display: inline-flex; width: fit-content; align-items: center; min-height: 34px; padding: 0 9px; }
+.brand .brand-logo { display: block; width: 92px; height: 34px; }
+.brand .brand-logo img { width: 100%; height: 100%; object-fit: contain; object-position: left center; }
+.profileSwitcher { display: flex; min-width: 0; align-items: center; gap: 10px; margin: 26px 0 27px; padding: 11px 10px; border: 1px solid var(--dash-border); border-radius: 13px; background: var(--dash-surface); }
+.switcherAvatar { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; border: 1px solid rgba(40, 168, 246, .42); border-radius: 10px; background: rgba(40, 168, 246, .12); color: var(--app-text, #f4f5f7); font-size: 12px; font-weight: 700; }
+.profileSwitcher > span:last-child { display: grid; min-width: 0; gap: 4px; }
+.profileSwitcher strong { overflow: hidden; color: var(--dash-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.profileSwitcher small { color: var(--dash-quiet); font-size: 9px; }
+.navigation { display: flex; flex-direction: column; gap: 4px; }
+.navGroupLabel { margin: 0 10px 6px; color: var(--dash-quiet); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+.navGroupLabel:not(:first-child) { margin-top: 24px; }
+.navItem { min-height: 40px; justify-content: flex-start; padding-inline: 11px; border-radius: 9px; }
+.navItemActive { border-color: rgba(40, 168, 246, .34); background: rgba(40, 168, 246, .10); color: #d8efff; box-shadow: inset 2px 0 #28a8f6; }
+.sidebarFooter { display: grid; gap: 7px; margin-top: auto; padding-top: 15px; border-top: 1px solid var(--dash-border-soft); }
+.sidebarFooter .themeButton, .sidebarFooter .logoutButton { justify-content: flex-start; width: 100%; }
+.topNav { position: fixed; top: 0; right: 0; left: 224px; display: flex; min-height: 78px; align-items: center; justify-content: space-between; width: auto; margin: 0; padding: 0 34px; border-bottom: 1px solid var(--dash-border-soft); background: rgba(8, 9, 12, .88); backdrop-filter: blur(18px); }
+.topNav > div:first-child { display: grid; gap: 6px; }
+.topEyebrow { color: var(--dash-quiet); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
+.topNav > div:first-child strong { color: var(--dash-text); font-size: 20px; letter-spacing: -.04em; }
+.viewProfileButton { display: inline-flex; min-height: 34px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid var(--dash-border); border-radius: 8px; background: rgba(255,255,255,.025); color: var(--dash-text); font: inherit; font-size: 10px; }
+.viewProfileButton:hover { border-color: rgba(40, 168, 246, .45); background: rgba(40, 168, 246, .08); }
+.main { width: auto; max-width: 1260px; margin: 0 42px 0 266px; padding: 124px 0 30px; }
+.pageIntro { margin: 0 0 34px; text-align: left; }
+.pageIntro h1 { font-size: clamp(34px, 4vw, 52px); }
+.dashboardGrid { gap: 14px; }
+.panel { border-radius: 16px; background: var(--dash-surface); box-shadow: none; backdrop-filter: none; }
+.quickActions { padding-top: 12px; }
+.dashboardFooter { padding-top: 22px; }
+.dashboardPage[data-theme='light'] { background: #f3f5f8; }
+.dashboardPage[data-theme='light'] .sidebar { background: #edf0f5; }
+.dashboardPage[data-theme='light'] .topNav { background: rgba(243, 245, 248, .9); }
+
+@media (max-width: 820px) {
+  .sidebar { position: fixed; inset: auto 0 0; width: auto; height: 66px; flex-direction: row; align-items: center; padding: 8px 10px; border-top: 1px solid var(--dash-border-soft); border-right: 0; }
+  .sidebar .brand, .profileSwitcher, .navGroupLabel, .sidebarFooter { display: none; }
+  .navigation { width: 100%; flex-direction: row; justify-content: space-around; gap: 4px; }
+  .navItem { min-width: 0; flex: 1; justify-content: center; padding-inline: 5px; }
+  .navItem span { font-size: 9px; }
+  .topNav { left: 0; min-height: 68px; padding: 0 16px; }
+  .topNav > div:first-child strong { font-size: 18px; }
+  .main { margin: 0; padding: 102px 16px 96px; }
+  .accountHandle { display: none; }
+  .pageIntro { margin-bottom: 25px; }
+  .dashboardGrid { grid-template-columns: 1fr; }
+  .profileOverview, .customizationPanel, .shopPanel, .activityPanel { grid-column: 1; }
+}

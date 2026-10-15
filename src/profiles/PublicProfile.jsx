@@ -119,7 +119,7 @@ export default function PublicProfile({ profile, owner = false, onNavigate }) {
         >
           {profile.showBanner && profile.bannerUrl && <img className={styles.banner} src={profile.bannerUrl} alt="" />}
           <div className={styles.identity}>
-            {profile.avatarUrl ? <img className={styles.avatar} src={profile.avatarUrl} alt={`${profile.displayName}'s avatar`} /> : <div className={styles.avatarFallback}>{profile.displayName.slice(0, 1).toUpperCase()}</div>}
+            {profile.avatarUrl ? <img className={styles.avatar} src={profile.avatarUrl} alt={`${profile.displayName}'s avatar`} style={{ objectPosition: `${profile.avatarCropX ?? 50}% ${profile.avatarCropY ?? 50}%`, transform: `scale(${(profile.avatarZoom ?? 100) / 100})` }} /> : <div className={styles.avatarFallback}>{profile.displayName.slice(0, 1).toUpperCase()}</div>}
             <div className={styles.identityCopy}>
               <h1 data-effect={profile.usernameEffect}>{profile.displayName}</h1>
               <p className={styles.handle}>@{profile.username}</p>

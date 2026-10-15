@@ -1,10 +1,10 @@
 {
   "url": "https://fakecrime.bio/",
   "title": "Just a moment...",
-  "text": "⚡\n\nChecking if the site connection is secure!\n\nRay ID: a4a9e556be5a9461\n\nDiscord",
+  "text": "⚡\n\nChecking if the site connection is secure!\n\nRay ID: a4af38b71fa363c3\n\nDiscord",
   "scripts": [
-    "https://fakecrime.bio/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1?ray=a4a9e556be5a9461",
-    "https://challenges.cloudflare.com/turnstile/v0/g/4df4a60fa397/api.js?onload=zeEi4&render=explicit"
+    "https://fakecrime.bio/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=a4af38b71fa363c3",
+    "https://challenges.cloudflare.com/turnstile/v0/b/d2d3316b729e/api.js?onload=DraY9&render=explicit"
   ],
   "images": [],
   "styles": [],

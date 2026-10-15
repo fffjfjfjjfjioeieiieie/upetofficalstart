@@ -13,7 +13,6 @@ import ProfileBackground from '../shared/ProfileBackground.jsx';
 import LampShop from '../shop/LampShop.jsx';
 import SadlizzeShop from '../shop/SadlizzeShop.jsx';
 import Dashboard from '../dashboard/Dashboard.jsx';
-import Friends from '../dashboard/Friends.jsx';
 import PublicProfileRoute from '../profiles/PublicProfileRoute.jsx';
 import { claimUsername as saveClaimedUsername, getAccountForUser } from '../data/accountStore.js';
 import {
@@ -24,7 +23,7 @@ import {
 
 const ProfileEditor = React.lazy(() => import('../dashboard/ProfileEditor.jsx'));
 const ADMIN_EMAILS = new Set([
-  'zurhics@gmail.com',
+  'zurihcs@gmail.com',
   'lampjustlamp123@gmail.com',
   'iamjayvonlol@gmail.com',
 ]);
@@ -224,7 +223,7 @@ function App() {
   const accountLabel = claimedUsername ? `@${claimedUsername}` : accountName;
 
   useEffect(() => {
-    if ((pathname === '/dashboard' || pathname === '/friends' || pathname === '/welcome' || pathname === '/customize') && authReady && !currentUser) navigateTo('/');
+    if ((pathname === '/dashboard' || pathname === '/welcome' || pathname === '/customize' || pathname === '/analytics' || pathname === '/settings' || pathname === '/claim') && authReady && !currentUser) navigateTo('/');
   }, [pathname, authReady, currentUser]);
   const openLogin = (mode = 'login') => {
     setAuthMode(mode);
@@ -546,14 +545,11 @@ function App() {
       >
         Dashboard
       </button>
-      <button type="button" className="home-account-action" onClick={() => navigateTo('/friends')}>
-        Friends
-      </button>
     </section>
   );
 
   const publicUsername = pathname.match(/^\/([a-z0-9][a-z0-9._-]{2,19})\/?$/)?.[1];
-  const reservedPaths = new Set(['dashboard', 'friends', 'welcome', 'customize', 'create-account']);
+  const reservedPaths = new Set(['dashboard', 'welcome', 'customize', 'analytics', 'settings', 'claim', 'create-account']);
   if (publicUsername && !reservedPaths.has(publicUsername)) {
     return <PublicProfileRoute username={publicUsername} currentUser={currentUser} onNavigate={navigateTo} />;
   }
@@ -588,22 +584,6 @@ function App() {
 
   if (currentUser && claimedUsername && pathname === '/customize') {
     return <React.Suspense fallback={<div className="page-shell" data-theme={theme} />}><ProfileEditor username={claimedUsername} user={currentUser} onNavigate={navigateTo} /></React.Suspense>;
-  }
-
-  if (currentUser && pathname === '/friends') {
-    return (
-      <div className="page-shell dashboard-shell" data-theme={theme}>
-        <Friends
-          username={claimedUsername}
-          user={currentUser}
-          theme={theme}
-          onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
-          onLogout={logout}
-          onNavigate={navigateTo}
-        />
-        {loginDialog}
-      </div>
-    );
   }
 
   if (currentUser && pathname === '/welcome') {
