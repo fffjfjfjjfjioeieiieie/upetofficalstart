@@ -14,17 +14,22 @@ export default function EffectsInspector({ document, set, upload, uploads, user 
   const name = document.identity.displayName || 'your name';
   return <div className="studio-section"><h2>Effects</h2><p>Each effect has its own target. Keep motion comfortable for your visitors.</p>
     <EffectBrowser label="Display name" value={effects.displayName} sample={name} onChange={(next) => set('effects.displayName', next)} />
+    <EffectBrowser label="Username" value={effects.username} sample={`@${document.identity.displayName || 'username'}`} onChange={(next) => set('effects.username', next)} />
     <EffectBrowser label="Bio" value={effects.bio} sample="Your story" onChange={(next) => set('effects.bio', next)} />
-    <Choice label="Background effect" value={effects.background} options={['none', 'glow', 'stars', 'grid', 'aurora', 'particles']} onChange={(next) => set('effects.background', next)} />
+    <Choice label="Background effect" value={effects.background} options={['none', 'glow', 'stars', 'grid', 'aurora', 'gradient-motion', 'rain', 'particles']} onChange={(next) => set('effects.background', next)} />
+    <Choice label="Card effect" value={effects.card} options={['none', 'glow', 'float']} onChange={(next) => set('effects.card', next)} />
+    <Choice label="Foreground overlay" value={effects.overlay} options={['none', 'vignette', 'scanlines']} onChange={(next) => set('effects.overlay', next)} />
     <Toggle label="Card tilt" checked={effects.enableTilt} onChange={(next) => set('effects.enableTilt', next)} />
     <Toggle label="Grain overlay" checked={effects.grain} onChange={(next) => set('effects.grain', next)} />
     <Toggle label="Animated accent" checked={effects.animatedAccent} onChange={(next) => set('effects.animatedAccent', next)} />
     <Toggle label="Reduced motion mode" checked={effects.reducedMotionMode} onChange={(next) => set('effects.reducedMotionMode', next)} />
     <Range label="Intensity" value={effects.intensity} min={0} max={100} suffix="%" onChange={(next) => set('effects.intensity', next)} />
+    <Range label="Animation speed" value={effects.animationSpeed} min={25} max={200} suffix="%" onChange={(next) => set('effects.animationSpeed', next)} />
     <div className="studio-divider" /><h3>Pointer and clicks</h3>
     <Toggle label="Custom cursor" checked={effects.customCursor} onChange={(next) => set('effects.customCursor', next)} />
     <label className="studio-upload"><span>Cursor image</span><input type="file" accept="image/png,image/webp,image/gif" onChange={(event) => upload('cursor', event.target.files?.[0], 'effects.cursor')} />{uploads.cursor && <small>Uploading {uploads.cursor}%</small>}</label>
     <MediaLibrary user={user} kinds={['cursor']} onSelect={(url) => set('effects.cursor', url)} />
+    <div className="studio-row"><Range label="Cursor hotspot X" value={effects.cursorHotspotX} min={0} max={128} suffix="px" onChange={(next) => set('effects.cursorHotspotX', next)} /><Range label="Cursor hotspot Y" value={effects.cursorHotspotY} min={0} max={128} suffix="px" onChange={(next) => set('effects.cursorHotspotY', next)} /></div>
     <Toggle label="Page click sound" checked={effects.clickSoundEnabled} onChange={(next) => set('effects.clickSoundEnabled', next)} />
     <label className="studio-upload"><span>Click sound</span><input type="file" accept="audio/mpeg,audio/wav,audio/ogg" onChange={(event) => upload('click', event.target.files?.[0], 'effects.clickSound')} />{uploads.click && <small>Uploading {uploads.click}%</small>}</label>
     <Range label="Click volume" value={effects.clickSoundVolume} min={0} max={100} suffix="%" onChange={(next) => set('effects.clickSoundVolume', next)} />

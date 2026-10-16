@@ -29,6 +29,14 @@ export async function claimUsername(user, rawUsername) {
       if (existingUsername === username) {
         if (usernameSnapshot.exists() && usernameSnapshot.data().uid !== user.uid) throw new UsernameAlreadyTakenError(username);
         if (!usernameSnapshot.exists()) transaction.set(usernameRef, { uid: user.uid, username, createdAt: serverTimestamp() });
+        const accountRepair = {
+          uid: user.uid,
+          email: String(user.email || '').toLowerCase(),
+          role: 'founder',
+          updatedAt: serverTimestamp(),
+        };
+        if (!accountSnapshot.data().createdAt) accountRepair.createdAt = serverTimestamp();
+        transaction.update(accountRef, accountRepair);
         return { username, alreadyOwned: true };
       }
       throw new UsernameAlreadyClaimedError(existingUsername);

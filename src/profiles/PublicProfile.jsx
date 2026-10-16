@@ -10,12 +10,19 @@ import ProfileSafetyGate from './ProfileSafetyGate.jsx';
 import { recordProfileEvent } from '../data/analyticsStore.js';
 import styles from './PublicProfile.module.css';
 
+const formatTime = (seconds) => {
+  const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  return `${Math.floor(safe / 60)}:${String(Math.floor(safe % 60)).padStart(2, '0')}`;
+};
+
 export default function PublicProfile({ profile, owner = false, onNavigate, preview = false, onCanvasBlockChange, mobilePreview = false }) {
   const [entered, setEntered] = useState(preview || !profile.showEnterScreen);
   const [entering, setEntering] = useState(false);
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(preview || (!profile.contentWarning && !profile.ageGate));
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(profile.volume ?? 72);
+  const [elapsed, setElapsed] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [trackIndex, setTrackIndex] = useState(() => Math.max(0, (profile.audioTracks || []).findIndex((item) => item.id === profile.activeTrackId)));
   const [displayBio, setDisplayBio] = useState(profile.bio || '');
   const [displayNameText, setDisplayNameText] = useState(profile.displayName || '');
@@ -32,6 +39,7 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   const activeTrack = tracks[trackIndex] || tracks[0];
 
   useEffect(() => { setTrackIndex(Math.max(0, tracks.findIndex((item) => item.id === profile.activeTrackId))); }, [profile.activeTrackId, profile.audioTracks?.length]);
+  useEffect(() => { setElapsed(0); setDuration(0); }, [activeTrack?.id]);
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume / 100; }, [volume]);
   useEffect(() => {
     if (!profile.clickSoundEnabled || !profile.clickSoundUrl || preview) { clickAudioRef.current = null; return undefined; }
@@ -42,8 +50,8 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   }, [profile.clickSoundEnabled, profile.clickSoundUrl, profile.clickSoundVolume, preview]);
 
   useEffect(() => {
-    if (!preview) recordProfileEvent(profile.username, 'view');
-  }, [profile.username, preview]);
+    if (!preview && profile.analyticsEnabled !== false) recordProfileEvent(profile.username, 'view');
+  }, [profile.username, profile.analyticsEnabled, preview]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -91,9 +99,9 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
       index += 1;
       setDisplayBio((profile.bio || '').slice(0, index));
       if (index >= (profile.bio || '').length) window.clearInterval(timer);
-    }, 34);
+    }, Math.max(12, Math.round(34 * (100 / (profile.animationSpeed || 100)))));
     return () => window.clearInterval(timer);
-  }, [profile.bio, profile.bioEffect, reduceMotion, entered]);
+  }, [profile.bio, profile.bioEffect, profile.animationSpeed, reduceMotion, entered]);
 
   useEffect(() => {
     const name = profile.displayName || '';
@@ -107,9 +115,9 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
       if (effect === 'typewriter') setDisplayNameText(name.slice(0, step));
       else setDisplayNameText([...name].map((character, index) => index < step / 2 || character === ' ' ? character : glyphs[Math.floor(Math.random() * glyphs.length)]).join(''));
       if (step >= (effect === 'typewriter' ? name.length : name.length * 2)) { setDisplayNameText(name); window.clearInterval(timer); }
-    }, effect === 'typewriter' ? 75 : 45);
+    }, Math.max(16, Math.round((effect === 'typewriter' ? 75 : 45) * (100 / (profile.animationSpeed || 100)))));
     return () => window.clearInterval(timer);
-  }, [profile.displayName, profile.usernameEffect, profile.reducedMotionMode, reduceMotion, entered]);
+  }, [profile.displayName, profile.usernameEffect, profile.reducedMotionMode, profile.animationSpeed, reduceMotion, entered]);
 
   const enter = () => {
     if (activeTrack?.url && audioRef.current) {
@@ -135,6 +143,7 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
     '--profile-radius': `${profile.borderRadius}px`,
     '--profile-font': PROFILE_FONTS[profile.font] || PROFILE_FONTS.space,
     '--profile-visualizer': profile.visualizerColor || profile.accentColor,
+    '--profile-muted': profile.mutedColor || '#9ba3b3',
     '--profile-secondary': profile.secondaryColor || profile.accentColor,
     '--profile-width': `${profile.cardWidth || 480}px`,
     '--profile-button-radius': `${profile.buttonRadius ?? 11}px`,
@@ -157,6 +166,15 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
     '--profile-background-brightness': `${profile.backgroundBrightness ?? 100}%`,
     '--profile-background-saturation': `${profile.backgroundSaturation ?? 100}%`,
     '--profile-background-fit': profile.backgroundFit || 'cover',
+    '--profile-background-scale': (profile.backgroundScale ?? 100) / 100,
+    '--profile-avatar-border-width': `${profile.avatarBorderWidth ?? 4}px`,
+    '--profile-avatar-border-color': profile.avatarBorderColor || '#0b0e16',
+    '--profile-animation-speed': `${100 / (profile.animationSpeed || 100)}`,
+    '--profile-visualizer-intensity': (profile.visualizerIntensity ?? 50) / 100,
+    '--profile-visualizer-base-height': `${12 + (profile.visualizerIntensity ?? 50) * .2}%`,
+    '--profile-visualizer-opacity': .1 + ((profile.visualizerIntensity ?? 50) / 100) * .28,
+    '--profile-visualizer-speed': `${0.32 + ((profile.visualizerSmoothing ?? 65) / 100) * 1.05}s`,
+    '--profile-visualizer-fill': profile.visualizerGradient ? `linear-gradient(180deg, ${profile.secondaryColor || profile.accentColor}, ${profile.visualizerColor || profile.accentColor})` : (profile.visualizerColor || profile.accentColor),
     '--profile-tilt-x': `${tilt.x}deg`,
     '--profile-tilt-y': `${tilt.y}deg`,
   };
@@ -180,9 +198,10 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   });
 
   return (
-    <div ref={pageRef} className={styles.page} style={pageStyle} data-preview={preview} data-density={profile.density || 'comfortable'} data-reduced-motion={reduceMotion || profile.reducedMotionMode} data-effect={profile.backgroundEffect} data-grain={profile.enableGrain} data-surface={profile.surfaceEnabled !== false} data-shadow={profile.surfaceShadow !== false} data-button-style={profile.buttonStyle || 'soft'} data-animated-accent={profile.animatedAccent} data-custom-cursor={profile.customCursor && Boolean(profile.cursorUrl)} onPointerDown={() => { if (clickAudioRef.current) { clickAudioRef.current.currentTime = 0; clickAudioRef.current.play().catch(() => {}); } }} onPointerMove={(event) => { if (profile.customCursor && !preview) setCursorPoint({ x: event.clientX, y: event.clientY }); }}>
+    <div ref={pageRef} className={styles.page} style={pageStyle} data-preview={preview} data-density={profile.density || 'comfortable'} data-reduced-motion={reduceMotion || profile.reducedMotionMode} data-effect={profile.backgroundEffect} data-grain={profile.enableGrain} data-surface={profile.surfaceEnabled !== false} data-shadow={profile.surfaceShadow !== false} data-button-style={profile.buttonStyle || 'soft'} data-button-shadow={profile.buttonShadow} data-button-hover={profile.buttonHover || 'lift'} data-avatar-glow={profile.avatarGlow !== false} data-name-case={profile.displayTextCase || 'normal'} data-player-style={profile.playerStyle || 'compact'} data-player-position={profile.playerPosition || 'card'} data-animated-accent={profile.animatedAccent} data-custom-cursor={profile.customCursor && Boolean(profile.cursorUrl)} onPointerDown={() => { if (clickAudioRef.current) { clickAudioRef.current.currentTime = 0; clickAudioRef.current.play().catch(() => {}); } }} onPointerMove={(event) => { if (profile.customCursor && !preview) setCursorPoint({ x: event.clientX, y: event.clientY }); }}>
       <ProfileBackground profile={profile} videoRef={videoRef} reduceMotion={reduceMotion || profile.reducedMotionMode} entered={entered} />
-      {profile.customCursor && profile.cursorUrl && !preview && <img className={styles.customCursor} src={profile.cursorUrl} alt="" aria-hidden="true" style={{ transform: `translate3d(${cursorPoint.x}px, ${cursorPoint.y}px, 0)` }} />}
+      {profile.showVisualizer && profile.visualizerPlacement === 'background' && activeTrack?.url && <div className={styles.backgroundVisualizer} data-playing={playing} aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} />)}</div>}
+      {profile.customCursor && profile.cursorUrl && !preview && <img className={styles.customCursor} src={profile.cursorUrl} alt="" aria-hidden="true" style={{ transform: `translate3d(${cursorPoint.x - (profile.cursorHotspotX || 0)}px, ${cursorPoint.y - (profile.cursorHotspotY || 0)}px, 0)` }} />}
       <ProfileEntrance profile={profile} entered={entered} entering={entering} onEnter={enter} />
       <ProfileSafetyGate profile={profile} acknowledged={safetyAcknowledged} onContinue={() => setSafetyAcknowledged(true)} onLeave={() => onNavigate('/')} />
       <header className={styles.header}>
@@ -202,21 +221,24 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
             {profile.avatarUrl ? <img className={styles.avatar} src={profile.avatarUrl} alt={`${profile.displayName}'s avatar`} style={{ objectPosition: `${profile.avatarCropX ?? 50}% ${profile.avatarCropY ?? 50}%`, transform: `scale(${(profile.avatarZoom ?? 100) / 100}) rotate(${profile.avatarRotation ?? 0}deg)` }} /> : <div className={styles.avatarFallback}>{profile.displayName.slice(0, 1).toUpperCase()}</div>}
             <div className={styles.identityCopy}>
               <h1 data-effect={profile.usernameEffect}>{displayNameText}</h1>
-              <p className={styles.handle}>@{profile.username}</p>
+              <p className={styles.handle} data-effect={profile.handleEffect || 'none'}>@{profile.username}</p>
+              {profile.subtitle && <p className={styles.subtitle}>{profile.subtitle}</p>}
               {profile.showStatus && profile.statusText && <p className={styles.status}><i />{profile.statusText}</p>}
             </div>
           </div>
           {(profile.badges || []).length > 0 && <div className={styles.badges}>{profile.badges.slice(0, 6).map((badge) => <span key={badge}><BadgeCheck size={12} />{badge}</span>)}</div>}
           <p className={styles.bio} data-effect={profile.bioEffect}>{displayBio}{profile.bioEffect === 'typewriter' && <i aria-hidden="true" />}</p>
           {profile.location && profile.showLocation && <p className={styles.location}><MapPin size={13} />{profile.location}</p>}
-          {profile.blocks?.length ? <ProfileBlocks blocks={profile.blocks} username={profile.username} layout={profile.layout} onGeometryChange={preview ? onCanvasBlockChange : undefined} mobilePreview={mobilePreview} /> : safeLinks.length > 0 && <nav className={styles.links} aria-label="Profile links">{safeLinks.map((link, index) => <a key={`${link.url}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" onClick={() => recordProfileEvent(profile.username, 'click', `legacy-${index}`)}><span><Sparkles size={13} />{link.label}</span><ExternalLink size={14} /></a>)}</nav>}
+          {profile.blocks?.length ? <ProfileBlocks blocks={profile.blocks} username={profile.username} layout={profile.layout} linkAction={profile.linkAction} analyticsEnabled={profile.analyticsEnabled} onGeometryChange={preview ? onCanvasBlockChange : undefined} mobilePreview={mobilePreview} /> : safeLinks.length > 0 && <nav className={styles.links} aria-label="Profile links">{safeLinks.map((link, index) => <a key={`${link.url}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" onClick={(event) => { if (profile.linkAction === 'copy') event.preventDefault(); if (profile.linkAction !== 'open') navigator.clipboard?.writeText(link.url).catch(() => {}); if (profile.analyticsEnabled !== false) recordProfileEvent(profile.username, 'click', `legacy-${index}`); }}><span><Sparkles size={13} />{link.label}</span><ExternalLink size={14} /></a>)}</nav>}
           {activeTrack?.url && profile.document?.audio?.enabled !== false && <div className={styles.player}>
             <button type="button" onClick={toggleAudio} aria-label={playing ? 'Pause music' : 'Play music'}>{playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}</button>
             {activeTrack.cover ? <img className={styles.trackCover} src={activeTrack.cover} alt="" /> : <Music2 size={16} />}
             <span><strong>{activeTrack.title || 'Profile audio'}</strong><small>{activeTrack.artist || profile.displayName}</small></span>
-            {profile.showVisualizer ? <span className={styles.visualizer} data-playing={playing} aria-label={playing ? 'Audio visualizer playing' : 'Audio visualizer paused'}>{Array.from({ length: 8 }, (_, index) => <i key={index} />)}</span> : <Volume2 size={15} />}
+            {profile.showVisualizer && profile.visualizerPlacement !== 'background' ? <span className={styles.visualizer} data-playing={playing} aria-label={playing ? 'Audio visualizer playing' : 'Audio visualizer paused'}>{Array.from({ length: 8 }, (_, index) => <i key={index} />)}</span> : <Volume2 size={15} />}
           </div>}
-          <audio ref={audioRef} src={activeTrack?.url || ''} loop={profile.audioLoop && tracks.length === 1} onEnded={() => { if (tracks.length > 1) setTrackIndex((index) => profile.audioShuffle ? Math.floor(Math.random() * tracks.length) : (index + 1) % tracks.length); }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+          <audio ref={audioRef} src={activeTrack?.url || ''} loop={profile.audioLoop && tracks.length === 1} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setElapsed(event.currentTarget.currentTime || 0)} onEnded={() => { if (tracks.length > 1) setTrackIndex((index) => profile.audioShuffle ? Math.floor(Math.random() * tracks.length) : (index + 1) % tracks.length); }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+          {activeTrack?.url && profile.showProgress && <label className={styles.progress}><span>{formatTime(elapsed)}</span><input type="range" min="0" max={duration || 1} step="0.1" value={Math.min(elapsed, duration || 1)} aria-label="Track progress" onChange={(event) => { const next = Number(event.target.value); setElapsed(next); if (audioRef.current) audioRef.current.currentTime = next; }} /><span>{formatTime(duration)}</span></label>}
+          {activeTrack?.url && profile.showWaveform && <div className={styles.waveform} data-playing={playing} aria-label="Audio waveform">{Array.from({ length: 32 }, (_, index) => <i key={index} style={{ height: `${15 + (index % 9) * 8}%` }} />)}</div>}
           {tracks.length > 1 && <div className={styles.playlistControls}><button type="button" onClick={() => setTrackIndex((index) => (index - 1 + tracks.length) % tracks.length)}>Previous</button><span>{trackIndex + 1} / {tracks.length}</span><button type="button" onClick={() => setTrackIndex((index) => (index + 1) % tracks.length)}>Next</button></div>}
           {activeTrack?.url && profile.document?.audio?.enabled !== false && profile.showVolumeControl && <label className={styles.volume}><Volume2 size={13} /><input type="range" min="0" max="100" value={volume} aria-label="Profile music volume" onChange={(event) => { const next = Number(event.target.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /><span>{volume}%</span></label>}
         </ProfileLayout>

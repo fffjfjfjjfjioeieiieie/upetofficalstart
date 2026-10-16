@@ -16,8 +16,11 @@ export default function DesignInspector({ document, set }) {
     <Choice label="Display font" value={theme.typography.displayFont} options={Object.keys(PROFILE_FONTS)} onChange={(next) => set('theme.typography.displayFont', next)} />
     <Choice label="Link font" value={theme.typography.linkFont} options={Object.keys(PROFILE_FONTS)} onChange={(next) => set('theme.typography.linkFont', next)} />
     <Range label="Name weight" value={theme.typography.displayWeight} min={300} max={900} onChange={(next) => set('theme.typography.displayWeight', next)} />
+    <Range label="Name tracking" value={theme.typography.letterSpacing} min={-4} max={8} suffix="px" onChange={(next) => set('theme.typography.letterSpacing', next)} />
+    <Choice label="Name case" value={theme.typography.textCase} options={['normal', 'uppercase', 'lowercase']} onChange={(next) => set('theme.typography.textCase', next)} />
     <Toggle label="Card surface" checked={theme.surface.enabled} onChange={(next) => set('theme.surface.enabled', next)} />
     <Range label="Surface opacity" value={theme.surface.opacity} min={0} max={100} suffix="%" onChange={(next) => set('theme.surface.opacity', next)} />
+    <Range label="Surface blur" value={theme.surface.blur} min={0} max={40} suffix="px" onChange={(next) => set('theme.surface.blur', next)} />
     <Range label="Corner radius" value={theme.surface.radius} min={0} max={48} suffix="px" onChange={(next) => set('theme.surface.radius', next)} />
     <Range label="Border width" value={theme.surface.borderWidth} min={0} max={6} suffix="px" onChange={(next) => set('theme.surface.borderWidth', next)} />
     <Field label="Border color" value={theme.surface.borderColor} type="color" onChange={(next) => set('theme.surface.borderColor', next)} />
@@ -25,12 +28,17 @@ export default function DesignInspector({ document, set }) {
     <Choice label="Button style" value={theme.buttons.style} options={['solid', 'outline', 'soft', 'glass', 'underline', 'icon']} onChange={(next) => set('theme.buttons.style', next)} />
     <div className="studio-row"><Field label="Button fill" value={theme.buttons.background} type="color" onChange={(next) => set('theme.buttons.background', next)} /><Field label="Button text" value={theme.buttons.text} type="color" onChange={(next) => set('theme.buttons.text', next)} /><Field label="Button border" value={theme.buttons.border} type="color" onChange={(next) => set('theme.buttons.border', next)} /></div>
     <Range label="Button radius" value={theme.buttons.radius} min={0} max={40} suffix="px" onChange={(next) => set('theme.buttons.radius', next)} />
+    <Choice label="Button hover" value={theme.buttons.hover} options={['none', 'lift', 'scale']} onChange={(next) => set('theme.buttons.hover', next)} />
+    <Toggle label="Button shadow" checked={theme.buttons.shadow} onChange={(next) => set('theme.buttons.shadow', next)} />
     <Choice label="Avatar shape" value={theme.avatar.shape} options={['circle', 'squircle', 'square']} onChange={(next) => set('theme.avatar.shape', next)} />
     <Range label="Avatar size" value={theme.avatar.size} min={64} max={180} suffix="px" onChange={(next) => set('theme.avatar.size', next)} />
     <Range label="Avatar zoom" value={theme.avatar.zoom} min={100} max={200} suffix="%" onChange={(next) => set('theme.avatar.zoom', next)} />
     <Range label="Avatar crop X" value={theme.avatar.cropX} min={0} max={100} suffix="%" onChange={(next) => set('theme.avatar.cropX', next)} />
     <Range label="Avatar crop Y" value={theme.avatar.cropY} min={0} max={100} suffix="%" onChange={(next) => set('theme.avatar.cropY', next)} />
     <Range label="Avatar rotation" value={theme.avatar.rotation} min={-180} max={180} suffix="°" onChange={(next) => set('theme.avatar.rotation', next)} />
+    <Range label="Avatar border" value={theme.avatar.borderWidth} min={0} max={10} suffix="px" onChange={(next) => set('theme.avatar.borderWidth', next)} />
+    <Field label="Avatar border color" value={theme.avatar.borderColor} type="color" onChange={(next) => set('theme.avatar.borderColor', next)} />
+    <Toggle label="Avatar glow" checked={theme.avatar.glow} onChange={(next) => set('theme.avatar.glow', next)} />
     <Choice label="Avatar decoration" value={theme.avatar.decoration || 'none'} options={['none', 'halo', 'pulse', 'double-ring']} onChange={(next) => set('theme.avatar.decoration', next)} />
   </div>;
 }

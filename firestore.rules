@@ -57,8 +57,18 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
 
-      // Account identifiers stay fixed while profile editing is being built.
-      allow update, delete: if false;
+      // Owners may repair legacy account metadata, but cannot transfer a handle.
+      allow update: if founder()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.createdAt == resource.data.get('createdAt', request.time)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'founder'
+        && request.resource.data.updatedAt == request.time
+        && get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
+      allow delete: if false;
     }
 
     match /profiles/{username} {

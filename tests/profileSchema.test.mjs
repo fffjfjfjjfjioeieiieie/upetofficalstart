@@ -23,3 +23,25 @@ test('temporary assets cannot be saved', () => {
   assert.throws(() => validateProfileForSave(document), /upload is still previewing/i);
 });
 
+test('new customization controls default safely and reach the shared renderer', () => {
+  const original = createProfileDocument({ username: 'dome' });
+  const legacyV1 = structuredClone(original);
+  delete legacyV1.behavior;
+  delete legacyV1.theme.avatar.borderWidth;
+  delete legacyV1.audio.showProgress;
+  const migrated = migrateProfile(legacyV1);
+  assert.equal(migrated.behavior.linkAction, 'open');
+  assert.equal(migrated.theme.avatar.borderWidth, 4);
+  assert.equal(migrated.audio.showProgress, true);
+
+  migrated.behavior.linkAction = 'both';
+  migrated.behavior.analyticsEnabled = false;
+  migrated.background.scale = 125;
+  migrated.effects.cursorHotspotX = 8;
+  const renderer = toRendererProfile(migrated, { username: 'dome' });
+  assert.equal(renderer.linkAction, 'both');
+  assert.equal(renderer.analyticsEnabled, false);
+  assert.equal(renderer.backgroundScale, 125);
+  assert.equal(renderer.cursorHotspotX, 8);
+});
+

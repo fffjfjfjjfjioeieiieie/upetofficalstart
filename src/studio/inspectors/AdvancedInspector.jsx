@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Field, Toggle } from '../StudioField.jsx';
+import { Choice, Field, Toggle } from '../StudioField.jsx';
 import { profileDocumentSchema } from '../../shared/profileSchema.js';
 import { createProfileDocument } from '../../shared/profileSchema.js';
 import ProfileHistory from '../ProfileHistory.jsx';
@@ -50,6 +50,8 @@ export default function AdvancedInspector({ document, set, replaceDocument, user
     <Field label="Content warning" value={document.safety.contentWarning} maxLength={160} onChange={(next) => set('safety.contentWarning', next)} />
     <Toggle label="Adults-only entry notice" checked={document.safety.ageGate} onChange={(next) => set('safety.ageGate', next)} />
     <Toggle label="Show view counter" checked={document.identity.showViews} onChange={(next) => set('identity.showViews', next)} />
+    <Choice label="Link action" value={document.behavior.linkAction} options={[['open', 'Open links'], ['copy', 'Copy links'], ['both', 'Open and copy controls']]} onChange={(next) => set('behavior.linkAction', next)} />
+    <Toggle label="Profile analytics" checked={document.behavior.analyticsEnabled} onChange={(next) => set('behavior.analyticsEnabled', next)} />
     <div className="studio-divider" /><h3>Transfer profile</h3><div className="studio-row"><button type="button" onClick={exportProfile}>Export JSON</button><label className="studio-upload">Import JSON<input type="file" accept="application/json,.json" onChange={(event) => importProfile(event.target.files?.[0])} /></label></div>
     <ProfileHistory user={user} username={username} onRestore={replaceDocument} />
     {message && <p role="status">{message}</p>}
