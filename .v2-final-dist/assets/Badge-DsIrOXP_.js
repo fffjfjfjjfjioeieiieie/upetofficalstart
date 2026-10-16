@@ -1,0 +1,1 @@
+import{j as t}from"./react-vendor-D2fEljz4.js";import{s as e}from"./Button-v5mefojf.js";function n({tone:s="neutral",children:a}){return t.jsx("span",{className:e.badge,"data-tone":s,children:a})}export{n as B};
