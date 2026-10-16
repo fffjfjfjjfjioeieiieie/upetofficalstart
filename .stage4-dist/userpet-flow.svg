@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" fill="none" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="blue-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#3877D8" stop-opacity=".08" />
+      <stop offset=".28" stop-color="#4D91F3" stop-opacity=".72" />
+      <stop offset=".62" stop-color="#70D7E7" stop-opacity=".46" />
+      <stop offset="1" stop-color="#557CE0" stop-opacity=".1" />
+    </linearGradient>
+    <linearGradient id="violet-wave" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#6755C9" stop-opacity=".08" />
+      <stop offset=".35" stop-color="#8A70E8" stop-opacity=".55" />
+      <stop offset=".7" stop-color="#527FD9" stop-opacity=".38" />
+      <stop offset="1" stop-color="#56B6D5" stop-opacity=".08" />
+    </linearGradient>
+    <filter id="soft-glow" x="-10%" y="-100%" width="120%" height="300%">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+  <g filter="url(#soft-glow)" opacity=".32" stroke-width="14">
+    <path stroke="url(#blue-wave)" d="M-100 510C120 495 198 370 405 393s318 205 520 180 263-201 469-187 289 138 626 71" />
+    <path stroke="url(#violet-wave)" d="M-90 645c241-111 320-159 526-108s299 162 502 110 297-192 487-134 293 167 587 110" />
+    <path stroke="url(#blue-wave)" d="M-130 340c217 77 345 192 535 162s298-201 507-161 296 190 494 161 330-167 618-114" />
+  </g>
+  <g stroke-width="1.7">
+    <path stroke="url(#blue-wave)" d="M-100 510C120 495 198 370 405 393s318 205 520 180 263-201 469-187 289 138 626 71" />
+    <path stroke="url(#violet-wave)" d="M-90 645c241-111 320-159 526-108s299 162 502 110 297-192 487-134 293 167 587 110" />
+    <path stroke="url(#blue-wave)" d="M-130 340c217 77 345 192 535 162s298-201 507-161 296 190 494 161 330-167 618-114" />
+  </g>
+</svg>
