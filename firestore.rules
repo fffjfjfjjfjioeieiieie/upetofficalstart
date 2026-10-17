@@ -76,7 +76,8 @@ service cloud.firestore {
     match /profiles/{username} {
       // Drafts now live in owner-only profileDrafts. Legacy documents that still
       // contain a draft stay private until their owner republishes them.
-      allow get: if !('draft' in resource.data)
+      allow get: if !exists(/databases/$(database)/documents/profiles/$(username))
+        || !('draft' in resource.data)
         || (founder() && (resource.data.get('ownerUid', '') == request.auth.uid || resource.data.get('uid', '') == request.auth.uid));
       allow list: if false;
 
