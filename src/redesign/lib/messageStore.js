@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { firestore } from '../../app/firebase.js';
 
 const messages = () => collection(firestore, 'shopMessages');
@@ -14,7 +14,11 @@ export async function sendShopMessage(ownerUsername, { senderName, senderContact
 
 export function subscribeShopMessages(ownerUsername, onChange, onError) {
   if (!firestore || !ownerUsername) return () => {};
-  return onSnapshot(query(messages(), where('ownerUsername', '==', ownerUsername), orderBy('createdAt', 'desc')), (snapshot) => onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))), onError);
+  return onSnapshot(query(messages(), where('ownerUsername', '==', ownerUsername)), (snapshot) => {
+    const entries = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+    entries.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    onChange(entries);
+  }, onError);
 }
 
 export async function markShopMessageRead(id, read = true) {
