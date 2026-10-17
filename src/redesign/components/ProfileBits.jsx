@@ -40,9 +40,25 @@ export const BadgeIcon = ({ id, size = 18, cfg }) => {
   const st = cfg || { style: "soft", bgAlpha: 0.15, glow: 0, monochrome: false };
   const color = st.monochrome ? st.color : b.color;
   const s = cfg ? cfg.size : size;
-  const bg = st.style === "plain" ? "transparent" : st.style === "solid" ? color : `${color}${alphaHex(st.bgAlpha)}`;
+  const isSoft = st.style === "soft";
+  const isSolid = st.style === "solid";
+  const isOutline = st.style === "outline";
+  const background = isSolid ? color : isSoft ? `${color}${alphaHex(st.bgAlpha)}` : "transparent";
+  const glow = Math.max(0, Number(st.glow) || 0);
   return (
-    <span data-testid={`badge-${id}`} className="inline-grid place-items-center rounded-full" style={{ width: s + 8, height: s + 8, background: bg, border: st.style === "outline" ? `1.5px solid ${color}` : "none", color: st.style === "solid" ? "#0b1626" : color, filter: st.glow ? `drop-shadow(0 0 ${st.glow}px ${color})` : undefined }}>
+    <span
+      data-testid={`badge-${id}`}
+      className="inline-grid place-items-center rounded-full transition-[width,height,background-color,border-color,filter,box-shadow] duration-150"
+      style={{
+        width: s + 10,
+        height: s + 10,
+        background,
+        border: isOutline ? `1.5px solid ${color}` : "1.5px solid transparent",
+        color: isSolid ? "#08111f" : color,
+        filter: glow ? `drop-shadow(0 0 ${Math.max(1, glow * 0.55)}px ${color})` : undefined,
+        boxShadow: glow ? `0 0 ${glow}px ${color}, inset 0 0 ${glow * 0.35}px ${color}` : undefined,
+      }}
+    >
       <Icon style={{ width: s, height: s }} />
     </span>
   );

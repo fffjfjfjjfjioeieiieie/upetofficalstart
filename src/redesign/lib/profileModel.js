@@ -163,10 +163,10 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       position: oneOf(source.tooltips?.position, ['top', 'bottom'], 'top'),
     },
     badgeStyle: {
-      style: oneOf(source.badgeStyle?.style, ['soft', 'solid', 'outline'], 'soft'),
+      style: oneOf(source.badgeStyle?.style, ['soft', 'solid', 'outline', 'plain'], 'soft'),
       bgAlpha: clamp(source.badgeStyle?.bgAlpha, 0, 1, 0.15),
       size: clamp(source.badgeStyle?.size, 8, 40, 14),
-      glow: clamp(source.badgeStyle?.glow, 0, 2, 0),
+      glow: clamp(source.badgeStyle?.glow, 0, 16, 0),
       monochrome: Boolean(source.badgeStyle?.monochrome),
       color: color(source.badgeStyle?.color, '#6cc4ff'),
     },

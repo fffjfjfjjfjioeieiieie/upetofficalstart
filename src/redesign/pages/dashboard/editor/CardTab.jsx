@@ -64,7 +64,10 @@ export default function CardTab() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <ToggleRow testid="badge-mono" label="Single color" checked={bs.monochrome} onChange={setB("monochrome")} />
-            <ColorRow testid="badge-color" label="Badge color" value={bs.color} onChange={setB("color")} />
+            <ColorRow testid="badge-color" label="Badge color" value={bs.color} onChange={(value) => {
+              setProfile("badgeStyle.color", value);
+              setProfile("badgeStyle.monochrome", true);
+            }} />
           </div>
         </div>
       </Panel>
