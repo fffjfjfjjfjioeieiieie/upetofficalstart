@@ -17,6 +17,21 @@ service cloud.firestore {
         ];
     }
 
+    function supportMembership() {
+      return get(/databases/$(database)/documents/supportStaff/$(request.auth.uid)).data;
+    }
+
+    function supportStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/supportStaff/$(request.auth.uid))
+        && supportMembership().active == true
+        && supportMembership().role in ['owner', 'support_admin', 'support_agent', 'moderator'];
+    }
+
+    function supportOwner() {
+      return supportStaff() && supportMembership().role == 'owner';
+    }
+
     function validUsername(username) {
       return username is string
         && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
@@ -238,6 +253,126 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
       allow delete: if false;
+    }
+
+    match /supportStaff/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || supportOwner());
+      allow list: if supportOwner();
+      // Existing verified founders may bootstrap their own owner membership.
+      // All later team changes are controlled by an active owner membership.
+      allow create: if founder()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'role', 'capabilities', 'active', 'createdAt', 'addedBy'])
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'owner'
+        && request.resource.data.active == true
+        && request.resource.data.addedBy == uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if supportOwner()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.role in ['owner', 'support_admin', 'support_agent', 'moderator']
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /supportTickets/{ticketId} {
+      allow get, list: if signedIn() && (resource.data.requesterUid == request.auth.uid || supportStaff());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reference', 'requesterUid', 'requesterEmail', 'subject', 'category', 'status', 'priority', 'assignedToUid', 'tags', 'resolutionSummary', 'createdAt', 'updatedAt', 'lastPublicMessageAt'])
+        && request.resource.data.requesterUid == request.auth.uid
+        && request.resource.data.requesterEmail == request.auth.token.email
+        && request.resource.data.reference is string
+        && request.resource.data.reference.matches('^UP-[0-9]{4}-[A-Z0-9]{6}$')
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() >= 6
+        && request.resource.data.subject.size() <= 120
+        && request.resource.data.category in ['Account access', 'Profile editor', 'Bugs', 'Safety/Abuse', 'Marketplace', 'Payment issue', 'Other']
+        && request.resource.data.status == 'open'
+        && request.resource.data.priority == 'normal'
+        && request.resource.data.assignedToUid == ''
+        && request.resource.data.tags.size() == 0
+        && request.resource.data.resolutionSummary == ''
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastPublicMessageAt == request.time;
+      allow update: if signedIn()
+        && request.resource.data.requesterUid == resource.data.requesterUid
+        && request.resource.data.requesterEmail == resource.data.requesterEmail
+        && request.resource.data.reference == resource.data.reference
+        && request.resource.data.createdAt == resource.data.createdAt
+        && ((resource.data.requesterUid == request.auth.uid
+          && resource.data.status != 'closed'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'lastPublicMessageAt'])
+          && (request.resource.data.status == resource.data.status || (resource.data.status == 'resolved' && request.resource.data.status == 'open')))
+          || (supportStaff()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'priority', 'assignedToUid', 'category', 'tags', 'resolutionSummary', 'updatedAt', 'lastPublicMessageAt'])
+            && request.resource.data.status in ['open', 'in_progress', 'waiting_on_user', 'resolved', 'closed']
+            && request.resource.data.priority in ['low', 'normal', 'high', 'urgent']))
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        function ticketAfter() {
+          return getAfter(/databases/$(database)/documents/supportTickets/$(ticketId)).data;
+        }
+        allow get, list: if signedIn()
+          && (supportStaff() || (ticketAfter().requesterUid == request.auth.uid && resource.data.visibility == 'public'));
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['authorUid', 'authorRole', 'visibility', 'body', 'attachments', 'createdAt', 'editedAt'])
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() >= 1
+          && request.resource.data.body.size() <= 5000
+          && request.resource.data.attachments.size() == 0
+          && request.resource.data.createdAt == request.time
+          && ((ticketAfter().requesterUid == request.auth.uid
+            && request.resource.data.authorRole == 'user'
+            && request.resource.data.visibility == 'public')
+            || (supportStaff()
+              && request.resource.data.authorRole in ['owner', 'support_admin', 'support_agent', 'moderator']
+              && request.resource.data.visibility in ['public', 'internal']));
+        allow update, delete: if false;
+      }
+
+      match /audit/{auditId} {
+        function auditTicket() {
+          return getAfter(/databases/$(database)/documents/supportTickets/$(ticketId)).data;
+        }
+        allow get, list: if supportStaff();
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['actorUid', 'action', 'changes', 'createdAt'])
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && (supportStaff() || (auditTicket().requesterUid == request.auth.uid && request.resource.data.action in ['ticket_created', 'public_reply_added']));
+        allow update, delete: if false;
+      }
+    }
+
+    match /helpArticles/{articleId} {
+      allow get, list: if resource.data.status == 'published' || supportStaff();
+      allow create, update: if supportStaff()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.status in ['draft', 'review', 'published', 'archived'];
+      allow delete: if supportOwner();
+    }
+
+    match /helpCategories/{categoryId} {
+      allow get, list: if resource.data.published == true || supportStaff();
+      allow create, update, delete: if supportOwner();
+    }
+
+    match /helpLegalDocuments/{slug} {
+      allow get, list: if resource.data.approved == true || supportStaff();
+      allow create, update: if supportOwner();
+      allow delete: if false;
+    }
+
+    match /helpFeedback/{feedbackId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow get, list, update, delete: if supportStaff();
     }
 
   }
