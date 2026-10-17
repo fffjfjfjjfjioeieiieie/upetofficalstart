@@ -13,7 +13,7 @@ export default function AudioTab() {
   const lyrics = a.lyrics || { enabled: false, lines: [] };
   const updateLyrics = (next) => set("lyrics")({ ...lyrics, ...next });
   const addLyric = () => updateLyrics({ lines: [...lyrics.lines, { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, time: 0, text: "" }] });
-  const updateLyric = (id, key, value) => updateLyrics({ lines: lyrics.lines.map((line) => line.id === id ? { ...line, [key]: key === "time" ? Number(value) || 0 : value } : line) });
+  const updateLyric = (id, key, value) => updateLyrics({ lines: lyrics.lines.map((line) => line.id === id ? { ...line, [key]: key === "time" ? (Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0) : value } : line) });
   const removeLyric = (id) => updateLyrics({ lines: lyrics.lines.filter((line) => line.id !== id) });
   const onTrack = async (e) => {
     const f = e.target.files[0];
@@ -69,7 +69,7 @@ export default function AudioTab() {
         {!lyrics.lines.length && <div className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/15 p-4 text-xs text-muted-foreground"><Captions className="h-4 w-4 text-primary" />Add each line and the second it begins in the track.</div>}
         <div className="mt-4 space-y-2">
           {lyrics.lines.map((line, index) => <div key={line.id} className="grid grid-cols-[84px_minmax(0,1fr)_36px] gap-2">
-            <input aria-label={`Lyric ${index + 1} timestamp`} data-testid={`lyric-time-${index}`} className={inputCls} type="number" min="0" step="0.01" value={line.time} onChange={(event) => updateLyric(line.id, "time", event.target.value)} />
+            <input aria-label={`Lyric ${index + 1} timestamp`} data-testid={`lyric-time-${index}`} className={inputCls} type="number" min="0" step="0.01" defaultValue={line.time} onFocus={(event) => { if (event.currentTarget.value === "0") event.currentTarget.select(); }} onBlur={(event) => updateLyric(line.id, "time", event.target.value)} />
             <input aria-label={`Lyric ${index + 1} text`} data-testid={`lyric-text-${index}`} className={inputCls} placeholder="Lyric line" value={line.text} onChange={(event) => updateLyric(line.id, "text", event.target.value)} />
             <button type="button" data-testid={`lyric-remove-${index}`} onClick={() => removeLyric(line.id)} aria-label="Remove lyric" className="grid place-items-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>)}
