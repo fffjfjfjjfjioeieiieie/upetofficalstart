@@ -18,8 +18,10 @@ const ASSET_RULES = {
   video: { types: VIDEO_TYPES, max: 100 },
 };
 
-function json(value, status = 200) {
-  return Response.json(value, { status });
+function parsedBody(request) {
+  if (request.body && typeof request.body === 'object') return request.body;
+  if (typeof request.body === 'string') return JSON.parse(request.body);
+  return {};
 }
 
 function ownedBlobUrl(value, uid) {
@@ -33,10 +35,10 @@ function ownedBlobUrl(value, uid) {
   }
 }
 
-export default async function handler(request) {
+export default async function handler(request, response) {
   try {
     if (request.method === 'POST') {
-      const body = await request.json();
+      const body = parsedBody(request);
       const result = await handleUpload({
         body,
         request,
@@ -60,26 +62,26 @@ export default async function handler(request) {
         },
         onUploadCompleted: async () => {},
       });
-      return json(result);
+      return response.status(200).json(result);
     }
 
     const account = await verifyFirebaseToken(bearerToken(request));
 
     if (request.method === 'GET') {
       const result = await list({ prefix: `profiles/${account.uid}/`, limit: 100 });
-      return json({ blobs: result.blobs });
+      return response.status(200).json({ blobs: result.blobs });
     }
 
     if (request.method === 'DELETE') {
-      const { url } = await request.json();
-      if (!ownedBlobUrl(url, account.uid)) return json({ error: 'That file does not belong to this profile.' }, 403);
+      const { url } = parsedBody(request);
+      if (!ownedBlobUrl(url, account.uid)) return response.status(403).json({ error: 'That file does not belong to this profile.' });
       await del(url);
-      return json({ ok: true });
+      return response.status(200).json({ ok: true });
     }
 
-    return json({ error: 'Method not allowed.' }, 405);
+    return response.status(405).json({ error: 'Method not allowed.' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Blob request failed.';
-    return json({ error: message }, message.includes('Sign in') ? 401 : 400);
+    return response.status(message.includes('Sign in') ? 401 : 400).json({ error: message });
   }
 }

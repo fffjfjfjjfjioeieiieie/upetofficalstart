@@ -30,6 +30,8 @@ export async function verifyFirebaseToken(token) {
 }
 
 export function bearerToken(request) {
-  const header = request.headers.get('authorization') || '';
+  const header = typeof request.headers?.get === 'function'
+    ? request.headers.get('authorization') || ''
+    : request.headers?.authorization || '';
   return header.startsWith('Bearer ') ? header.slice(7) : '';
 }
