@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { toast } from "sonner";
-import { Upload, Music, Trash2 } from "lucide-react";
+import { Upload, Music, Trash2, Plus, Captions } from "lucide-react";
 import { useStore, fileToDataUrl } from "../../../lib/store";
 import { Panel, SliderRow, ToggleRow, Field, inputCls } from "../../../components/Controls";
 
@@ -10,6 +10,11 @@ export default function AudioTab() {
   const set = (k) => (v) => setProfile(`audio.${k}`, v);
   const track = useRef(null);
   const cover = useRef(null);
+  const lyrics = a.lyrics || { enabled: false, lines: [] };
+  const updateLyrics = (next) => set("lyrics")({ ...lyrics, ...next });
+  const addLyric = () => updateLyrics({ lines: [...lyrics.lines, { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, time: 0, text: "" }] });
+  const updateLyric = (id, key, value) => updateLyrics({ lines: lyrics.lines.map((line) => line.id === id ? { ...line, [key]: key === "time" ? Number(value) || 0 : value } : line) });
+  const removeLyric = (id) => updateLyrics({ lines: lyrics.lines.filter((line) => line.id !== id) });
   const onTrack = async (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -53,6 +58,21 @@ export default function AudioTab() {
           <SliderRow testid="audio-volume" label="Volume" value={a.volume} min={0} max={1} step={0.01} onChange={set("volume")} />
           <ToggleRow testid="audio-autoplay" label="Autoplay on enter" checked={a.autoplay} onChange={set("autoplay")} />
           <ToggleRow testid="audio-loop" label="Loop" checked={a.loop} onChange={set("loop")} />
+        </div>
+      </Panel>
+      <Panel title="Lyrics" desc="Add timed lines. Visitors can tap the track title to open a synced lyrics view." testid="audio-lyrics">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <ToggleRow testid="lyrics-enabled" label="Enable lyrics on profile" checked={lyrics.enabled} onChange={(enabled) => updateLyrics({ enabled })} />
+          <button type="button" data-testid="lyrics-add-line" onClick={addLyric} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"><Plus className="h-3.5 w-3.5" />Add lyric</button>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">Use seconds from the beginning of the song, for example <span className="font-mono">83.5</span> for 1:23.5.</p>
+        {!lyrics.lines.length && <div className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/15 p-4 text-xs text-muted-foreground"><Captions className="h-4 w-4 text-primary" />Add each line and the second it begins in the track.</div>}
+        <div className="mt-4 space-y-2">
+          {lyrics.lines.map((line, index) => <div key={line.id} className="grid grid-cols-[84px_minmax(0,1fr)_36px] gap-2">
+            <input aria-label={`Lyric ${index + 1} timestamp`} data-testid={`lyric-time-${index}`} className={inputCls} type="number" min="0" step="0.01" value={line.time} onChange={(event) => updateLyric(line.id, "time", event.target.value)} />
+            <input aria-label={`Lyric ${index + 1} text`} data-testid={`lyric-text-${index}`} className={inputCls} placeholder="Lyric line" value={line.text} onChange={(event) => updateLyric(line.id, "text", event.target.value)} />
+            <button type="button" data-testid={`lyric-remove-${index}`} onClick={() => removeLyric(line.id)} aria-label="Remove lyric" className="grid place-items-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /></button>
+          </div>)}
         </div>
       </Panel>
     </>

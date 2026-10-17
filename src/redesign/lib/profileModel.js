@@ -56,7 +56,7 @@ export const defaultProfile = (username = '') => ({
     discord: { enabled: false, userId: '', alpha: 0.5, radius: 16, accent: '#5865f2' },
     tiktok: { enabled: false, username: '', videoUrl: '', alpha: 0.5, radius: 16, accent: '#25f4ee' },
   },
-  audio: { src: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true },
+  audio: { src: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true, lyrics: { enabled: false, lines: [] } },
   tooltips: { enabled: true, style: 'glass', color: '#0b1626', textColor: '#ffffff', position: 'top' },
   badgeStyle: { style: 'soft', bgAlpha: 0.15, size: 14, glow: 0, monochrome: false, color: '#6cc4ff' },
   shop: { enabled: false, name: '', description: '', currency: 'GBP', products: [] },
@@ -93,6 +93,11 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     stock: text(item?.stock, 20),
     type: oneOf(item?.type, ['digital', 'physical', 'service'], 'digital'),
   })).filter((item) => item.name) : [];
+  const lyricLines = Array.isArray(source.audio?.lyrics?.lines) ? source.audio.lyrics.lines.slice(0, 150).map((line, index) => ({
+    id: text(line?.id || `lyric-${index}`, 80),
+    time: clamp(line?.time, 0, 86_400, 0),
+    text: text(line?.text, 240),
+  })).filter((line) => line.text).sort((a, b) => a.time - b.time) : [];
   const savedBadges = Array.isArray(source.badges) ? source.badges.slice(0, 20).map((item) => text(item, 32)) : [];
   const grants = SYSTEM_BADGES[normalizedUsername] || [];
   const isFirstGrant = grants.some((item) => !savedBadges.includes(item));
@@ -173,6 +178,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       autoplay: Boolean(source.audio?.autoplay),
       volume: clamp(source.audio?.volume, 0, 1, 0.6),
       loop: source.audio?.loop !== false,
+      lyrics: { enabled: Boolean(source.audio?.lyrics?.enabled), lines: lyricLines },
     },
     tooltips: {
       enabled: source.tooltips?.enabled !== false,
