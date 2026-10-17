@@ -4,11 +4,11 @@ import { firestore } from '../../app/firebase.js';
 const threadRef = (id) => doc(firestore, 'shopConversations', id);
 const messageRef = (id) => collection(threadRef(id), 'messages');
 
-export async function beginShopConversation(ownerUsername, guestName, guestContact, body) {
+export async function beginShopConversation(ownerUsername, guestUsername, guestName, body) {
   if (!firestore) throw new Error('Chat is not configured yet.');
-  const name = String(guestName || '').trim(); const text = String(body || '').trim();
-  if (!name || !text) throw new Error('Enter your name and a message.');
-  const thread = await addDoc(collection(firestore, 'shopConversations'), { ownerUsername, guestName: name.slice(0, 80), guestContact: String(guestContact || '').trim().slice(0, 240), lastMessage: text.slice(0, 2000), lastSender: 'guest', unreadForOwner: true, unreadForGuest: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  const name = String(guestName || '').trim(); const handle = String(guestUsername || '').trim().toLowerCase(); const text = String(body || '').trim();
+  if (!handle || !name || !text) throw new Error('Sign in with your user.pet profile before starting a chat.');
+  const thread = await addDoc(collection(firestore, 'shopConversations'), { ownerUsername, guestUsername: handle, guestName: name.slice(0, 80), guestContact: '', lastMessage: text.slice(0, 2000), lastSender: 'guest', unreadForOwner: true, unreadForGuest: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   await addDoc(messageRef(thread.id), { sender: 'guest', body: text.slice(0, 2000), createdAt: serverTimestamp() });
   return thread.id;
 }
