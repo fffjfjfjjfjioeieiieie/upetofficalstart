@@ -1,4 +1,5 @@
 import { migrateProfile, toRendererProfile } from '../../shared/profileSchema.js';
+import { DEFAULT_SHOP_DESIGN, sanitizeShopDesign, sanitizeShopProduct } from '../shop/shopModel.js';
 
 const clamp = (value, min, max, fallback) => {
   const number = Number(value);
@@ -59,7 +60,7 @@ export const defaultProfile = (username = '') => ({
   audio: { src: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true, lyrics: { enabled: false, lines: [] } },
   tooltips: { enabled: true, style: 'glass', color: '#0b1626', textColor: '#ffffff', position: 'top' },
   badgeStyle: { style: 'soft', bgAlpha: 0.15, size: 14, glow: 0, monochrome: false, color: '#6cc4ff' },
-  shop: { enabled: false, private: true, name: '', description: '', contactUrl: '', currency: 'GBP', products: [] },
+  shop: { enabled: false, private: true, name: '', description: '', contactUrl: '', currency: 'GBP', design: DEFAULT_SHOP_DESIGN, products: [] },
   linkStyle: { mode: 'list', iconColor: 'brand', glow: 0.6, glowColor: '', size: 18, radius: 12 },
   integrations: {},
 });
@@ -84,15 +85,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     url: externalUrl(item?.url),
     platform: text(item?.platform || 'website', 32).toLowerCase(),
   })).filter((item) => item.url) : [];
-  const products = Array.isArray(source.shop?.products) ? source.shop.products.slice(0, 50).map((item, index) => ({
-    id: text(item?.id || `product-${index}`, 80),
-    name: text(item?.name, 100),
-    price: text(item?.price, 20),
-    image: assetUrl(item?.image),
-    description: text(item?.description, 500),
-    stock: text(item?.stock, 20),
-    type: oneOf(item?.type, ['digital', 'physical', 'service'], 'digital'),
-  })).filter((item) => item.name) : [];
+  const products = Array.isArray(source.shop?.products) ? source.shop.products.slice(0, 50).map(sanitizeShopProduct).filter((item) => item.name) : [];
   const lyricLines = Array.isArray(source.audio?.lyrics?.lines) ? source.audio.lyrics.lines.slice(0, 150).map((line, index) => ({
     id: text(line?.id || `lyric-${index}`, 80),
     time: clamp(line?.time, 0, 86_400, 0),
@@ -202,6 +195,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       description: text(source.shop?.description, 500),
       contactUrl: externalUrl(source.shop?.contactUrl),
       currency: oneOf(source.shop?.currency, ['USD', 'EUR', 'GBP'], 'GBP'),
+      design: sanitizeShopDesign(source.shop?.design),
       products,
     },
     linkStyle: {

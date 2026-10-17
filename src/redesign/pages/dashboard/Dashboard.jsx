@@ -10,7 +10,7 @@ const Editor = lazy(() => import('./Editor'));
 const Badges = lazy(() => import('./Badges'));
 const Leaderboard = lazy(() => import('./Leaderboard'));
 const Settings = lazy(() => import('./Settings'));
-const Shop = lazy(() => import('./Shop'));
+const Shop = lazy(() => import('../../shop/ShopEditor'));
 const Notifications = lazy(() => import('./Notifications'));
 const Conversation = lazy(() => import('./Conversation'));
 

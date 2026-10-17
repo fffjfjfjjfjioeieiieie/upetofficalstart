@@ -12,9 +12,9 @@ import Login from "./pages/Login";
 import ClaimUsername from "./pages/ClaimUsername";
 
 const Explore = lazy(() => import('./pages/Explore'));
-const Marketplace = lazy(() => import('./pages/Marketplace'));
+const Marketplace = lazy(() => import('./shop/Marketplace'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const ShopfrontPage = lazy(() => import('./pages/ShopfrontPage'));
+const ShopfrontPage = lazy(() => import('./shop/ShopfrontPage'));
 const ShopChatPage = lazy(() => import('./pages/ShopChatPage'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 
