@@ -145,5 +145,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /directoryProfiles/{username} {
+      // Public discovery contains only fields already displayed on published pages.
+      allow get, list: if true;
+      allow create, update: if founder()
+        && validUsername(username)
+        && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'displayName', 'alias', 'avatar', 'badges', 'shop', 'updatedAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.updatedAt == request.time
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+      allow delete: if false;
+    }
+
   }
 }
