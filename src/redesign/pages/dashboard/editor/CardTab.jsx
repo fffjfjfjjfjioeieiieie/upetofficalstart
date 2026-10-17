@@ -54,7 +54,7 @@ export default function CardTab() {
         </div>
       </Panel>
       <Panel title="Badges" desc="Style how badges look on your page." testid="badge-settings">
-        <div className="mb-4 flex items-center gap-2 rounded-xl bg-[#0b1626] p-3">{["staff", "verified", "premium", "og"].map((b) => <BadgeIcon key={b} id={b} cfg={bs} />)}</div>
+        <div className="mb-4 flex items-center gap-2 rounded-xl bg-[#0b1626] p-3">{["owner", "staff", "verified", "premium", "og"].map((b) => <BadgeIcon key={b} id={b} cfg={bs} />)}</div>
         <div className="space-y-4">
           <Chips testid="badge-style" value={bs.style} options={["soft", "solid", "outline", "plain"]} onChange={setB("style")} />
           <div className="grid gap-5 md:grid-cols-3">

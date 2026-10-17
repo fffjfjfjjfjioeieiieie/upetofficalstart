@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BADGES } from "../lib/catalog";
-import { ShieldCheck, Crown, Star, Sparkles, Zap, Bug, Heart, ShoppingBag } from "lucide-react";
+import { ShieldCheck, Crown, Star, Sparkles, Zap, Bug, Heart, ShoppingBag, Gem } from "lucide-react";
 
 export const mediaStyle = (m) => ({
   backgroundImage: m && m.src ? `url(${m.src})` : undefined,
@@ -29,7 +29,7 @@ export const Avatar = ({ media, name = "", size = 96, decoration, hue = 0, decoS
   );
 };
 
-const BADGE_ICON = { staff: ShieldCheck, verified: Sparkles, premium: Crown, og: Star, booster: Zap, bughunter: Bug, donor: Heart, seller: ShoppingBag };
+const BADGE_ICON = { owner: Gem, staff: ShieldCheck, verified: Sparkles, premium: Crown, og: Star, booster: Zap, bughunter: Bug, donor: Heart, seller: ShoppingBag };
 
 const alphaHex = (a) => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, "0");
 

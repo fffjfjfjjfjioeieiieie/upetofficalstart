@@ -46,6 +46,7 @@ export const useDecorations = () => {
 };
 
 export const BADGES = [
+  { id: "owner", label: "Owner", color: "#38bdf8", desc: "Owner of user.pet", lockedVisible: true },
   { id: "staff", label: "Staff", color: "#6cc4ff", desc: "user.pet team member" },
   { id: "verified", label: "Verified", color: "#3ba7ff", desc: "Verified identity" },
   { id: "premium", label: "Premium", color: "#ffd166", desc: "Supports user.pet" },

@@ -21,7 +21,7 @@ export default function Badges() {
             <motion.div key={b.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4 }} data-testid={`badge-card-${b.id}`} className={`glass rounded-2xl p-5 ${owned ? "" : "opacity-60"}`}>
               <div className="flex items-start justify-between">
                 <BadgeIcon id={b.id} size={22} />
-                {owned ? <Switch data-testid={`badge-toggle-${b.id}`} checked={shown.includes(b.id)} onCheckedChange={(v) => toggle(b.id, v)} /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                {owned ? (b.lockedVisible ? <span className="text-[10px] font-medium uppercase tracking-wider text-primary">Always shown</span> : <Switch data-testid={`badge-toggle-${b.id}`} checked={shown.includes(b.id)} onCheckedChange={(v) => toggle(b.id, v)} />) : <Lock className="h-4 w-4 text-muted-foreground" />}
               </div>
               <div className="mt-4 font-semibold">{b.label}</div>
               <div className="mt-1 text-xs text-muted-foreground">{b.desc}</div>

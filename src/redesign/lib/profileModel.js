@@ -26,6 +26,12 @@ const externalUrl = (value) => {
 
 const media = () => ({ src: '', zoom: 1, blur: 0, rotate: 0, size: 100, x: 50, y: 50 });
 
+// Founder badges are granted by the public username so public profile reads can
+// render them without exposing account emails or requiring a private user read.
+const SYSTEM_BADGES = {
+  lamp: ['owner', 'staff', 'verified', 'premium', 'og'],
+};
+
 export const defaultProfile = (username = '') => ({
   username,
   alias: username,
@@ -64,6 +70,7 @@ const cleanMedia = (source = {}) => ({
 
 export function sanitizeRedesignProfile(source = {}, username = '') {
   const fallback = defaultProfile(username);
+  const normalizedUsername = text(username || source.username, 20).toLowerCase();
   const links = Array.isArray(source.links) ? source.links.slice(0, 40).map((item, index) => ({
     id: text(item?.id || `link-${index}`, 80),
     label: text(item?.label, 80),
@@ -79,8 +86,13 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     stock: text(item?.stock, 20),
     type: oneOf(item?.type, ['digital', 'physical', 'service'], 'digital'),
   })).filter((item) => item.name) : [];
-  const badges = Array.isArray(source.badges) ? source.badges.slice(0, 20).map((item) => text(item, 32)) : [];
-  const shownBadges = Array.isArray(source.shownBadges) ? source.shownBadges.slice(0, 6).map((item) => text(item, 32)).filter((item) => badges.includes(item)) : [];
+  const savedBadges = Array.isArray(source.badges) ? source.badges.slice(0, 20).map((item) => text(item, 32)) : [];
+  const grants = SYSTEM_BADGES[normalizedUsername] || [];
+  const isFirstGrant = grants.some((item) => !savedBadges.includes(item));
+  const badges = [...new Set([...savedBadges, ...grants])];
+  const savedShown = Array.isArray(source.shownBadges) ? source.shownBadges.slice(0, 6).map((item) => text(item, 32)).filter((item) => badges.includes(item)) : [];
+  const migratedShown = isFirstGrant ? [...new Set([...savedShown, ...grants])] : savedShown;
+  const shownBadges = [...new Set([...migratedShown, ...grants.filter((item) => item === 'owner')])].slice(0, 6);
   const integrations = {};
   for (const provider of ['discord', 'spotify', 'tiktok', 'github']) {
     const entry = source.integrations?.[provider];
@@ -88,7 +100,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
   }
 
   const profile = {
-    username: text(username || source.username, 20).toLowerCase(),
+    username: normalizedUsername,
     alias: text(source.alias || fallback.alias, 40),
     displayName: text(source.displayName || fallback.displayName, 40),
     bio: text(source.bio, 500),
