@@ -1,4 +1,4 @@
-# Upet Help Centre progress
+﻿# Upet Help Centre progress
 
 Last updated: 17 October 2026
 
@@ -10,12 +10,12 @@ Last updated: 17 October 2026
 - Hosting: one Vercel project currently owns `user.pet`, `www.user.pet` and `help.user.pet`.
 - Integration choice: `src/main.jsx` selects the isolated `HelpApp` only on `help.user.pet`. `/help-preview` provides a local/review route. The main user.pet application and routes are unchanged.
 - Authentication persistence is origin-scoped, so a user may need to sign in separately at `help.user.pet`. The same Firebase UID remains authoritative.
-- Actual Upet logo component and existing shadcn/ui sources are reused. No parallel UI dependency set was installed.
+- Existing Upet logo asset and shadcn/ui sources are reused. No parallel UI dependency set was installed.
 
 ## Stage status
 
 - Stage A — complete: audit, feature branch, isolated host-aware app, shell, routing and tokens.
-- Stage B — complete for initial release: responsive home, categories, bundled reviewed starter guides, search, category and article pages.
+- Stage B — expanded: responsive search-led home, categories, 23 bundled guides, searchable article contents, category and article pages with reading navigation.
 - Stage C — complete for text tickets: authenticated creation, private list, private thread, replies, validation and Firestore persistence. Attachments are visibly unavailable pending scanning/private-download support.
 - Stage D — complete for the initial owner inbox: live inbox, search/filter, public replies, internal notes, assignment to self, category/priority/status/resolution changes and append-only audit writes.
 - Stage E — safe initial release: stable legal routes show “Policy being prepared” unless an approved Firestore document exists. Owner-only private draft editor added. No legal draft is auto-published.
@@ -23,6 +23,8 @@ Last updated: 17 October 2026
 - Stage G — released: production build, Firestore rules/indexes, main-branch merge and Vercel deployment completed. Responsive browser review and permission-denial emulator coverage remain follow-up work.
 
 ## Known release limits
+
+- The 17 October editorial pass adds fourteen practical guides and redesigns public Help Centre pages. Guidance describes current product behaviour; policy pages still require legal approval before publication.
 
 - Public account registration is not open in the main product. Ticket access therefore works for existing Firebase accounts.
 - Ticket attachments, email notifications, Discord webhooks, SLA/overdue calculations, exports and deletion workflows are unavailable.

@@ -1,4 +1,5 @@
 import { CreditCard, Link2, Palette, Shield, ShoppingBag, UserRound } from 'lucide-react';
+import { moreArticles } from './moreArticles';
 
 export const categories = [
   { slug: 'account-login', name: 'Account & Login', description: 'Signing in, passwords and account access.', icon: UserRound, available: true },
@@ -49,11 +50,12 @@ export const articles = [
     ['Profile privacy', ['Avoid publishing home addresses, private phone numbers or authentication details.', 'Review uploaded media for hidden or background information.', 'Remove links that reveal more than you intend.']],
     ['Suspicious contact', ['Do not send passwords, recovery links or one-time codes.', 'Block contact off-platform when appropriate and report the account to Upet.']],
   ], ['privacy', 'security']),
+  ...moreArticles,
 ];
 
 export const categoryBySlug = (slug) => categories.find((category) => category.slug === slug);
 export const articleBySlug = (slug) => articles.find((entry) => entry.slug === slug && entry.status === 'published');
 export const searchArticles = (query, category = '') => {
   const needle = String(query || '').trim().toLowerCase();
-  return articles.filter((entry) => entry.status === 'published' && (!category || entry.category === category) && (!needle || `${entry.title} ${entry.excerpt} ${entry.tags.join(' ')}`.toLowerCase().includes(needle)));
+  return articles.filter((entry) => entry.status === 'published' && (!category || entry.category === category) && (!needle || `${entry.title} ${entry.excerpt} ${entry.tags.join(' ')} ${entry.sections.flatMap(([heading, steps]) => [heading, ...steps]).join(' ')}`.toLowerCase().includes(needle)));
 };
