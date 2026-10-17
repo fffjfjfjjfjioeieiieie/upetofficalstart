@@ -8,7 +8,8 @@ The returned `userpet-source.zip` frontend is mounted from `src/redesign`. The o
 - The approved founder email list remains in `src/app/FounderGate.jsx` and `firestore.rules`.
 - Claimed usernames continue to use the existing transactional `users` and `usernames` documents.
 - Existing version 1 profile documents remain readable. New redesign state is sanitized and stored in `published.redesign` alongside a compatible version 1 document.
-- Profile media uses Firebase Storage under the existing per-user paths and size/type rules.
+- Profile media uses the public Vercel Blob store `userpet-media`. Direct browser uploads are authorized by `api/blob.js`, which verifies the current Firebase ID token and founder email before issuing a short-lived upload token.
+- Blob objects remain grouped under `profiles/{uid}/`, retain the existing size/type limits, and can only be listed or deleted by their Firebase owner.
 - Profile views continue to use `profileEvents`.
 - A public `directoryProfiles` projection supports Explore and Marketplace without exposing private account documents. Its rules must be deployed with the frontend release.
 
@@ -23,8 +24,9 @@ The returned `userpet-source.zip` frontend is mounted from `src/redesign`. The o
 ## Release order
 
 1. Review and deploy `firestore.rules` so `directoryProfiles` reads and owner writes are available.
-2. Build the Vite app with the existing production Firebase environment variables.
-3. Smoke-test login, claim, editor save, upload, public profile, Explore, and Marketplace against Firebase.
-4. Deploy the frontend only after approval.
+2. Confirm the Vercel project has the `BLOB_READ_WRITE_TOKEN` created by its linked `userpet-media` store.
+3. Build the Vite app with the existing production Firebase environment variables.
+4. Smoke-test login, claim, editor save, Blob upload, public profile, Explore, and Marketplace.
+5. Deploy the frontend only after approval.
 
 No deployment was performed during this integration.
