@@ -1,7 +1,7 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
 import { motion } from "framer-motion";
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink } from "lucide-react";
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { Logo } from "../../components/Logo";
 import { Avatar } from "../../components/ProfileBits";
@@ -11,11 +11,13 @@ const Badges = lazy(() => import('./Badges'));
 const Leaderboard = lazy(() => import('./Leaderboard'));
 const Settings = lazy(() => import('./Settings'));
 const Shop = lazy(() => import('./Shop'));
+const Notifications = lazy(() => import('./Notifications'));
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
   ["editor", "Editor", PenTool],
   ["shop", "Shop", Store],
+  ["notifications", "Notifications", Bell],
   ["badges", "Badges", Award],
   ["leaderboard", "Leaderboard", Trophy],
   ["settings", "Settings", Cog],
@@ -63,7 +65,7 @@ const MobileNav = () => {
         <span className="text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span>
       </header>
       <nav className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-2xl p-1.5 md:hidden">
-        {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'settings'].includes(path)).map(([path, label, Icon]) => (
+        {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'notifications'].includes(path)).map(([path, label, Icon]) => (
           <NavLink key={path} to={`/dashboard/${path}`} className={({ isActive }) => `flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}>
             <Icon className="h-4 w-4" />{label}
           </NavLink>
@@ -85,6 +87,7 @@ export default function Dashboard() {
           <Route path="overview" element={<Overview />} />
           <Route path="editor" element={<Editor />} />
           <Route path="shop" element={<Shop />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="badges" element={<Badges />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="settings" element={<Settings />} />

@@ -3,6 +3,7 @@ import { Play, Pause, Music2, ChevronDown, Globe, MapPin, X, Captions, Store, Sh
 import { Avatar, BadgeIcon, BackgroundFx, FxText, MediaLayer, OverlayFx, Tip } from "./ProfileBits";
 import { DiscordWidget, TikTokWidget, hexA } from "./Widgets";
 import { iconUrl, BRAND, BADGES } from "../lib/catalog";
+import { sendShopMessage } from "../lib/messageStore";
 
 const formatTime = (seconds) => {
   const safe = Math.max(0, Number(seconds) || 0);
@@ -36,6 +37,7 @@ const LyricsSheet = ({ audio, currentTime, accent, onClose }) => {
 
 const StorefrontSheet = ({ profile, onClose }) => {
   const [message, setMessage] = useState("");
+  const [compose, setCompose] = useState(false);
   const shop = profile.shop;
   const money = (price) => price ? new Intl.NumberFormat(undefined, { style: "currency", currency: shop.currency || "GBP" }).format(Number(price)) : "Price on request";
   useEffect(() => {
@@ -61,10 +63,25 @@ const StorefrontSheet = ({ profile, onClose }) => {
           </article>)}</div>
           {!shop.products.length && <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-white/50">This shop is being stocked.</div>}
         </div>
-        <footer className="border-t border-white/10 p-4"><a data-testid="shop-contact" href={shop.contactUrl || "#"} target={shop.contactUrl ? "_blank" : undefined} rel="noreferrer" onClick={(event) => { if (!shop.contactUrl) { event.preventDefault(); setMessage("The seller has not added a contact link yet."); } }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/15"><MessageCircle className="h-4 w-4" />Contact seller</a></footer>
+        <footer className="flex flex-wrap gap-2 border-t border-white/10 p-4"><button type="button" data-testid="shop-contact" onClick={() => setCompose(true)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/15"><MessageCircle className="h-4 w-4" />Message seller</button>{shop.contactUrl && <a href={shop.contactUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center rounded-xl border border-white/15 px-3 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10">Contact link</a>}</footer>
       </section>
+      {compose && <MessageSellerSheet ownerUsername={profile.username} shopName={shop.name || `${profile.username}'s shop`} onClose={() => setCompose(false)} />}
     </div>
   );
+};
+
+const MessageSellerSheet = ({ ownerUsername, shopName, onClose }) => {
+  const [senderName, setSenderName] = useState("");
+  const [senderContact, setSenderContact] = useState("");
+  const [body, setBody] = useState("");
+  const [state, setState] = useState("idle");
+  const submit = async (event) => {
+    event.preventDefault();
+    setState("sending");
+    try { await sendShopMessage(ownerUsername, { senderName, senderContact, body }); setState("sent"); }
+    catch (error) { setState(error?.message || "Message could not be sent."); }
+  };
+  return <div className="fixed inset-0 z-[80] grid place-items-end bg-black/70 p-3 backdrop-blur-md sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`Message ${shopName}`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><form onSubmit={submit} className="w-full max-w-md rounded-[28px] border border-white/15 bg-[#111319] p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-medium uppercase tracking-[.2em] text-primary">Shop messages</p><h3 className="mt-1 font-display text-xl font-bold text-white">Message {shopName}</h3></div><button type="button" onClick={onClose} aria-label="Close message form" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button></div>{state === "sent" ? <div className="mt-5 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-sm text-primary">Your message was sent. The seller can reply using the contact details you provided.</div> : <><div className="mt-5 grid gap-3"><input required value={senderName} onChange={(event) => setSenderName(event.target.value)} placeholder="Your name" className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /><input value={senderContact} onChange={(event) => setSenderContact(event.target.value)} placeholder="Email, Discord, or another way to reply (optional)" className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /><textarea required rows={5} value={body} onChange={(event) => setBody(event.target.value)} placeholder="Write your message…" className="resize-none rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /></div>{state !== "idle" && state !== "sending" && <p className="mt-3 text-xs text-red-300">{state}</p>}<button disabled={state === "sending"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><MessageCircle className="h-4 w-4" />{state === "sending" ? "Sending…" : "Send message"}</button></>}</form></div>;
 };
 
 const ShopButton = ({ p }) => {

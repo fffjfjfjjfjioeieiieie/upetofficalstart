@@ -12,7 +12,8 @@ service cloud.firestore {
           'zurihcs@gmail.com',
           'lampjustlamp123@gmail.com',
           'iamjayvonlol@gmail.com',
-          'riotsoffical@proton.me'
+          'riotsoffical@proton.me',
+          'daalt38@gmail.com'
         ];
     }
 
@@ -143,6 +144,31 @@ service cloud.firestore {
         && request.resource.data.document.schemaVersion == 1
         && getAfter(/databases/$(database)/documents/profiles/$(username)).data.ownerUid == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    match /shopMessages/{messageId} {
+      allow get, list: if founder()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername;
+      allow create: if exists(/databases/$(database)/documents/profiles/$(request.resource.data.ownerUsername))
+        && request.resource.data.keys().hasOnly(['ownerUsername', 'senderName', 'senderContact', 'body', 'read', 'createdAt'])
+        && request.resource.data.ownerUsername is string
+        && request.resource.data.ownerUsername.size() >= 3
+        && request.resource.data.ownerUsername.size() <= 20
+        && request.resource.data.senderName is string
+        && request.resource.data.senderName.size() >= 1
+        && request.resource.data.senderName.size() <= 80
+        && request.resource.data.senderContact is string
+        && request.resource.data.senderContact.size() <= 240
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 2000
+        && request.resource.data.read == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if founder()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
+      allow delete: if false;
     }
 
     match /directoryProfiles/{username} {
