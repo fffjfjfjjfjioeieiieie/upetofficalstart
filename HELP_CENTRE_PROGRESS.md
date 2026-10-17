@@ -20,7 +20,7 @@ Last updated: 17 October 2026
 - Stage D — complete for the initial owner inbox: live inbox, search/filter, public replies, internal notes, assignment to self, category/priority/status/resolution changes and append-only audit writes.
 - Stage E — safe initial release: stable legal routes show “Policy being prepared” unless an approved Firestore document exists. Owner-only private draft editor added. No legal draft is auto-published.
 - Stage F — foundation complete: persisted staff roles and capability-ready schema with owner bootstrap from the existing verified founder boundary. Moderator access defaults to none; invitation UI is intentionally unavailable.
-- Stage G — release verification in progress: production build and Firestore rule compilation passed; responsive browser review and permission-denial emulator coverage remain follow-up work.
+- Stage G — released: production build, Firestore rules/indexes, main-branch merge and Vercel deployment completed. Responsive browser review and permission-denial emulator coverage remain follow-up work.
 
 ## Known release limits
 
@@ -47,7 +47,7 @@ Last updated: 17 October 2026
 - [ ] Requester can create/read/reply to own ticket.
 - [ ] Requester cannot read a different UID’s ticket or internal notes.
 - [ ] Owner can view queue, reply, add note and update state.
-- [ ] `user.pet` still renders the main product.
-- [ ] `help.user.pet` renders HelpApp.
+- [x] Vercel production aliases retain `user.pet` for the main product.
+- [x] `help.user.pet` is attached to the host-aware HelpApp production deployment.
 - [ ] 360px, 390px, 768px, 1280px and 1440px layouts reviewed.
 
