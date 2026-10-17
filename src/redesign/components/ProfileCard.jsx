@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, Music2, ChevronDown, Globe, MapPin, X, Captions } from "lucide-react";
+import { Play, Pause, Music2, ChevronDown, Globe, MapPin, X, Captions, Store, ShoppingBag, MessageCircle } from "lucide-react";
 import { Avatar, BadgeIcon, BackgroundFx, FxText, MediaLayer, OverlayFx, Tip } from "./ProfileBits";
 import { DiscordWidget, TikTokWidget, hexA } from "./Widgets";
 import { iconUrl, BRAND, BADGES } from "../lib/catalog";
@@ -32,6 +32,45 @@ const LyricsSheet = ({ audio, currentTime, accent, onClose }) => {
       </section>
     </div>
   );
+};
+
+const StorefrontSheet = ({ profile, onClose }) => {
+  const [message, setMessage] = useState("");
+  const shop = profile.shop;
+  const money = (price) => price ? new Intl.NumberFormat(undefined, { style: "currency", currency: shop.currency || "GBP" }).format(Number(price)) : "Price on request";
+  useEffect(() => {
+    const close = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-end bg-black/75 p-3 backdrop-blur-md sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`${shop.name || profile.username} shop`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/15 bg-[#111319]/95 shadow-2xl">
+        <header className="flex items-center gap-3 border-b border-white/10 p-5">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl" style={{ background: `${profile.card.accent}25`, color: profile.card.accent }}><Store className="h-6 w-6" /></div>
+          <div className="min-w-0 flex-1"><p className="text-xs font-medium uppercase tracking-[.2em] text-white/45">{profile.displayName}'s shop</p><h3 className="truncate font-display text-xl font-bold text-white">{shop.name || `${profile.username}'s shop`}</h3></div>
+          <button type="button" onClick={onClose} aria-label="Close shop" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
+        </header>
+        <div className="max-h-[68svh] overflow-y-auto p-5"><p className="mb-5 text-sm text-white/60">{shop.description || "A little collection from this profile."}</p>
+          {message && <div role="status" className="mb-4 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-primary">{message}</div>}
+          <div className="grid gap-4 sm:grid-cols-2">{shop.products.map((product) => <article key={product.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[.035]">
+            <div className="relative aspect-[16/9] bg-black/20">{product.image ? <img src={product.image} alt={product.name} className="h-full w-full object-cover" /> : <Store className="absolute inset-0 m-auto h-7 w-7 text-white/35" />}</div>
+            <div className="p-4"><div className="flex items-start justify-between gap-3"><div><h4 className="font-semibold text-white">{product.name}</h4><p className="mt-1 text-xs capitalize text-white/50">{product.type || "digital"}{product.stock ? ` · ${product.stock} left` : ""}</p></div><strong className="shrink-0 text-sm" style={{ color: profile.card.accent }}>{money(product.price)}</strong></div>
+            {product.description && <p className="mt-3 text-sm text-white/60">{product.description}</p>}
+            <button type="button" data-testid={`shop-buy-${product.id}`} onClick={() => setMessage(`Checkout for ${product.name} is coming soon.`)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-black" style={{ background: profile.card.accent }}><ShoppingBag className="h-4 w-4" />Buy {product.name}</button></div>
+          </article>)}</div>
+          {!shop.products.length && <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-white/50">This shop is being stocked.</div>}
+        </div>
+        <footer className="border-t border-white/10 p-4"><a data-testid="shop-contact" href={shop.contactUrl || "#"} target={shop.contactUrl ? "_blank" : undefined} rel="noreferrer" onClick={(event) => { if (!shop.contactUrl) { event.preventDefault(); setMessage("The seller has not added a contact link yet."); } }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/15"><MessageCircle className="h-4 w-4" />Contact seller</a></footer>
+      </section>
+    </div>
+  );
+};
+
+const ShopButton = ({ p }) => {
+  const [open, setOpen] = useState(false);
+  if (!p.shop?.enabled) return null;
+  return <>{open && <StorefrontSheet profile={p} onClose={() => setOpen(false)} />}<button type="button" data-testid="profile-shop-open" onClick={() => setOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15"><Store className="h-4 w-4" style={{ color: p.card.accent }} />Visit {p.shop.name || "shop"}</button></>;
 };
 
 const AudioBar = ({ audio, accent }) => {
@@ -135,6 +174,7 @@ const Body = ({ p }) => {
       <Identity p={{ ...p, bio: "" }} align="left" avatarSize={72} />
       {p.bio && <p className="text-left text-sm" style={{ color: hexA(p.card.textColor, 0.8) }}>{p.bio}</p>}
       <Links p={p} compact />
+      <ShopButton p={p} />
       <AudioBar audio={p.audio} accent={accent} />
       <Widgets widgets={p.widgets} />
     </div>
@@ -148,6 +188,7 @@ const Body = ({ p }) => {
       )}
       <Identity p={p} />
       <Links p={p} compact={layout === "minimal" && p.linkStyle.mode !== "list"} />
+      <ShopButton p={p} />
       <AudioBar audio={p.audio} accent={accent} />
       <Widgets widgets={p.widgets} />
     </div>
@@ -161,8 +202,9 @@ export const SlideshowPage = ({ p }) => {
   const slides = [
     ["Profile", <Identity p={p} />],
     ["Links", <Links p={p} />],
+    ["Shop", <ShopButton p={p} />],
     ["Now", <div className="space-y-3"><AudioBar audio={p.audio} accent={p.card.accent} /><Widgets widgets={p.widgets} /></div>],
-  ].filter(([k], i) => i === 0 || (k === "Links" ? p.links.length : p.audio.src || p.widgets.discord.enabled || p.widgets.tiktok.enabled));
+  ].filter(([k], i) => i === 0 || (k === "Links" ? p.links.length : k === "Shop" ? p.shop?.enabled : p.audio.src || p.widgets.discord.enabled || p.widgets.tiktok.enabled));
   const go = (i) => ref.current.scrollTo({ top: i * ref.current.clientHeight, behavior: "smooth" });
   return (
     <div ref={ref} data-testid="slideshow-page" className="snap-slides scroll-thin absolute inset-0 overflow-y-auto">

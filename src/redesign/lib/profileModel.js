@@ -59,7 +59,7 @@ export const defaultProfile = (username = '') => ({
   audio: { src: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true, lyrics: { enabled: false, lines: [] } },
   tooltips: { enabled: true, style: 'glass', color: '#0b1626', textColor: '#ffffff', position: 'top' },
   badgeStyle: { style: 'soft', bgAlpha: 0.15, size: 14, glow: 0, monochrome: false, color: '#6cc4ff' },
-  shop: { enabled: false, name: '', description: '', currency: 'GBP', products: [] },
+  shop: { enabled: false, private: true, name: '', description: '', contactUrl: '', currency: 'GBP', products: [] },
   linkStyle: { mode: 'list', iconColor: 'brand', glow: 0.6, glowColor: '', size: 18, radius: 12 },
   integrations: {},
 });
@@ -197,8 +197,10 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     },
     shop: {
       enabled: Boolean(source.shop?.enabled),
+      private: Boolean(source.shop?.private),
       name: text(source.shop?.name, 100),
       description: text(source.shop?.description, 500),
+      contactUrl: externalUrl(source.shop?.contactUrl),
       currency: oneOf(source.shop?.currency, ['USD', 'EUR', 'GBP'], 'GBP'),
       products,
     },

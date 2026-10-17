@@ -18,7 +18,7 @@ const Placeholder = ({ i }) => (
 export default function Marketplace() {
   const { db } = useStore();
   const [q, setQ] = useState("");
-  const shops = useMemo(() => Object.values(db.users).filter((u) => !u.banned && u.profile.shop?.enabled && u.profile.shop.products.length && (u.profile.shop.name + u.username).toLowerCase().includes(q.toLowerCase())), [db, q]);
+  const shops = useMemo(() => Object.values(db.users).filter((u) => !u.banned && u.profile.shop?.enabled && !u.profile.shop.private && u.profile.shop.products.length && (u.profile.shop.name + u.username).toLowerCase().includes(q.toLowerCase())), [db, q]);
   return (
     <section className="mx-auto max-w-5xl px-6" data-testid="marketplace-page">
       <h1 className="text-3xl font-bold sm:text-4xl">Marketplace</h1>

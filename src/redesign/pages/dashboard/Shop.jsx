@@ -24,11 +24,13 @@ export default function Shop() {
       <PageTitle title="Shop" sub="Build your shop. Checkout and payments are coming soon." />
       <Panel title="Shop details" testid="shop-details">
         <div className="space-y-3">
-          <ToggleRow testid="shop-enabled" label="List my shop on the marketplace" checked={shop.enabled} onChange={set("enabled")} />
+          <ToggleRow testid="shop-enabled" label="Enable shop on my profile" checked={shop.enabled} onChange={(enabled) => { set("enabled")(enabled); if (enabled) set("private")(true); }} />
+          {shop.enabled && <div className="rounded-xl border border-primary/20 bg-primary/5 p-3"><div className="text-sm font-semibold">Where should your shop appear?</div><p className="mt-1 text-xs text-muted-foreground">Private shops are visible from your profile only. Public shops are also listed in Marketplace.</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" data-testid="shop-private" onClick={() => set("private")(true)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${shop.private ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>Private</button><button type="button" data-testid="shop-public" onClick={() => set("private")(false)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${!shop.private ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>Public marketplace</button></div></div>}
           <div className="grid gap-3 md:grid-cols-3">
             <Field label="Shop name"><input data-testid="shop-name" className={inputCls} value={shop.name} onChange={(e) => set("name")(e.target.value)} /></Field>
             <Field label="Currency"><select data-testid="shop-currency" className={inputCls} value={shop.currency} onChange={(e) => set("currency")(e.target.value)}>{["USD", "EUR", "GBP"].map((c) => <option key={c}>{c}</option>)}</select></Field>
             <Field label="Description"><input data-testid="shop-description" className={inputCls} value={shop.description} onChange={(e) => set("description")(e.target.value)} /></Field>
+            <Field label="Contact URL (optional)"><input data-testid="shop-contact-url" className={inputCls} placeholder="https://discord.gg/..." value={shop.contactUrl || ""} onChange={(e) => set("contactUrl")(e.target.value)} /></Field>
           </div>
         </div>
       </Panel>
