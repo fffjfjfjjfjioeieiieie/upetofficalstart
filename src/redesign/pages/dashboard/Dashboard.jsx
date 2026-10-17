@@ -12,6 +12,7 @@ const Leaderboard = lazy(() => import('./Leaderboard'));
 const Settings = lazy(() => import('./Settings'));
 const Shop = lazy(() => import('./Shop'));
 const Notifications = lazy(() => import('./Notifications'));
+const Conversation = lazy(() => import('./Conversation'));
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
@@ -88,6 +89,7 @@ export default function Dashboard() {
           <Route path="editor" element={<Editor />} />
           <Route path="shop" element={<Shop />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/:threadId" element={<Conversation />} />
           <Route path="badges" element={<Badges />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="settings" element={<Settings />} />

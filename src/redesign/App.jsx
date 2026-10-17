@@ -14,6 +14,8 @@ import ClaimUsername from "./pages/ClaimUsername";
 const Explore = lazy(() => import('./pages/Explore'));
 const Marketplace = lazy(() => import('./pages/Marketplace'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ShopfrontPage = lazy(() => import('./pages/ShopfrontPage'));
+const ShopChatPage = lazy(() => import('./pages/ShopChatPage'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 
 const NAMES = { "": "Home", explore: "Explore", marketplace: "Marketplace", legal: "Legal", login: "Login", privacy: "Privacy", terms: "Terms", support: "Support", status: "Status", changelog: "Changelog" };
@@ -68,6 +70,8 @@ function App() {
             <Route path="/login" element={<Shell><Login /></Shell>} />
             <Route path="/claim" element={<Shell><ClaimUsername /></Shell>} />
             <Route path="/dashboard/*" element={<Guard><Dashboard /></Guard>} />
+            <Route path="/:username/shop/chat/:threadId" element={<ShopChatPage />} />
+            <Route path="/:username/shop" element={<ShopfrontPage />} />
             <Route path="/:username" element={<ProfilePage />} />
           </Routes></Suspense>
         </BrowserRouter>

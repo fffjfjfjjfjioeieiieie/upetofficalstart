@@ -172,6 +172,48 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /shopConversations/{conversationId} {
+      allow get: if true;
+      allow list: if founder()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername;
+      allow create: if exists(/databases/$(database)/documents/profiles/$(request.resource.data.ownerUsername))
+        && request.resource.data.keys().hasOnly(['ownerUsername', 'guestName', 'guestContact', 'lastMessage', 'lastSender', 'unreadForOwner', 'unreadForGuest', 'createdAt', 'updatedAt'])
+        && request.resource.data.ownerUsername is string
+        && request.resource.data.guestName is string
+        && request.resource.data.guestName.size() >= 1
+        && request.resource.data.guestName.size() <= 80
+        && request.resource.data.guestContact is string
+        && request.resource.data.guestContact.size() <= 240
+        && request.resource.data.lastMessage is string
+        && request.resource.data.lastMessage.size() >= 1
+        && request.resource.data.lastMessage.size() <= 2000
+        && request.resource.data.lastSender == 'guest'
+        && request.resource.data.unreadForOwner == true
+        && request.resource.data.unreadForGuest == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastSender', 'unreadForOwner', 'unreadForGuest', 'updatedAt'])
+        && request.resource.data.lastMessage is string
+        && request.resource.data.lastMessage.size() >= 1
+        && request.resource.data.lastMessage.size() <= 2000
+        && request.resource.data.lastSender in ['guest', 'owner']
+        && request.resource.data.updatedAt == request.time
+        && (request.resource.data.lastSender == 'guest' || (founder() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername));
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get, list: if true;
+        allow create: if request.resource.data.keys().hasOnly(['sender', 'body', 'createdAt'])
+          && request.resource.data.sender in ['guest', 'owner']
+          && request.resource.data.body is string
+          && request.resource.data.body.size() >= 1
+          && request.resource.data.body.size() <= 2000
+          && request.resource.data.createdAt == request.time
+          && (request.resource.data.sender == 'guest' || (founder() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == get(/databases/$(database)/documents/shopConversations/$(conversationId)).data.ownerUsername));
+        allow update, delete: if false;
+      }
+    }
+
     match /directoryProfiles/{username} {
       // Public discovery contains only fields already displayed on published pages.
       allow get, list: if true;

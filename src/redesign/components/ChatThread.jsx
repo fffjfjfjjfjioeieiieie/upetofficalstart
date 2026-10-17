@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react';
+import { Send } from 'lucide-react';
+import { sendConversationMessage, subscribeConversation, subscribeConversationMessages } from '../lib/chatStore';
+
+export default function ChatThread({ threadId, sender, title = 'Shop chat' }) {
+  const [thread, setThread] = useState(null); const [messages, setMessages] = useState([]); const [body, setBody] = useState(''); const [error, setError] = useState('');
+  useEffect(() => subscribeConversation(threadId, setThread, (reason) => setError(reason?.message || 'Chat could not load.')), [threadId]);
+  useEffect(() => subscribeConversationMessages(threadId, setMessages, (reason) => setError(reason?.message || 'Messages could not load.')), [threadId]);
+  const send = async (event) => { event.preventDefault(); try { await sendConversationMessage(threadId, sender, body); setBody(''); } catch (reason) { setError(reason?.message || 'Message could not send.'); } };
+  return <section className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border bg-card/80 shadow-2xl"><header className="border-b p-5"><p className="text-xs uppercase tracking-[.2em] text-primary">Live chat</p><h1 className="mt-1 font-display text-xl font-bold">{title}</h1><p className="mt-1 text-sm text-muted-foreground">{thread?.guestName || 'Loading conversation…'}</p></header>{error && <p className="m-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}<div className="flex-1 space-y-3 overflow-y-auto p-5">{messages.map((message) => <div key={message.id} className={`flex ${message.sender === sender ? 'justify-end' : 'justify-start'}`}><p className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm ${message.sender === sender ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>{message.body}</p></div>)}</div><form onSubmit={send} className="flex gap-2 border-t p-4"><input required value={body} onChange={(event) => setBody(event.target.value)} placeholder="Write a message…" className="min-w-0 flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary" /><button className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground"><Send className="h-4 w-4" /></button></form></section>;
+}

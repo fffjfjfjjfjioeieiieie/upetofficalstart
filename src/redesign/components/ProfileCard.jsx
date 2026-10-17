@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Play, Pause, Music2, ChevronDown, Globe, MapPin, X, Captions, Store, ShoppingBag, MessageCircle } from "lucide-react";
 import { Avatar, BadgeIcon, BackgroundFx, FxText, MediaLayer, OverlayFx, Tip } from "./ProfileBits";
 import { DiscordWidget, TikTokWidget, hexA } from "./Widgets";
@@ -85,9 +86,8 @@ const MessageSellerSheet = ({ ownerUsername, shopName, onClose }) => {
 };
 
 const ShopButton = ({ p }) => {
-  const [open, setOpen] = useState(false);
   if (!p.shop?.enabled) return null;
-  return <>{open && <StorefrontSheet profile={p} onClose={() => setOpen(false)} />}<button type="button" data-testid="profile-shop-open" onClick={() => setOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15"><Store className="h-4 w-4" style={{ color: p.card.accent }} />Visit {p.shop.name || "shop"}</button></>;
+  return <Link to={`/${p.username}/shop`} data-testid="profile-shop-open" className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15"><Store className="h-4 w-4" style={{ color: p.card.accent }} />Visit {p.shop.name || "shop"}</Link>;
 };
 
 const AudioBar = ({ audio, accent }) => {
