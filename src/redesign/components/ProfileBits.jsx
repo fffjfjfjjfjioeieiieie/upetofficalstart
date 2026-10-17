@@ -11,13 +11,21 @@ export const mediaStyle = (m) => ({
   transform: m?.rotate ? `rotate(${m.rotate}deg)` : undefined,
 });
 
+export const isVideoMedia = (m) => m?.type === "video" || String(m?.type || "").startsWith("video/") || /\.(mp4|webm|mov)(?:$|[?#])/i.test(String(m?.src || ""));
+
+export const MediaLayer = ({ media, className = "", style = {} }) => {
+  if (!media?.src) return null;
+  if (isVideoMedia(media)) return <video src={media.src} className={className} style={{ objectFit: "cover", objectPosition: `${media.x ?? 50}% ${media.y ?? 50}%`, filter: media.blur ? `blur(${media.blur}px)` : undefined, transform: `scale(${(media.zoom || 1) * (media.size || 100) / 100}) rotate(${media.rotate || 0}deg)`, ...style }} autoPlay loop muted playsInline preload="metadata" />;
+  return <div className={className} style={{ ...mediaStyle(media), ...style }} />;
+};
+
 export const Avatar = ({ media, name = "", size = 96, decoration, hue = 0, decoSize = 120, className = "" }) => {
   const s = Math.round(size * ((media?.size ?? 100) / 100));
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width: s, height: s }}>
       <div className="h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-sky-300 to-sky-600">
         {media?.src ? (
-          <div className="h-full w-full" style={{ ...mediaStyle(media), backgroundSize: `${(media.zoom || 1) * 100}%` }} />
+          <MediaLayer media={media} className="h-full w-full" style={isVideoMedia(media) ? { transform: `scale(${media.zoom || 1}) rotate(${media.rotate || 0}deg)` } : { backgroundSize: `${(media.zoom || 1) * 100}%` }} />
         ) : (
           <div className="grid h-full w-full place-items-center font-display font-bold text-white" style={{ fontSize: s * 0.38 }}>{(name[0] || "?").toUpperCase()}</div>
         )}

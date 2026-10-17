@@ -24,7 +24,13 @@ const externalUrl = (value) => {
   return /^https?:\/\//i.test(url) ? url : '';
 };
 
-const media = () => ({ src: '', zoom: 1, blur: 0, rotate: 0, size: 100, x: 50, y: 50 });
+const media = () => ({ src: '', type: '', zoom: 1, blur: 0, rotate: 0, size: 100, x: 50, y: 50 });
+
+const mediaType = (source = {}) => {
+  if (source.type === 'video' || String(source.type || '').startsWith('video/')) return 'video';
+  if (source.type === 'image' || String(source.type || '').startsWith('image/')) return 'image';
+  return /\.(mp4|webm|mov)(?:$|[?#])/i.test(String(source.src || '')) ? 'video' : source.src ? 'image' : '';
+};
 
 // Founder badges are granted by the public username so public profile reads can
 // render them without exposing account emails or requiring a private user read.
@@ -60,6 +66,7 @@ export const defaultProfile = (username = '') => ({
 
 const cleanMedia = (source = {}) => ({
   src: assetUrl(source.src),
+  type: mediaType(source),
   zoom: clamp(source.zoom, 0.25, 4, 1),
   blur: clamp(source.blur, 0, 40, 0),
   rotate: clamp(source.rotate, -180, 180, 0),
@@ -217,9 +224,9 @@ export function redesignFromDocument(document, username) {
     badges: source.badges,
     shownBadges: source.badges,
     media: {
-      avatar: { ...media(), src: source.avatarUrl, zoom: Number(source.avatarZoom || 100) / 100, rotate: source.avatarRotation, x: source.avatarCropX, y: source.avatarCropY },
-      banner: { ...media(), src: source.bannerUrl },
-      background: { ...media(), src: source.backgroundUrl, blur: source.backgroundBlur, x: source.backgroundPositionX, y: source.backgroundPositionY, zoom: Number(source.backgroundScale || 100) / 100 },
+      avatar: { ...media(), src: source.avatarUrl, type: mediaType({ src: source.avatarUrl }), zoom: Number(source.avatarZoom || 100) / 100, rotate: source.avatarRotation, x: source.avatarCropX, y: source.avatarCropY },
+      banner: { ...media(), src: source.bannerUrl, type: mediaType({ src: source.bannerUrl }) },
+      background: { ...media(), src: source.backgroundUrl, type: source.backgroundType === 'video' ? 'video' : mediaType({ src: source.backgroundUrl }), blur: source.backgroundBlur, x: source.backgroundPositionX, y: source.backgroundPositionY, zoom: Number(source.backgroundScale || 100) / 100 },
       cursor: { ...media(), src: source.cursorUrl },
     },
     effects: { text: source.usernameEffect, background: source.backgroundEffect, overlay: source.overlayEffect, decoration: source.avatarDecoration ? { id: source.avatarDecoration, label: 'Decoration', url: source.avatarDecoration } : null },
@@ -246,7 +253,7 @@ export function documentFromRedesign(source, uid, username) {
     avatarRotation: redesign.media.avatar.rotate,
     bannerUrl: redesign.media.banner.src,
     backgroundUrl: redesign.media.background.src,
-    backgroundType: redesign.media.background.src ? 'image' : 'color',
+    backgroundType: redesign.media.background.src ? (redesign.media.background.type === 'video' ? 'video' : 'image') : 'color',
     backgroundColor: redesign.card.bgColor,
     backgroundBlur: redesign.media.background.blur,
     backgroundPositionX: redesign.media.background.x,

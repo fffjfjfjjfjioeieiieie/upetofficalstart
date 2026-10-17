@@ -1,8 +1,8 @@
 import { upload } from '@vercel/blob/client';
 import imageCompression from 'browser-image-compression';
 
-const limitsMb = { avatar: 5, banner: 10, cursor: 5, background: 100, audio: 20, click: 5, image: 10, video: 100, cover: 5 };
-const accepted = { avatar: 'image/', banner: 'image/', cursor: 'image/', background: ['image/', 'video/'], audio: 'audio/', click: 'audio/', image: 'image/', video: 'video/', cover: 'image/' };
+const limitsMb = { avatar: 20, banner: 50, cursor: 5, background: 100, audio: 20, click: 5, image: 10, video: 100, cover: 5 };
+const accepted = { avatar: ['image/', 'video/'], banner: ['image/', 'video/'], cursor: 'image/', background: ['image/', 'video/'], audio: 'audio/', click: 'audio/', image: 'image/', video: 'video/', cover: 'image/' };
 
 function accepts(kind, mime) {
   const rule = accepted[kind];

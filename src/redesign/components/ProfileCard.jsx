@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Music2, ChevronDown, Globe, MapPin } from "lucide-react";
-import { Avatar, BadgeIcon, BackgroundFx, FxText, OverlayFx, Tip, mediaStyle } from "./ProfileBits";
+import { Avatar, BadgeIcon, BackgroundFx, FxText, MediaLayer, OverlayFx, Tip } from "./ProfileBits";
 import { DiscordWidget, TikTokWidget, hexA } from "./Widgets";
 import { iconUrl, BRAND, BADGES } from "../lib/catalog";
 
@@ -110,7 +110,7 @@ const Body = ({ p }) => {
     <div className="space-y-4">
       {layout === "banner" && (
         <div className="-mx-6 -mt-6 mb-[-52px] h-36 overflow-hidden" style={{ borderTopLeftRadius: p.card.radius, borderTopRightRadius: p.card.radius }}>
-          <div className="h-full w-full bg-gradient-to-br from-sky-400/60 to-indigo-500/40" style={mediaStyle(p.media.banner)} />
+          {p.media.banner.src ? <MediaLayer media={p.media.banner} className="h-full w-full" /> : <div className="h-full w-full bg-gradient-to-br from-sky-400/60 to-indigo-500/40" />}
         </div>
       )}
       <Identity p={p} />
@@ -152,7 +152,7 @@ export const ProfileScene = ({ p, className = "", children }) => {
   const bg = p.media.background;
   return (
     <div className={`relative overflow-hidden ${className}`} style={{ background: p.card.bgColor }}>
-      {bg.src && <div className="absolute inset-[-20px]" style={{ ...mediaStyle(bg), backgroundSize: "cover", transform: `scale(${(bg.zoom || 1) * (bg.size || 100) / 100}) rotate(${bg.rotate || 0}deg)` }} />}
+      {bg.src && <MediaLayer media={bg} className="absolute inset-[-20px] h-[calc(100%+40px)] w-[calc(100%+40px)]" style={{ backgroundSize: "cover" }} />}
       {!bg.src && <div className="absolute inset-0" style={{ background: `radial-gradient(60% 50% at 50% 10%, ${hexA(p.card.accent, 0.35)}, transparent 70%)` }} />}
       <BackgroundFx kind={p.effects.background} />
       {slideshow && !children ? <div className="absolute inset-0 z-10">{content}</div> : <div className="relative z-10 flex h-full w-full items-center justify-center p-6">{content}</div>}

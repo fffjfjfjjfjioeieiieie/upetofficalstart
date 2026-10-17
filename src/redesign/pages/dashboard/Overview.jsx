@@ -38,6 +38,7 @@ export default function Overview() {
     if (!f) return;
     try {
       setProfile("media.avatar.src", await fileToDataUrl(f, 400, 'avatar'));
+      setProfile("media.avatar.type", f.type.startsWith('video/') ? 'video' : 'image');
       toast.success("Profile picture updated");
     } catch (error) {
       toast.error(error?.message || 'Profile picture could not be uploaded');
@@ -85,7 +86,7 @@ export default function Overview() {
         <div className="grid gap-6 md:grid-cols-[auto_1fr_1fr]">
           <div className="flex flex-col items-center gap-3">
             <Avatar media={p.media.avatar} name={p.username} size={84} decoration={p.effects.decoration} hue={p.effects.decoHue} decoSize={p.effects.decoSize} />
-            <input ref={file} type="file" accept="image/*" hidden onChange={upload} />
+            <input ref={file} type="file" accept="image/*,video/mp4,video/webm,video/quicktime" hidden onChange={upload} />
             <button data-testid="overview-upload-pfp" onClick={() => file.current.click()} className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-primary/30"><Upload className="h-3.5 w-3.5" />Upload pfp</button>
           </div>
           <div className="space-y-3">

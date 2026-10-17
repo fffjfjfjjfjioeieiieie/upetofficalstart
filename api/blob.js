@@ -7,8 +7,8 @@ const AUDIO_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-wav', 'aud
 const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 const ASSET_RULES = {
-  avatar: { types: IMAGE_TYPES, max: 5 },
-  banner: { types: IMAGE_TYPES, max: 10 },
+  avatar: { types: [...IMAGE_TYPES, ...VIDEO_TYPES], max: 20 },
+  banner: { types: [...IMAGE_TYPES, ...VIDEO_TYPES], max: 50 },
   cursor: { types: IMAGE_TYPES, max: 5 },
   cover: { types: IMAGE_TYPES, max: 5 },
   image: { types: IMAGE_TYPES, max: 10 },
