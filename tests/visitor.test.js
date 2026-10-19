@@ -81,7 +81,7 @@ test('proxycheck v3 network intelligence maps to diagnostic fields', async () =>
   const prior = globalThis.fetch;
   const key = process.env.PROXYCHECK_API_KEY;
   process.env.PROXYCHECK_API_KEY = 'test-key';
-  globalThis.fetch = async () => ({ ok: true, json: async () => ({ status: 'ok', '203.0.113.10': { network: { asn: 'AS123', provider: 'Example ISP', organisation: 'Example Org', type: 'Hosting' }, location: { city: 'London', region: 'England', country: 'United Kingdom' }, detections: { vpn: true, proxy: false, tor: false, hosting: true, confidence: 91 }, operator: { name: 'Example VPN' } } }) });
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ status: 'ok', '203.0.113.10': { network: { asn: 'AS123', provider: 'Example ISP', organisation: 'Example Org', type: 'Hosting' }, location: { city_name: 'London', region_name: 'England', country_name: 'United Kingdom' }, detections: { vpn: true, proxy: false, tor: false, hosting: true, confidence: 91 }, operator: { name: 'Example VPN' } } }) });
   try {
     const result = await inspectIp('203.0.113.10');
     assert.equal(result.ip, undefined);

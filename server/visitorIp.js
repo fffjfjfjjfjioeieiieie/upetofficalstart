@@ -20,6 +20,6 @@ export async function inspectIp(ip) {
     const network = record.network || {};
     const location = record.location || {};
     const detections = record.detections || {};
-    return { status: 'ok', city: location.city || '', region: location.region || '', country: location.country || '', isp: network.provider || '', asn: network.asn || '', organisation: network.organisation || '', provider: record.operator?.name || network.provider || '', network: network.type || '', vpn: flag(detections.vpn), proxy: flag(detections.proxy), tor: flag(detections.tor), datacenter: flag(detections.hosting) || network.type === 'Hosting', confidence: detections.confidence ?? null };
+    return { status: 'ok', city: location.city_name || '', region: location.region_name || '', country: location.country_name || '', isp: network.provider || '', asn: network.asn || '', organisation: network.organisation || '', provider: record.operator?.name || network.provider || '', network: network.type || '', vpn: flag(detections.vpn), proxy: flag(detections.proxy), tor: flag(detections.tor), datacenter: flag(detections.hosting) || network.type === 'Hosting', confidence: detections.confidence ?? null };
   } catch { return { status: 'unavailable' }; }
 }
