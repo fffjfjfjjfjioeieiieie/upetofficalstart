@@ -1,4 +1,5 @@
 import { migrateProfile, toRendererProfile } from '../../shared/profileSchema.js';
+import { profileName } from '../../shared/profileIdentity.js';
 import { DEFAULT_SHOP_DESIGN, sanitizeShopDesign, sanitizeShopProduct } from '../shop/shopModel.js';
 
 const clamp = (value, min, max, fallback) => {
@@ -106,8 +107,8 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
 
   const profile = {
     username: normalizedUsername,
-    alias: text(source.alias || fallback.alias, 40),
-    displayName: text(source.displayName || fallback.displayName, 40),
+    alias: text(profileName(source.alias, normalizedUsername) || fallback.alias, 40),
+    displayName: text(profileName(source.displayName, normalizedUsername) || fallback.displayName, 40),
     bio: text(source.bio, 500),
     location: text(source.location, 80),
     views: clamp(source.views, 0, Number.MAX_SAFE_INTEGER, 0),
@@ -215,7 +216,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
 export function redesignFromDocument(document, username) {
   if (document?.redesign) return sanitizeRedesignProfile(document.redesign, username);
   let source;
-  try { source = toRendererProfile(document || {}, { username }); }
+  try { source = toRendererProfile(document || { username }, { username }); }
   catch { source = {}; }
   return sanitizeRedesignProfile({
     username,

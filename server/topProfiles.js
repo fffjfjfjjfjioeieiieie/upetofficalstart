@@ -1,4 +1,5 @@
 import { database } from './visitorStore.js';
+import { profileName } from '../src/shared/profileIdentity.js';
 
 const usernamePattern = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 const text = (value, length = 120) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, length);
@@ -27,8 +28,8 @@ function compactProfile(username, views, document, directory) {
   if (document?.status !== 'published' || !profile) return null;
   return {
     username, views,
-    displayName: text(profile.displayName || directory.displayName || username, 40),
-    alias: text(profile.alias || directory.alias || username, 40),
+    displayName: text(profileName(profile.displayName || directory.displayName, username), 40),
+    alias: text(profileName(profile.alias || directory.alias, username), 40),
     bio: text(profile.bio, 180),
     avatar: media(profile.media?.avatar || directory.avatar),
     banner: media(profile.media?.banner),
