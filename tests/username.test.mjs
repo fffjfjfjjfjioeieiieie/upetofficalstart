@@ -7,7 +7,7 @@ test('claims normalize case and whitespace without changing punctuation', () => 
 });
 
 test('reserved and invalid names cannot be claimed', () => {
-  for (const name of ['dashboard', 'Admin', 'ab', 'bad/name', 'contains space', 'a'.repeat(21)]) assert.throws(() => normalizeUsername(name));
+  for (const name of ['dashboard', 'business', 'biz', 'Admin', 'ab', 'bad/name', 'contains space', 'a'.repeat(21)]) assert.throws(() => normalizeUsername(name));
 });
 
 test('Dome is restricted to the associated founder email', () => {

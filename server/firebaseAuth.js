@@ -13,6 +13,7 @@ const FOUNDER_EMAILS = new Set([
   'riotsoffical@proton.me',
   'daalt38@gmail.com',
   'gabeandtheowenshow@gmail.com',
+  'whatdidido6969@gmail.com',
 ]);
 
 export async function verifyFirebaseIdentity(token) {
@@ -28,12 +29,12 @@ export async function verifyFirebaseIdentity(token) {
   const email = String(payload.email || '').trim().toLowerCase();
   if (!uid) throw new Error('Invalid account token.');
 
-  return { uid, email };
+  return { uid, email, emailVerified: payload.email_verified === true };
 }
 
 export async function verifyFirebaseToken(token) {
   const account = await verifyFirebaseIdentity(token);
-  if (!FOUNDER_EMAILS.has(account.email)) throw new Error('This account cannot manage profile files.');
+  if (!FOUNDER_EMAILS.has(account.email) || (account.email === 'whatdidido6969@gmail.com' && !account.emailVerified)) throw new Error('This account cannot manage profile files.');
   return account;
 }
 

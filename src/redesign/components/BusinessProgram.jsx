@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, BadgeCheck, LockKeyhole, Send, Store } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getBusinessApplication, submitBusinessApplication } from '../lib/businessProgram';
 import styles from '../pages/Home.module.css';
 
@@ -38,7 +39,7 @@ export default function BusinessProgram({ user }) {
   };
 
   return <section className={styles.businessSection} aria-labelledby="business-title" data-testid="business-program">
-    <div className={styles.businessIntro}><p className={styles.sectionKicker}><Store size={15} /> The business side of user.pet</p><h2 id="business-title">Got a business?</h2><p>Put your shop forward for the separate Verified Business programme. Founders can apply for a review; approved shops receive a verified business mark on their storefront.</p><div className={styles.businessPoints}><span><BadgeCheck size={15} /> Reviewed, not automatic</span><span><Store size={15} /> Built for your shop</span></div></div>
+    <div className={styles.businessIntro}><p className={styles.sectionKicker}><Store size={15} /> The business side of user.pet</p><h2 id="business-title">Got a business?</h2><p>Put your shop forward for the separate Verified Business programme. Founders can apply for a review; approved shops receive a verified business mark on their storefront.</p><div className={styles.businessPoints}><span><BadgeCheck size={15} /> Reviewed, not automatic</span><span><Store size={15} /> Built for your shop</span></div>{founder && <Link to="/business" className={styles.textLink} style={{ marginTop: 22 }}>Open business mode <ArrowUpRight size={16} /></Link>}</div>
     <div className={styles.businessPanel}>
       {!founder ? <div className={styles.businessLocked}><div className={styles.businessBlur} aria-hidden="true"><span>Business name</span><i /><span>What do you sell?</span><i /><span>Tell us about your shop</span><i /></div><div className={styles.businessLockMessage}><LockKeyhole size={25} /><strong>Founder access</strong><p>Business applications are open to invited user.pet founders.</p><a href="https://discord.gg/upet" target="_blank" rel="noreferrer">Join the community <ArrowUpRight size={15} /></a></div></div> : loading ? <p className={styles.businessStatus}>Loading your application…</p> : application?.status === 'approved' ? <div className={styles.businessResult}><BadgeCheck size={34} /><h3>Business verified</h3><p>Your shop has been approved for the programme.</p></div> : <>
         <div className={styles.businessPanelHeading}><span>Founder application</span>{application?.status && <span className={styles.businessStatusPill}>{application.status === 'rejected' ? 'Needs another look' : 'In review'}</span>}</div>

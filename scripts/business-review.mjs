@@ -20,7 +20,8 @@ if (action === 'list') {
     const profileRef = db.collection('profiles').doc(row.username);
     const profile = await transaction.get(profileRef);
     if (!profile.exists || profile.data().ownerUid !== uid) throw new Error('The applicant no longer owns this profile.');
-    if (action === 'approve' && !profile.data().published?.redesign?.shop?.enabled) throw new Error('The applicant must enable their shop before approval.');
+    const businessShop = await transaction.get(db.collection('businessShops').doc(row.username));
+    if (action === 'approve' && !profile.data().published?.redesign?.shop?.enabled && !(businessShop.exists && businessShop.data().ownerUid === uid && businessShop.data().enabled)) throw new Error('The applicant must enable their personal or business shop before approval.');
     transaction.update(applicationRef, { status: action === 'approve' ? 'approved' : 'rejected', reviewedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     if (action === 'approve') transaction.set(db.collection('verifiedBusinesses').doc(row.username), { username: row.username, ownerUid: uid, businessName: row.businessName, category: row.category, status: 'approved', verifiedAt: FieldValue.serverTimestamp() });
   });
