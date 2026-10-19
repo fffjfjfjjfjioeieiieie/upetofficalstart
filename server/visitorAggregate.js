@@ -33,12 +33,13 @@ export async function recordAggregate(request, body, ip) {
   const identity = createHash('sha256').update(`${process.env.VISITOR_RATE_SALT || 'aggregate'}:${ip || 'unknown'}`).digest();
   const shard = identity[1] & 15;
   const daily = database().collection('visitorDaily').doc(`${dateKey(at)}-${shard}`);
-  const live = database().collection('visitorLive').doc(`${bucketKey(at)}-${shard}`);
+  const live = database().collection('visitorLive').doc(`${bucketKey(at) % 4}-${shard}`);
   const { device, browser } = userAgent(request.headers['user-agent']);
   const source = sourceOf(body.referrer);
   const country = clean(request.headers['x-vercel-ip-country'], 2) || 'Unknown';
   const write = async (ref, kind) => database().runTransaction(async (tx) => {
-    const old = (await tx.get(ref)).data() || {};
+    const stored = (await tx.get(ref)).data() || {};
+    const old = kind === 'live' && stored.bucket !== bucketKey(at) ? {} : stored;
     const next = { ...old, hll: sketch(identity, old.hll), updatedAt: now(), expiresAt: expiry(kind === 'daily' ? 90 * 86400000 : 86400000) };
     if (kind === 'daily') {
       next.day = dateKey(at);
