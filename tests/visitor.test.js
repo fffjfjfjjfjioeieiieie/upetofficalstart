@@ -8,6 +8,7 @@ import { botActor } from '../server/visitorSecurity.js';
 import { diagnosticBody, notificationBody } from '../server/visitorNotify.js';
 import { estimate, recordAggregate, sketch, union } from '../server/visitorAggregate.js';
 import { createHash } from 'node:crypto';
+import { rankTopProfiles } from '../server/topProfiles.js';
 import visitorHandler from '../api/visitor.js';
 import adminHandler from '../api/visitor-admin.js';
 import pruneHandler from '../api/visitor-prune.js';
@@ -33,6 +34,14 @@ test('aggregate sketch estimates unique requests without retaining identifiers',
 test('deployment check routes do not enter visitor aggregates', async () => {
   const request = { headers: { 'user-agent': 'test' } };
   assert.equal(await recordAggregate(request, { type: 'page', route: '/deployment-check-production' }, '203.0.113.10'), null);
+});
+
+test('top profiles rank all-time views with stable ties', () => {
+  assert.deepEqual(rankTopProfiles([
+    { username: 'third', views: 2 }, { username: 'first', views: 10 },
+    { username: 'second', views: 4 }, { username: 'invalid/name', views: 100 },
+    { username: 'fourth', views: 2 },
+  ]).map((row) => row.username), ['first', 'second', 'fourth']);
 });
 
 test('ordinary visitor projection does not include full IP or owner data', () => {
