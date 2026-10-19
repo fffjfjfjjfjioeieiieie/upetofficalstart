@@ -6,7 +6,7 @@ import { inspectIp } from '../server/visitorIp.js';
 import { publicVisitor } from '../server/visitorStore.js';
 import { botActor } from '../server/visitorSecurity.js';
 import { diagnosticBody, notificationBody } from '../server/visitorNotify.js';
-import { estimate, sketch, union } from '../server/visitorAggregate.js';
+import { estimate, recordAggregate, sketch, union } from '../server/visitorAggregate.js';
 import { createHash } from 'node:crypto';
 import visitorHandler from '../api/visitor.js';
 import adminHandler from '../api/visitor-admin.js';
@@ -28,6 +28,11 @@ test('aggregate sketch estimates unique requests without retaining identifiers',
   const second = hashes.slice(50, 150).reduce((hll, bytes) => sketch(bytes, hll), []);
   assert.ok(Math.abs(estimate(first) - 100) < 35);
   assert.ok(Math.abs(estimate(union([{ hll: first }, { hll: second }])) - 150) < 45);
+});
+
+test('deployment check routes do not enter visitor aggregates', async () => {
+  const request = { headers: { 'user-agent': 'test' } };
+  assert.equal(await recordAggregate(request, { type: 'page', route: '/deployment-check-production' }, '203.0.113.10'), null);
 });
 
 test('ordinary visitor projection does not include full IP or owner data', () => {

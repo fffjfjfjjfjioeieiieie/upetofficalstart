@@ -75,9 +75,9 @@ export default async function handler(req, res) {
       if (body.type === 'page' && bearerToken(req)) {
         try { signedIn = !!(await verifyFirebaseIdentity(bearerToken(req))); } catch { /* Unverified visits remain anonymous. */ }
       }
-      await recordAggregate(req, body, ip, signedIn);
-      if (body.type === 'page') await notifyVisitor();
-      return res.status(200).json({ recorded: true });
+      const recorded = await recordAggregate(req, body, ip, signedIn);
+      if (recorded && body.type === 'page') await notifyVisitor();
+      return res.status(200).json({ recorded: !!recorded });
     }
     await founder(req);
     if (body.mode !== 'diagnostic') return fail(res, 400, 'Invalid tracking mode.');
