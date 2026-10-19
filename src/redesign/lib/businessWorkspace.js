@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, limit, onSnapshot, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { auth, firestore } from '../../app/firebase.js';
-import { cleanBusinessApplication } from '../../shared/businessApplication.js';
+import { cleanBusinessDetails } from '../../shared/businessDetails.js';
 import { DEFAULT_SHOP_DESIGN, sanitizeShopDesign, sanitizeShopProduct } from '../shop/shopModel.js';
 
 export const businessRoles = ['owner', 'manager', 'editor', 'viewer'];
@@ -28,7 +28,7 @@ export function watchBusinessShop(id, onChange, onError) {
 
 export async function createBusiness(user, input) {
   if (!firestore || !user?.uid || !user.username) throw new Error('Create a personal profile first.');
-  const values = cleanBusinessApplication(input);
+  const values = cleanBusinessDetails(input);
   const id = user.username;
   const businessRef = doc(firestore, 'businesses', id);
   const shopRef = doc(firestore, 'businessShops', id);
@@ -48,7 +48,7 @@ export async function createBusiness(user, input) {
 }
 
 export async function saveBusinessDetails(id, changes) {
-  const values = cleanBusinessApplication({ businessName: changes.name, category: changes.category, website: changes.website, description: changes.description });
+  const values = cleanBusinessDetails({ businessName: changes.name, category: changes.category, website: changes.website, description: changes.description });
   await updateDoc(doc(firestore, 'businesses', id), { name: values.businessName, description: values.description.slice(0, 500), category: values.category, website: values.website, updatedAt: serverTimestamp() });
 }
 
