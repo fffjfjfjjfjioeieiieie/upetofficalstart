@@ -5,6 +5,7 @@ import { clean, routeOf, sourceOf, userAgent } from './visitorCore.js';
 const registers = 64;
 const dateKey = (at) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
 const bucketKey = (at) => Math.floor(at.getTime() / 300000);
+const syntheticRoute = (route) => /^\/deployment-check(?:[-/]|$)/.test(route);
 export const sketch = (bytes, prior = []) => {
   const result = Array.from({ length: registers }, (_, i) => prior[i] || 0);
   const index = bytes[0] & 63;
@@ -30,6 +31,7 @@ export async function recordAggregate(request, body, ip, signedIn = false) {
   const type = ['page', 'navigation', 'conversion', 'error', 'heartbeat'].includes(body?.type) ? body.type : null;
   if (!type) throw new Error('Invalid event.');
   const route = routeOf(body.route);
+  if (syntheticRoute(route)) return null;
   const identity = createHash('sha256').update(`${process.env.VISITOR_RATE_SALT || 'aggregate'}:${ip || 'unknown'}`).digest();
   const shard = identity[1] & 15;
   const daily = database().collection('visitorDaily').doc(`${dateKey(at)}-${shard}`);
@@ -85,7 +87,7 @@ export async function aggregateSummary() {
     today: { visits: estimate(union(todayRows)), unique: estimate(union(todayRows)), pageViews: add(todayRows, 'pageViews'), signedInPageViews: add(todayRows, 'signedInPageViews'), conversions: add(todayRows, 'conversions') },
     week: { visits: daily.reduce((n, d) => n + d.value, 0), pageViews }, daily,
     countries: combine('countries'), devices: combine('devices'), browsers: combine('browsers'), sources: combine('sources'),
-    pages: combine('pages'), profiles: combine('pages').filter((d) => /^\/[a-z0-9._-]+$/.test(d.name) && !['/login', '/privacy', '/explore', '/marketplace', '/claim'].includes(d.name)),
+    pages: combine('pages').filter((d) => !syntheticRoute(d.name)), profiles: combine('pages').filter((d) => /^\/[a-z0-9._-]+$/.test(d.name) && !syntheticRoute(d.name) && !['/login', '/privacy', '/explore', '/marketplace', '/claim'].includes(d.name)),
     funnel: { visits: daily.reduce((n, d) => n + d.value, 0), signups: add(entries, 'conversions') },
     security: { events: add(entries, 'errors'), bots: combine('devices').find((d) => d.name === 'Bot')?.value || 0 },
     partial: days.size >= 500,

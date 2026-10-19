@@ -5,6 +5,7 @@ const { DISCORD_TOKEN, DISCORD_GUILD_ID, DISCORD_ADMIN_IDS, VISITOR_API_URL, VIS
 if (!DISCORD_TOKEN || !DISCORD_GUILD_ID || !DISCORD_ADMIN_IDS || !VISITOR_API_URL || !VISITOR_BOT_SECRET) throw new Error('Configure the Discord visitor bot environment before starting.');
 const admins = new Set(DISCORD_ADMIN_IDS.split(',').map((v) => v.trim()).filter(Boolean));
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+client.on(Events.Error, (error) => console.error('Discord client error:', error));
 const safe = (value) => String(value ?? 'Unknown').replace(/[`*_~>|@]/g, '').slice(0, 200);
 const line = (label, value) => `**${label}:** ${safe(value)}`;
 
@@ -60,12 +61,18 @@ function diagnosticEmbed(data) {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand() || !['visitor', 'analytics'].includes(interaction.commandName)) return;
-  if (interaction.guildId !== DISCORD_GUILD_ID || !admins.has(interaction.user.id)) {
-    await interaction.reply({ content: 'You are not authorised to use this command.', flags: MessageFlags.Ephemeral });
+  const ageMs = Date.now() - interaction.createdTimestamp;
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  } catch (error) {
+    console.error('Could not acknowledge Discord command:', { code: error.code, command: interaction.commandName, ageMs, gatewayPingMs: client.ws.ping });
     return;
   }
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   try {
+    if (interaction.guildId !== DISCORD_GUILD_ID || !admins.has(interaction.user.id)) {
+      await interaction.editReply('You are not authorised to use this command.');
+      return;
+    }
     const command = interaction.options.getSubcommand();
     const visitorId = interaction.options.getString('id') || '';
     const result = await query(command, visitorId, interaction.user.id);
@@ -75,7 +82,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       : { content: format(command, result).slice(0, 1900) || 'No data.', allowedMentions: { parse: [] } });
   } catch (error) {
     console.error('Visitor command failed:', error);
-    await interaction.editReply('Visitor lookup failed. Check the API connection and try again.');
+    try { await interaction.editReply('Visitor lookup failed. Check the API connection and try again.'); }
+    catch (replyError) { console.error('Could not send Discord command error:', { code: replyError.code, command: interaction.commandName }); }
   }
 });
 
