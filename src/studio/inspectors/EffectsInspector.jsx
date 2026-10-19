@@ -30,8 +30,5 @@ export default function EffectsInspector({ document, set, upload, uploads, user 
     <label className="studio-upload"><span>Cursor image</span><input type="file" accept="image/png,image/webp,image/gif" onChange={(event) => upload('cursor', event.target.files?.[0], 'effects.cursor')} />{uploads.cursor && <small>Uploading {uploads.cursor}%</small>}</label>
     <MediaLibrary user={user} kinds={['cursor']} onSelect={(url) => set('effects.cursor', url)} />
     <div className="studio-row"><Range label="Cursor hotspot X" value={effects.cursorHotspotX} min={0} max={128} suffix="px" onChange={(next) => set('effects.cursorHotspotX', next)} /><Range label="Cursor hotspot Y" value={effects.cursorHotspotY} min={0} max={128} suffix="px" onChange={(next) => set('effects.cursorHotspotY', next)} /></div>
-    <Toggle label="Page click sound" checked={effects.clickSoundEnabled} onChange={(next) => set('effects.clickSoundEnabled', next)} />
-    <label className="studio-upload"><span>Click sound</span><input type="file" accept="audio/mpeg,audio/wav,audio/ogg" onChange={(event) => upload('click', event.target.files?.[0], 'effects.clickSound')} />{uploads.click && <small>Uploading {uploads.click}%</small>}</label>
-    <Range label="Click volume" value={effects.clickSoundVolume} min={0} max={100} suffix="%" onChange={(next) => set('effects.clickSoundVolume', next)} />
   </div>;
 }

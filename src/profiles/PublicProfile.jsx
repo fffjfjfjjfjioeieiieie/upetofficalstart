@@ -30,7 +30,6 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   const audioRef = useRef(null);
   const videoRef = useRef(null);
   const pageRef = useRef(null);
-  const clickAudioRef = useRef(null);
   const enterTimerRef = useRef(null);
   const reduceMotion = useReducedMotion();
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -41,14 +40,6 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   useEffect(() => { setTrackIndex(Math.max(0, tracks.findIndex((item) => item.id === profile.activeTrackId))); }, [profile.activeTrackId, profile.audioTracks?.length]);
   useEffect(() => { setElapsed(0); setDuration(0); }, [activeTrack?.id]);
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume / 100; }, [volume]);
-  useEffect(() => {
-    if (!profile.clickSoundEnabled || !profile.clickSoundUrl || preview) { clickAudioRef.current = null; return undefined; }
-    const audio = new Audio(profile.clickSoundUrl);
-    audio.volume = (profile.clickSoundVolume ?? 35) / 100;
-    clickAudioRef.current = audio;
-    return () => { audio.pause(); clickAudioRef.current = null; };
-  }, [profile.clickSoundEnabled, profile.clickSoundUrl, profile.clickSoundVolume, preview]);
-
   useEffect(() => {
     if (!preview && profile.analyticsEnabled !== false) recordProfileEvent(profile.username, 'view');
   }, [profile.username, profile.analyticsEnabled, preview]);
@@ -198,7 +189,7 @@ export default function PublicProfile({ profile, owner = false, onNavigate, prev
   });
 
   return (
-    <div ref={pageRef} className={styles.page} style={pageStyle} data-preview={preview} data-density={profile.density || 'comfortable'} data-reduced-motion={reduceMotion || profile.reducedMotionMode} data-effect={profile.backgroundEffect} data-grain={profile.enableGrain} data-surface={profile.surfaceEnabled !== false} data-shadow={profile.surfaceShadow !== false} data-button-style={profile.buttonStyle || 'soft'} data-button-shadow={profile.buttonShadow} data-button-hover={profile.buttonHover || 'lift'} data-avatar-glow={profile.avatarGlow !== false} data-name-case={profile.displayTextCase || 'normal'} data-player-style={profile.playerStyle || 'compact'} data-player-position={profile.playerPosition || 'card'} data-animated-accent={profile.animatedAccent} data-custom-cursor={profile.customCursor && Boolean(profile.cursorUrl)} onPointerDown={() => { if (clickAudioRef.current) { clickAudioRef.current.currentTime = 0; clickAudioRef.current.play().catch(() => {}); } }} onPointerMove={(event) => { if (profile.customCursor && !preview) setCursorPoint({ x: event.clientX, y: event.clientY }); }}>
+    <div ref={pageRef} className={styles.page} style={pageStyle} data-preview={preview} data-density={profile.density || 'comfortable'} data-reduced-motion={reduceMotion || profile.reducedMotionMode} data-effect={profile.backgroundEffect} data-grain={profile.enableGrain} data-surface={profile.surfaceEnabled !== false} data-shadow={profile.surfaceShadow !== false} data-button-style={profile.buttonStyle || 'soft'} data-button-shadow={profile.buttonShadow} data-button-hover={profile.buttonHover || 'lift'} data-avatar-glow={profile.avatarGlow !== false} data-name-case={profile.displayTextCase || 'normal'} data-player-style={profile.playerStyle || 'compact'} data-player-position={profile.playerPosition || 'card'} data-animated-accent={profile.animatedAccent} data-custom-cursor={profile.customCursor && Boolean(profile.cursorUrl)} onPointerMove={(event) => { if (profile.customCursor && !preview) setCursorPoint({ x: event.clientX, y: event.clientY }); }}>
       <ProfileBackground profile={profile} videoRef={videoRef} reduceMotion={reduceMotion || profile.reducedMotionMode} entered={entered} />
       {profile.showVisualizer && profile.visualizerPlacement === 'background' && activeTrack?.url && <div className={styles.backgroundVisualizer} data-playing={playing} aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} />)}</div>}
       {profile.customCursor && profile.cursorUrl && !preview && <img className={styles.customCursor} src={profile.cursorUrl} alt="" aria-hidden="true" style={{ transform: `translate3d(${cursorPoint.x - (profile.cursorHotspotX || 0)}px, ${cursorPoint.y - (profile.cursorHotspotY || 0)}px, 0)` }} />}
