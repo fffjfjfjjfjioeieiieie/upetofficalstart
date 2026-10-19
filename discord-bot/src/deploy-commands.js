@@ -1,33 +1,15 @@
 import 'dotenv/config';
-import { REST, Routes, PermissionFlagsBits } from 'discord.js';
+import { REST, Routes } from 'discord.js';
+import { commands } from './commands.js';
 
 const { DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID } = process.env;
-
-if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID || !DISCORD_GUILD_ID) {
-  throw new Error('Set DISCORD_TOKEN, DISCORD_CLIENT_ID, and DISCORD_GUILD_ID in discord-bot/.env first.');
+if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID || !DISCORD_GUILD_ID) throw new Error('Configure DISCORD_TOKEN, DISCORD_CLIENT_ID and DISCORD_GUILD_ID first.');
+try {
+  await new REST({ version: '10' }).setToken(DISCORD_TOKEN).put(Routes.applicationGuildCommands(DISCORD_CLIENT_ID, DISCORD_GUILD_ID), { body: commands });
+  console.log('Registered /visitor and /analytics for the configured server.');
+} catch (error) {
+  if (error.code === 50001) {
+    console.error('Discord denied guild command registration. Install this application in the configured server with the applications.commands scope, then retry.');
+    process.exitCode = 1;
+  } else throw error;
 }
-
-const commands = [
-  {
-    name: 'about',
-    description: 'See what User.pet is and what is happening with the project.',
-  },
-  {
-    name: 'guide',
-    description: 'Get a quick guide to the User.pet Discord server.',
-  },
-  {
-    name: 'setup',
-    description: 'Create or update the User.pet server layout, roles, and channels.',
-    default_member_permissions: PermissionFlagsBits.Administrator.toString(),
-  },
-];
-
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
-
-await rest.put(
-  Routes.applicationGuildCommands(DISCORD_CLIENT_ID, DISCORD_GUILD_ID),
-  { body: commands },
-);
-
-console.log('Registered /about, /guide, and /setup for the configured server.');

@@ -1,7 +1,7 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
 import { motion } from "framer-motion";
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell } from "lucide-react";
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { Logo } from "../../components/Logo";
 import { Avatar } from "../../components/ProfileBits";
@@ -13,6 +13,7 @@ const Settings = lazy(() => import('./Settings'));
 const Shop = lazy(() => import('../../shop/ShopEditor'));
 const Notifications = lazy(() => import('./Notifications'));
 const Conversation = lazy(() => import('./Conversation'));
+const VisitorAnalytics = lazy(() => import('./VisitorAnalytics'));
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
@@ -22,6 +23,7 @@ const NAV = [
   ["badges", "Badges", Award],
   ["leaderboard", "Leaderboard", Trophy],
   ["settings", "Settings", Cog],
+  ["visitors", "Visitors", ChartNoAxesCombined],
 ];
 
 const Sidebar = () => {
@@ -65,8 +67,8 @@ const MobileNav = () => {
         <NavLink to="/"><Logo /></NavLink>
         <span className="text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span>
       </header>
-      <nav className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-2xl p-1.5 md:hidden">
-        {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'notifications'].includes(path)).map(([path, label, Icon]) => (
+      <nav className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl p-1.5 md:hidden">
+        {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'notifications', 'visitors'].includes(path)).map(([path, label, Icon]) => (
           <NavLink key={path} to={`/dashboard/${path}`} className={({ isActive }) => `flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}>
             <Icon className="h-4 w-4" />{label}
           </NavLink>
@@ -93,6 +95,7 @@ export default function Dashboard() {
           <Route path="badges" element={<Badges />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="visitors" element={<VisitorAnalytics />} />
         </Routes></Suspense>
       </main>
     </div>
