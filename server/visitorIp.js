@@ -6,10 +6,10 @@ export function requestIp(request) {
 }
 
 export async function inspectIp(ip) {
-  if (!ip || !process.env.PROXYCHECK_API_KEY) return { status: 'unavailable' };
+  if (!ip) return { status: 'unavailable' };
   try {
     const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
-    url.searchParams.set('key', process.env.PROXYCHECK_API_KEY);
+    if (process.env.PROXYCHECK_API_KEY) url.searchParams.set('key', process.env.PROXYCHECK_API_KEY);
     url.searchParams.set('tag', '0');
     const response = await fetch(url, { signal: AbortSignal.timeout(3500) });
     if (!response.ok) return { status: 'unavailable' };

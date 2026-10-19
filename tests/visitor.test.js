@@ -92,3 +92,15 @@ test('proxycheck v3 network intelligence maps to diagnostic fields', async () =>
     assert.equal(result.city, 'London');
   } finally { globalThis.fetch = prior; if (key === undefined) delete process.env.PROXYCHECK_API_KEY; else process.env.PROXYCHECK_API_KEY = key; }
 });
+
+test('diagnostic network lookup works within the provider keyless allowance', async () => {
+  const prior = globalThis.fetch;
+  const key = process.env.PROXYCHECK_API_KEY;
+  delete process.env.PROXYCHECK_API_KEY;
+  let requested;
+  globalThis.fetch = async (url) => { requested = String(url); return { ok: true, json: async () => ({ '203.0.113.10': { network: { asn: 'AS123' }, detections: { vpn: false } } }) }; };
+  try {
+    assert.equal((await inspectIp('203.0.113.10')).asn, 'AS123');
+    assert.ok(!new URL(requested).searchParams.has('key'));
+  } finally { globalThis.fetch = prior; if (key !== undefined) process.env.PROXYCHECK_API_KEY = key; }
+});
