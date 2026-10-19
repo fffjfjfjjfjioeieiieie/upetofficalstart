@@ -10,7 +10,7 @@ export async function getBusinessApplication(uid) {
 
 export async function submitBusinessApplication(authUser, username, input) {
   if (!firestore || !authUser?.uid || !username) throw new Error('Sign in with a founder profile first.');
-  const values = cleanBusinessApplication(input);
+  const values = cleanBusinessApplication(input, username);
   const reference = doc(firestore, 'businessApplications', authUser.uid);
   const current = await getDoc(reference);
   if (current.data()?.status === 'approved') throw new Error('Your business is already approved.');
