@@ -21,7 +21,9 @@ service cloud.firestore {
           'iamjayvonlol@gmail.com',
           'riotsoffical@proton.me',
           'daalt38@gmail.com'
-        ];
+        ] || (signedIn()
+          && request.auth.token.email == 'whatdidido6969@gmail.com'
+          && request.auth.token.email_verified == true);
     }
 
     function supportMembership() {
@@ -42,7 +44,7 @@ service cloud.firestore {
     function validUsername(username) {
       return username is string
         && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
-        && !(username in ['dashboard', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
+        && !(username in ['dashboard', 'business', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
         && (username != 'dome' || request.auth.token.email == 'zurihcs@gmail.com');
     }
 
@@ -309,6 +311,84 @@ service cloud.firestore {
     match /verifiedBusinesses/{username} {
       allow get: if true;
       allow list, create, update, delete: if false;
+    }
+
+    function businessMember(id) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/businesses/$(id))
+        && request.auth.uid in get(/databases/$(database)/documents/businesses/$(id)).data.memberUids;
+    }
+
+    function businessEditor(id) {
+      return businessMember(id)
+        && get(/databases/$(database)/documents/businesses/$(id)).data.members[request.auth.uid].role in ['owner', 'manager', 'editor'];
+    }
+
+    match /businesses/{id} {
+      allow get: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow list: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow create: if founder()
+        && request.resource.data.keys().hasOnly(['ownerUid', 'ownerUsername', 'name', 'description', 'category', 'website', 'status', 'memberUids', 'members', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['ownerUid', 'ownerUsername', 'name', 'description', 'category', 'website', 'status', 'memberUids', 'members', 'createdAt', 'updatedAt'])
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == id
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUsername == id
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
+        && request.resource.data.website is string
+        && request.resource.data.website.size() <= 300
+        && request.resource.data.status == 'active'
+        && request.resource.data.memberUids == [request.auth.uid]
+        && request.resource.data.members.keys().hasOnly([request.auth.uid])
+        && request.resource.data.members[request.auth.uid].role == 'owner'
+        && request.resource.data.members[request.auth.uid].email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if founder()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'category', 'website', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
+        && request.resource.data.website is string
+        && request.resource.data.website.size() <= 300
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /businessShops/{id} {
+      allow get: if resource.data.enabled == true || businessMember(id);
+      allow list: if resource.data.enabled == true && resource.data.private == false;
+      allow create: if founder()
+        && getAfter(/databases/$(database)/documents/businesses/$(id)).data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['businessId', 'ownerUid', 'enabled', 'private', 'name', 'description', 'currency', 'design', 'products', 'createdAt', 'updatedAt'])
+        && request.resource.data.businessId == id
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.enabled == false
+        && request.resource.data.private == true
+        && request.resource.data.products.size() == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if businessEditor(id)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['enabled', 'private', 'name', 'description', 'currency', 'design', 'products', 'updatedAt'])
+        && request.resource.data.enabled is bool
+        && request.resource.data.private is bool
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.currency in ['GBP', 'USD', 'EUR']
+        && request.resource.data.products is list
+        && request.resource.data.products.size() <= 80
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
     }
 
     match /supportStaff/{uid} {

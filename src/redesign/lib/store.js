@@ -1,9 +1,11 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   EmailAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   reauthenticateWithCredential,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
   updatePassword,
@@ -17,7 +19,7 @@ import { getEditableRedesign, listDirectoryProfiles, saveRedesignProfile } from 
 import { defaultProfile } from './profileModel.js';
 
 export const ADMIN = { username: '', password: '' };
-export const RESERVED = ['admin', 'explore', 'marketplace', 'legal', 'login', 'dashboard', 'api', 'settings', 'help', 'support', 'user', 'pet', 'claim', 'welcome', 'create-account', 'assets'];
+export const RESERVED = ['admin', 'explore', 'marketplace', 'legal', 'login', 'dashboard', 'business', 'biz', 'api', 'settings', 'help', 'support', 'user', 'pet', 'claim', 'welcome', 'create-account', 'assets'];
 
 const Ctx = createContext(null);
 
@@ -50,6 +52,7 @@ function friendlyAuthError(error) {
     'auth/network-request-failed': 'Check your connection and try again.',
     'auth/requires-recent-login': 'Sign out, sign back in, then try that again.',
     'auth/weak-password': 'Use a password with at least six characters.',
+    'auth/email-already-in-use': 'An account already exists for this email. Log in instead.',
   };
   return messages[error?.code] || error?.message || 'Authentication could not finish.';
 }
@@ -65,6 +68,7 @@ export function StoreProvider({ children }) {
   const [saveState, setSaveState] = useState('saved');
   const dirty = useRef(false);
   const saveTimer = useRef(null);
+  const registeringRef = useRef(false);
   const currentUserRef = useRef(null);
   currentUserRef.current = user;
 
@@ -120,6 +124,7 @@ export function StoreProvider({ children }) {
         return;
       }
       if (!isApprovedFounder(authUser)) {
+        if (registeringRef.current && authUser.email?.toLowerCase() === 'whatdidido6969@gmail.com') return;
         await signOut(auth).catch(() => {});
         if (active) {
           setFirebaseUser(null);
@@ -175,6 +180,11 @@ export function StoreProvider({ children }) {
       await persistAuthLocally();
       const credential = await signInWithEmailAndPassword(auth, String(email || '').trim(), password || '');
       if (!isApprovedFounder(credential.user)) {
+        if (credential.user.email?.toLowerCase() === 'whatdidido6969@gmail.com' && !credential.user.emailVerified) {
+          await sendEmailVerification(credential.user).catch(() => {});
+          await signOut(auth);
+          return { ok: false, error: 'Verify your test account email first. We sent a new verification link.' };
+        }
         await signOut(auth);
         return { ok: false, error: 'This email does not have admin access.' };
       }
@@ -185,6 +195,20 @@ export function StoreProvider({ children }) {
       return { ok: false, error: friendlyAuthError(error) };
     }
   }, [loadAccount]);
+
+  const register = useCallback(async (email, password) => {
+    if (String(email || '').trim().toLowerCase() !== 'whatdidido6969@gmail.com') return { ok: false, error: 'Test account creation is available only for the invited email.' };
+    if (!auth || !firebaseConfigured) return { ok: false, error: 'Firebase is not configured.' };
+    try {
+      registeringRef.current = true;
+      await persistAuthLocally();
+      const credential = await createUserWithEmailAndPassword(auth, String(email).trim().toLowerCase(), password || '');
+      await sendEmailVerification(credential.user);
+      await signOut(auth);
+      return { ok: true };
+    } catch (error) { return { ok: false, error: friendlyAuthError(error) }; }
+    finally { registeringRef.current = false; }
+  }, []);
 
   const logout = useCallback(async () => {
     if (auth) await signOut(auth);
@@ -270,7 +294,7 @@ export function StoreProvider({ children }) {
     db, user, session, theme, ready, needsClaim, saveState, storageError,
     toggleTheme: () => setTheme((current) => current === 'dark' ? 'light' : 'dark'),
     login,
-    register: async () => ({ ok: false, error: 'Public registration is not open yet.' }),
+    register,
     logout,
     claimUsername,
     setProfile,

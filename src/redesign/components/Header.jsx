@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Sun, Moon, LayoutDashboard, ExternalLink, Repeat, LogOut, Check } from "lucide-react";
+import { User, Sun, Moon, LayoutDashboard, ExternalLink, Repeat, LogOut, Check, BriefcaseBusiness } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useStore } from "../lib/store";
 import { Logo } from "./Logo";
@@ -26,6 +26,7 @@ const AccountMenu = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem data-testid="menu-dashboard" onClick={() => nav("/dashboard")} className="rounded-xl"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => nav("/business")} className="rounded-xl"><BriefcaseBusiness className="mr-2 h-4 w-4" />Business mode</DropdownMenuItem>
         <DropdownMenuItem data-testid="menu-go-to-page" onClick={() => nav(`/${user.username}`)} className="rounded-xl"><ExternalLink className="mr-2 h-4 w-4" />Go to page</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">Switch account</DropdownMenuLabel>

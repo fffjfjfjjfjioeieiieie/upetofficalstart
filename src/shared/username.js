@@ -1,4 +1,4 @@
-export const RESERVED_USERNAMES = new Set(['dashboard', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets']);
+export const RESERVED_USERNAMES = new Set(['dashboard', 'business', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets']);
 export const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 
 export function normalizeUsername(value) {

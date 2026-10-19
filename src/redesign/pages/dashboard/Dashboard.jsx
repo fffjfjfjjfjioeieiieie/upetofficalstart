@@ -1,7 +1,7 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
 import { motion } from "framer-motion";
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined } from "lucide-react";
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined, BriefcaseBusiness } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { Logo } from "../../components/Logo";
 import { Avatar } from "../../components/ProfileBits";
@@ -44,6 +44,7 @@ const Sidebar = () => {
             )}
           </NavLink>
         ))}
+        <NavLink to="/business" className="mt-5 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10"><BriefcaseBusiness className="h-4 w-4" />Business mode</NavLink>
       </nav>
       <button data-testid="sidebar-view-page" onClick={() => nav(`/${user.username}`)} className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"><ExternalLink className="h-4 w-4" />View my page</button>
       <button data-testid="sidebar-logout" onClick={out} className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-500 transition-colors hover:bg-red-500/10"><LogOut className="h-4 w-4" />Logout</button>
@@ -65,7 +66,7 @@ const MobileNav = () => {
     <>
       <header className="glass fixed inset-x-3 top-3 z-40 flex h-14 items-center justify-between rounded-2xl px-4 md:hidden">
         <NavLink to="/"><Logo /></NavLink>
-        <span className="text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span>
+        <div className="flex items-center gap-3"><NavLink to="/business" className="text-xs font-semibold text-primary">Business</NavLink><span className="text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span></div>
       </header>
       <nav className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl p-1.5 md:hidden">
         {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'notifications', 'visitors'].includes(path)).map(([path, label, Icon]) => (

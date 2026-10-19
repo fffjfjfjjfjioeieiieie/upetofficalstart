@@ -10,4 +10,4 @@ node scripts/business-review.mjs approve <uid>
 node scripts/business-review.mjs reject <uid>
 ```
 
-Approval checks that the applicant still owns their published profile and has enabled its shop. It writes a separate `verifiedBusinesses/{username}` record that the shop page reads to show the verified mark. Client Firestore rules deny writes to verification records. Approval is manual and is never granted by the application form itself.
+Approval checks that the applicant still owns their published profile and has enabled either their personal shop or business shop. It writes a separate `verifiedBusinesses/{username}` record that the relevant shop page reads to show the verified mark. Client Firestore rules deny writes to verification records. Approval is manual and is never granted by the application form itself.

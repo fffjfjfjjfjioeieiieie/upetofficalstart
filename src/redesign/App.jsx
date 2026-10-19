@@ -19,6 +19,9 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ShopfrontPage = lazy(() => import('./shop/ShopfrontPage'));
 const ShopChatPage = lazy(() => import('./pages/ShopChatPage'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+const BusinessHub = lazy(() => import('./pages/business/BusinessHub'));
+const BusinessWorkspace = lazy(() => import('./pages/business/BusinessWorkspace'));
+const BusinessPublic = lazy(() => import('./pages/business/BusinessPublic'));
 
 const NAMES = { "": "Home", explore: "Explore", marketplace: "Marketplace", legal: "Legal", login: "Login", privacy: "Privacy", terms: "Terms", support: "Support", status: "Status", changelog: "Changelog" };
 
@@ -27,7 +30,7 @@ const TitleSync = () => {
   useEffect(() => {
     const [first = "", second] = pathname.split("/").filter(Boolean);
     const cap = (w) => w[0].toUpperCase() + w.slice(1);
-    const name = first === "dashboard" ? `Dashboard - ${cap(second || "overview")}` : NAMES[first] || `@${first}`;
+    const name = first === "dashboard" ? `Dashboard - ${cap(second || "overview")}` : first === 'business' ? 'Business mode' : first === 'biz' ? 'Business shop' : NAMES[first] || `@${first}`;
     document.title = `user.pet | ${name}`;
   }, [pathname]);
   return null;
@@ -74,6 +77,9 @@ function App() {
             <Route path="/login" element={<Shell><Login /></Shell>} />
             <Route path="/claim" element={<Shell><ClaimUsername /></Shell>} />
             <Route path="/dashboard/*" element={<Guard><Dashboard /></Guard>} />
+            <Route path="/business" element={<Guard><Shell><BusinessHub /></Shell></Guard>} />
+            <Route path="/business/:id/*" element={<Guard><BusinessWorkspace /></Guard>} />
+            <Route path="/biz/:id" element={<BusinessPublic />} />
             <Route path="/:username/shop/chat/:threadId" element={<ShopChatPage />} />
             <Route path="/:username/shop" element={<ShopfrontPage />} />
             <Route path="/:username" element={<ProfilePage />} />
