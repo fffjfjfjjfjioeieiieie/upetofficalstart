@@ -262,6 +262,55 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /businessApplications/{uid} {
+      allow get: if founder() && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if founder()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.username == get(/databases/$(database)/documents/users/$(uid)).data.username
+        && request.resource.data.contactEmail == request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() >= 2
+        && request.resource.data.businessName.size() <= 100
+        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
+        && request.resource.data.website is string
+        && (request.resource.data.website == '' || request.resource.data.website.matches('^https?://.{1,296}$'))
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 20
+        && request.resource.data.description.size() <= 1000
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if founder()
+        && request.auth.uid == uid
+        && resource.data.status in ['pending', 'rejected']
+        && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.contactEmail == resource.data.contactEmail
+        && request.resource.data.status == 'pending'
+        && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() >= 2
+        && request.resource.data.businessName.size() <= 100
+        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
+        && request.resource.data.website is string
+        && (request.resource.data.website == '' || request.resource.data.website.matches('^https?://.{1,296}$'))
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 20
+        && request.resource.data.description.size() <= 1000
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /verifiedBusinesses/{username} {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
     match /supportStaff/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || supportOwner());
       allow list: if supportOwner();
