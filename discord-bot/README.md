@@ -1,29 +1,7 @@
-# User.pet Discord bot
+# user.pet visitor bot
 
-This separate Node app creates the project server layout and gives new members a low-noise welcome. It does not add bot packages to the Vite website.
+This replaces the previous welcome/setup bot with private `/visitor` and `/analytics` slash commands. Site-wide traffic is aggregate; `/visitor recent`, `/visitor info` and `/visitor history` refer only to explicit diagnostic tests. Full IP and network details require a diagnostic test claimed with `/visitor claim <code>` from the signed-in dashboard. All bot replies are ephemeral, and the website also checks the Discord user ID against `DISCORD_ADMIN_IDS`.
 
-## Server layout
+Copy `.env.example` to ignored `.env`, then set the bot token, application ID, guild ID, administrator IDs, website URL and `VISITOR_BOT_SECRET`. The same shared secret and administrator IDs must be configured server-side on Vercel. Run `npm install`, `npm run deploy-commands`, then `npm start` on a persistent Node host. The Discord client secret is not needed. The bot must be installed in the guild with the `bot` and `applications.commands` scopes. Set `DISCORD_TOKEN` and `VISITOR_DISCORD_CHANNEL_ID` on Vercel for page notifications, or configure a webhook URL instead.
 
-- **START HERE:** `#welcome`, `#rules`
-- **COMMUNITY:** `#general`, `#introductions`, `#ideas-and-feedback`, `#showcase`, `#support`
-- **PROJECT UPDATES:** `#announcements`, `#project-updates`, `#changelog`
-- **VOICE:** `Community Lounge`
-- **STAFF:** private `#staff-chat` and `#mod-logs`
-- **Roles:** Admin, Moderator, Artist, Member, New Member
-
-`/setup` is administrator-only and can be run again to repair the layout. It reuses channels and roles with matching names. `/about` and `/guide` privately explain the project and server channels.
-
-New members are assigned the non-mentionable `New Member` role. The bot does not ping members or roles. It groups joins that happen close together into one welcome message, and says clearly that User.pet is in development and the website is not live yet.
-
-`Admin` is created with full server permissions but is never assigned automatically. Choose carefully who receives it in Server Settings. Roles created by the setup command are not mentionable. If the bot cannot assign `New Member`, move the bot's role above `New Member` in the server role list.
-
-## Create and run the bot
-
-1. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application, add a bot, and copy its bot token. Keep the token private.
-2. Enable the **Server Members Intent** under the bot's privileged gateway intents. The bot uses it to welcome new joins and assign `New Member`.
-3. Invite the bot to your server with the `bot` and `applications.commands` scopes. Grant **Manage Channels**, **Manage Roles**, **View Channels**, **Send Messages**, **Read Message History**, and **Embed Links**. Keep the bot's highest role above `New Member`.
-4. Copy `.env.example` to `.env` in this folder and fill in the bot token, application ID, and server ID. These values stay local.
-5. From this folder, run `npm install`, `npm run deploy-commands`, then `npm start`.
-6. In the server, run `/setup` as an administrator.
-
-The bot must stay running in a Node process to greet members. Firebase Hosting only serves the website; run this bot locally or on a Node host.
+For a diagnostic test, sign in at `/dashboard/visitors`, click **Start diagnostic test**, and run `/visitor claim <code>` within 10 minutes. Then use the full visitor ID shown on the dashboard with `/visitor info <id>` or `/visitor network <id>`. `/visitor myip` finds the latest claimed test for your Discord account. Diagnostic data expires after 24 hours and can be deleted early in the dashboard.

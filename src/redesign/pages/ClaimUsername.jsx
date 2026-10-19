@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStore } from '../lib/store';
 import { inputCls, btnCls } from '../components/Controls';
+import { visitorEvent } from '../components/VisitorTracking';
 
 export default function ClaimUsername() {
   const { ready, needsClaim, claimUsername, isTaken } = useStore();
@@ -34,6 +35,7 @@ export default function ClaimUsername() {
       return;
     }
     toast.success(`user.pet/${result.username} is yours`);
+    visitorEvent('conversion', '/claim');
     navigate('/dashboard', { replace: true });
   };
 

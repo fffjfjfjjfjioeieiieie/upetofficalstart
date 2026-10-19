@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /visitorSessions/{id} { allow read, write: if false; }
+    match /visitorDiagnostics/{id} { allow read, write: if false; }
+    match /visitorAudit/{id} { allow read, write: if false; }
+    match /visitorRateLimits/{id} { allow read, write: if false; }
+    match /visitorClaims/{id} { allow read, write: if false; }
+    match /visitorDaily/{id} { allow read, write: if false; }
+    match /visitorLive/{id} { allow read, write: if false; }
     function signedIn() {
       return request.auth != null;
     }

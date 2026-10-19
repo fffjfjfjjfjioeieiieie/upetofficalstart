@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 import { iconUrl } from "../lib/catalog";
 
 const SOCIALS = [["discord", "https://discord.gg/"], ["x", "https://x.com/"], ["tiktok", "https://tiktok.com/"], ["instagram", "https://instagram.com/"], ["github", "https://github.com/"]];
-const LINKS = [["Explore", "/explore"], ["Marketplace", "/marketplace"], ["Legal", "https://help.user.pet/legal/terms"], ["Privacy", "https://help.user.pet/legal/privacy"], ["Terms", "https://help.user.pet/legal/terms"], ["Support", "https://help.user.pet"]];
+const LINKS = [["Explore", "/explore"], ["Marketplace", "/marketplace"], ["Legal", "https://help.user.pet/legal/terms"], ["Privacy", "/privacy"], ["Terms", "https://help.user.pet/legal/terms"], ["Support", "https://help.user.pet"]];
 
 export const Footer = () => (
   <footer data-testid="site-footer" className="mx-auto mt-32 w-full max-w-5xl border-t px-6 py-10">

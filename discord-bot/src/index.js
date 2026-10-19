@@ -1,146 +1,55 @@
 import 'dotenv/config';
-import {
-  ChannelType,
-  Client,
-  EmbedBuilder,
-  Events,
-  GatewayIntentBits,
-  PermissionFlagsBits,
-} from 'discord.js';
-import { setupUserPetServer } from './setup-server.js';
+import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 
-if (!process.env.DISCORD_TOKEN) {
-  throw new Error('Set DISCORD_TOKEN in discord-bot/.env before starting the bot.');
+const { DISCORD_TOKEN, DISCORD_GUILD_ID, DISCORD_ADMIN_IDS, VISITOR_API_URL, VISITOR_BOT_SECRET } = process.env;
+if (!DISCORD_TOKEN || !DISCORD_GUILD_ID || !DISCORD_ADMIN_IDS || !VISITOR_API_URL || !VISITOR_BOT_SECRET) throw new Error('Configure the Discord visitor bot environment before starting.');
+const admins = new Set(DISCORD_ADMIN_IDS.split(',').map((v) => v.trim()).filter(Boolean));
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const safe = (value) => String(value ?? 'Unknown').replace(/[`*_~>|@]/g, '').slice(0, 200);
+const line = (label, value) => `**${label}:** ${safe(value)}`;
+
+async function query(command, visitorId, actor) {
+  const response = await fetch(new URL('/api/visitor-admin', VISITOR_API_URL), {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-visitor-bot-secret': VISITOR_BOT_SECRET, 'x-discord-admin-id': actor },
+    body: JSON.stringify({ command, id: visitorId }), signal: AbortSignal.timeout(8000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Visitor API is unavailable.');
+  return data;
 }
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
-});
-const welcomeBatches = new Map();
-const welcomeDelayMs = 8000;
-
-const findTextChannel = (guild, name) => guild.channels.cache.find(
-  (channel) => channel.type === ChannelType.GuildText && channel.name === name,
-);
-
-const channelReference = (guild, name) => {
-  const channel = findTextChannel(guild, name);
-  return channel ? `<#${channel.id}>` : `#${name}`;
-};
-
-client.once(Events.ClientReady, (readyClient) => {
-  console.log(`User.pet bot is online as ${readyClient.user.tag}.`);
-});
+function format(command, data) {
+  if (data.message) return data.message;
+  if (command === 'recent') return data.recent.length ? data.recent.map((v) => `${safe(v.id)} · ${safe(v.lastAt)} · ${safe(v.route)}`).join('\n') : 'No recent diagnostic tests.';
+  if (command === 'live') return `Active visitors: ${data.live}`;
+  if (command === 'today') return Object.entries(data.today).map(([k, v]) => line(k, v)).join('\n');
+  if (command === 'countries') return data.countries.length ? data.countries.map((v) => `${safe(v.name)}: ${v.value}`).join('\n') : 'No country data.';
+  if (command === 'security') return [line('Bot visits', data.security.bots), line('Security events', data.security.events)].join('\n');
+  if (command === 'myip') return [line('Visitor ID', data.id), line('Public IP', data.ip), line('Version', `IPv${data.ipVersion}`)].join('\n');
+  if (command === 'history') return data.visitor.events.length ? data.visitor.events.map((e) => `${safe(e.at)} · ${safe(e.type)} · ${safe(e.route)} ${safe(e.detail || '')}`).join('\n') : 'No events recorded.';
+  if (command === 'network') return Object.entries(data.diagnostic || {}).map(([k, v]) => line(k, v)).join('\n');
+  const v = data.visitor;
+  const d = data.diagnostic;
+  return [line('Visitor ID', v.id), line('First visit', v.firstAt), line('Last visit', v.lastAt), line('Pages', v.pageViews), line('Duration (seconds)', v.durationSeconds), line('Country', v.country), line('Device', v.device), line('Browser', v.browser), line('OS', v.os), ...(d ? [line('Public IP', d.ip), line('IP version', `IPv${d.ipVersion}`), line('City', d.city), line('Region', d.region), line('IP country', d.country), line('ISP', d.isp), line('ASN', d.asn), line('Network', d.network), line('VPN', d.vpn), line('Proxy', d.proxy), line('Tor', d.tor), line('Timezone', d.timezone), line('Language', d.language), line('Screen', d.screen), line('Viewport', d.viewport)] : [])].join('\n');
+}
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-
-  if (!interaction.guild) {
-    await interaction.reply({ content: 'Use this command in the User.pet server.', ephemeral: true });
+  if (!interaction.isChatInputCommand() || !['visitor', 'analytics'].includes(interaction.commandName)) return;
+  if (interaction.guildId !== DISCORD_GUILD_ID || !admins.has(interaction.user.id)) {
+    await interaction.reply({ content: 'You are not authorised to use this command.', flags: MessageFlags.Ephemeral });
     return;
   }
-
-  if (interaction.commandName === 'about') {
-    const about = new EmbedBuilder()
-      .setColor(0x8a74ee)
-      .setTitle('User.pet is still in development')
-      .setDescription('This server is for project progress, ideas, and questions. The website is not live yet; updates will be posted here when that changes.')
-      .addFields(
-        { name: 'Follow progress', value: `${channelReference(interaction.guild, 'announcements')} · ${channelReference(interaction.guild, 'project-updates')}` },
-        { name: 'Share ideas', value: `${channelReference(interaction.guild, 'ideas-and-feedback')} · ${channelReference(interaction.guild, 'showcase')}` },
-      )
-      .setFooter({ text: 'Early development · details may change' });
-    await interaction.reply({ embeds: [about], ephemeral: true, allowedMentions: { parse: [] } });
-    return;
-  }
-
-  if (interaction.commandName === 'guide') {
-    const guide = new EmbedBuilder()
-      .setColor(0x8a74ee)
-      .setTitle('Server guide')
-      .addFields(
-        { name: 'Start here', value: `${channelReference(interaction.guild, 'welcome')} · ${channelReference(interaction.guild, 'rules')}` },
-        { name: 'Community', value: `${channelReference(interaction.guild, 'general')} · ${channelReference(interaction.guild, 'introductions')} · ${channelReference(interaction.guild, 'ideas-and-feedback')} · ${channelReference(interaction.guild, 'showcase')} · ${channelReference(interaction.guild, 'support')}` },
-        { name: 'Project updates', value: `${channelReference(interaction.guild, 'announcements')} · ${channelReference(interaction.guild, 'project-updates')} · ${channelReference(interaction.guild, 'changelog')}` },
-      )
-      .setFooter({ text: 'The website is still being built.' });
-    await interaction.reply({ embeds: [guide], ephemeral: true, allowedMentions: { parse: [] } });
-    return;
-  }
-
-  if (interaction.commandName !== 'setup') return;
-
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: 'Only a server administrator can run `/setup`.', ephemeral: true });
-    return;
-  }
-
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   try {
-    const result = await setupUserPetServer(interaction.guild);
-    await interaction.editReply(
-      `Server layout checked: ${result.roles.length} roles and ${result.channels.length} channels. New members receive a quiet welcome with no user or role pings.`,
-    );
+    const command = interaction.options.getSubcommand();
+    const visitorId = interaction.options.getString('id') || '';
+    const result = await query(command, visitorId, interaction.user.id);
+    await interaction.editReply({ content: format(command, result).slice(0, 1900) || 'No data.', allowedMentions: { parse: [] } });
   } catch (error) {
-    console.error('Server setup failed:', error);
-    await interaction.editReply(
-      'Setup stopped. Check that the bot has Manage Channels, Manage Roles, View Channels, Send Messages, and Embed Links, and that its role is above the roles it manages.',
-    );
+    console.error('Visitor command failed:', error);
+    await interaction.editReply('Visitor lookup failed. Check the API connection and try again.');
   }
 });
 
-async function sendWelcomeBatch(guild, members) {
-  const welcomeName = process.env.WELCOME_CHANNEL_NAME || 'welcome';
-  const welcomeChannel = findTextChannel(guild, welcomeName);
-  if (!welcomeChannel || members.length === 0) return;
-
-  const welcome = new EmbedBuilder()
-    .setColor(0x8a74ee)
-    .setTitle(members.length === 1 ? 'Welcome to the User.pet community' : 'New people joined')
-    .setDescription('User.pet is still in development, and the website is not live yet. This server is where we share progress, collect ideas, and answer questions while the project takes shape.')
-    .addFields(
-      { name: 'Start here', value: `${channelReference(guild, 'rules')} · ${channelReference(guild, 'introductions')}` },
-      { name: 'Follow progress', value: `${channelReference(guild, 'announcements')} · ${channelReference(guild, 'project-updates')}` },
-      { name: 'Share an idea', value: channelReference(guild, 'ideas-and-feedback') },
-    )
-    .setFooter({ text: `${members.length} new member${members.length === 1 ? '' : 's'} · early development` })
-    .setTimestamp();
-
-  try {
-    await welcomeChannel.send({
-      embeds: [welcome],
-      allowedMentions: { parse: [] },
-    });
-  } catch (error) {
-    console.error(`Could not post the welcome batch in ${guild.name}:`, error);
-  }
-}
-
-client.on(Events.GuildMemberAdd, async (member) => {
-  if (member.user.bot) return;
-
-  const newcomerRole = member.guild.roles.cache.find((role) => role.name === 'New Member');
-  if (newcomerRole && member.guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-    try {
-      await member.roles.add(newcomerRole, 'Assign the non-mentionable New Member role');
-    } catch (error) {
-      console.error(`Could not assign New Member to a joiner in ${member.guild.name}:`, error);
-    }
-  }
-
-  const guildId = member.guild.id;
-  const batch = welcomeBatches.get(guildId) ?? { members: [], timer: null };
-  batch.members.push(member);
-  if (batch.timer) clearTimeout(batch.timer);
-  batch.timer = setTimeout(async () => {
-    welcomeBatches.delete(guildId);
-    await sendWelcomeBatch(member.guild, batch.members);
-  }, welcomeDelayMs);
-  welcomeBatches.set(guildId, batch);
-});
-
-client.on(Events.Error, (error) => {
-  console.error('Discord client error:', error);
-});
-
-await client.login(process.env.DISCORD_TOKEN);
+client.once(Events.ClientReady, (ready) => console.log(`Visitor bot online as ${ready.user.tag}`));
+await client.login(DISCORD_TOKEN);

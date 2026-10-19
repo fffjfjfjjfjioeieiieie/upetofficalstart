@@ -11,6 +11,8 @@ const FOUNDER_EMAILS = new Set([
   'lampjustlamp123@gmail.com',
   'iamjayvonlol@gmail.com',
   'riotsoffical@proton.me',
+  'daalt38@gmail.com',
+  'gabeandtheowenshow@gmail.com',
 ]);
 
 export async function verifyFirebaseToken(token) {

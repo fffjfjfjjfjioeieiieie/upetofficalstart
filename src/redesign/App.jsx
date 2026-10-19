@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import ComingSoon from "./pages/ComingSoon";
 import Login from "./pages/Login";
 import ClaimUsername from "./pages/ClaimUsername";
+import VisitorTracking from './components/VisitorTracking';
+import Privacy from './pages/Privacy';
 
 const Explore = lazy(() => import('./pages/Explore'));
 const Marketplace = lazy(() => import('./shop/Marketplace'));
@@ -59,12 +61,14 @@ function App() {
         <WaveBackground />
         <BrowserRouter>
           <TitleSync />
+          <VisitorTracking />
           <Suspense fallback={<div className="grid min-h-[60vh] place-items-center text-sm text-muted-foreground">Loading…</div>}><Routes>
             <Route path="/" element={<Shell><Home /></Shell>} />
             <Route path="/explore" element={<Shell><Explore /></Shell>} />
             <Route path="/marketplace" element={<Shell><Marketplace /></Shell>} />
             <Route path="/legal" element={<Shell><ComingSoon name="Legal" /></Shell>} />
-            {["privacy", "terms", "support", "status", "changelog"].map((p) => (
+            <Route path="/privacy" element={<Shell><Privacy /></Shell>} />
+            {["terms", "support", "status", "changelog"].map((p) => (
               <Route key={p} path={`/${p}`} element={<Shell><ComingSoon name={p[0].toUpperCase() + p.slice(1)} /></Shell>} />
             ))}
             <Route path="/login" element={<Shell><Login /></Shell>} />
