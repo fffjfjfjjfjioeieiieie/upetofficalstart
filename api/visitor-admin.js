@@ -1,6 +1,7 @@
 import { audit, database, diagnosticById, hash, recentVisitors, visitorById } from '../server/visitorStore.js';
 import { botActor, limit } from '../server/visitorSecurity.js';
 import { aggregateSummary } from '../server/visitorAggregate.js';
+import { notifyDiagnostic, publicAccount } from '../server/visitorNotify.js';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const fail = (res, status, error) => res.status(status).json({ error });
@@ -29,6 +30,13 @@ export default async function handler(req, res) {
       });
       if (!claimedId) return fail(res, 404, 'Claim code expired or not found.');
       await audit(actor, 'claim-diagnostic', claimedId);
+      const claimed = await diagnosticById(claimedId);
+      if (claimed) {
+        let account = { signedIn: true };
+        try { account = await publicAccount(claimed.ownerUid); }
+        catch (error) { console.error('Diagnostic profile lookup failed:', error.message); }
+        await notifyDiagnostic(claimed, account);
+      }
       return res.status(200).json({ message: `Diagnostic test verified. Visitor ID: ${claimedId}` });
     }
     if (command === 'info' || command === 'network' || command === 'history') {
@@ -45,7 +53,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ diagnostic: { ip: diagnostic.ip, ipVersion: diagnostic.ipVersion, ...diagnostic.network } });
       }
       if (diagnostic) await audit(actor, 'info-diagnostic', visitorId);
-      return res.status(200).json({ visitor, diagnostic: diagnostic ? { ip: diagnostic.ip, ipVersion: diagnostic.ipVersion, ...diagnostic.network, timezone: diagnostic.timezone, language: diagnostic.language, screen: diagnostic.screen, viewport: diagnostic.viewport } : null });
+      return res.status(200).json({ visitor, account: diagnostic ? await publicAccount(diagnostic.ownerUid) : null, diagnostic: diagnostic ? { ip: diagnostic.ip, ipVersion: diagnostic.ipVersion, ...diagnostic.network, timezone: diagnostic.timezone, language: diagnostic.language, screen: diagnostic.screen, viewport: diagnostic.viewport } : null });
     }
     if (command === 'myip') {
       const snap = await database().collection('visitorDiagnostics').where('discordId', '==', actor).limit(100).get();

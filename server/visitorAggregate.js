@@ -25,7 +25,7 @@ const increase = (map = {}, key, count = 1) => {
   return { ...map, [safeKey]: (map[safeKey] || 0) + count };
 };
 
-export async function recordAggregate(request, body, ip) {
+export async function recordAggregate(request, body, ip, signedIn = false) {
   const at = new Date();
   const type = ['page', 'navigation', 'conversion', 'error', 'heartbeat'].includes(body?.type) ? body.type : null;
   if (!type) throw new Error('Invalid event.');
@@ -44,6 +44,7 @@ export async function recordAggregate(request, body, ip) {
     if (kind === 'daily') {
       next.day = dateKey(at);
       next.pageViews = (old.pageViews || 0) + (type === 'page' ? 1 : 0);
+      next.signedInPageViews = (old.signedInPageViews || 0) + (type === 'page' && signedIn ? 1 : 0);
       next.conversions = (old.conversions || 0) + (type === 'conversion' ? 1 : 0);
       next.errors = (old.errors || 0) + (type === 'error' ? 1 : 0);
       if (type === 'page') {
@@ -81,7 +82,7 @@ export async function aggregateSummary() {
   const pageViews = add(entries, 'pageViews');
   return {
     live: estimate(union(live.docs.map((d) => d.data()))),
-    today: { visits: estimate(union(todayRows)), unique: estimate(union(todayRows)), pageViews: add(todayRows, 'pageViews'), conversions: add(todayRows, 'conversions') },
+    today: { visits: estimate(union(todayRows)), unique: estimate(union(todayRows)), pageViews: add(todayRows, 'pageViews'), signedInPageViews: add(todayRows, 'signedInPageViews'), conversions: add(todayRows, 'conversions') },
     week: { visits: daily.reduce((n, d) => n + d.value, 0), pageViews }, daily,
     countries: combine('countries'), devices: combine('devices'), browsers: combine('browsers'), sources: combine('sources'),
     pages: combine('pages'), profiles: combine('pages').filter((d) => /^\/[a-z0-9._-]+$/.test(d.name) && !['/login', '/privacy', '/explore', '/marketplace', '/claim'].includes(d.name)),

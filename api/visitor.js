@@ -5,6 +5,7 @@ import { routeOf, clean, userAgent, sourceOf, eventOf, SID_PATTERN } from '../se
 import { founder, limit, sameOrigin } from '../server/visitorSecurity.js';
 import { notifyVisitor } from '../server/visitorNotify.js';
 import { aggregateSummary, recordAggregate } from '../server/visitorAggregate.js';
+import { bearerToken, verifyFirebaseIdentity } from '../server/firebaseAuth.js';
 
 const cookieSid = (req) => String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith('upet_vid='))?.slice(9) || '';
 const bodyOf = (req) => typeof req.body === 'object' && req.body !== null ? req.body : JSON.parse(req.body || '{}');
@@ -70,8 +71,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST' && body.mode === 'aggregate') {
       const ip = requestIp(req);
       if (!await limit(`ingest:${hash(ip || 'unknown')}`, 100, 60000)) return fail(res, 429, 'Too many requests.');
-      const visitor = await recordAggregate(req, body, ip);
-      if (body.type === 'page') await notifyVisitor(visitor);
+      let signedIn = false;
+      if (body.type === 'page' && bearerToken(req)) {
+        try { signedIn = !!(await verifyFirebaseIdentity(bearerToken(req))); } catch { /* Unverified visits remain anonymous. */ }
+      }
+      await recordAggregate(req, body, ip, signedIn);
+      if (body.type === 'page') await notifyVisitor();
       return res.status(200).json({ recorded: true });
     }
     await founder(req);

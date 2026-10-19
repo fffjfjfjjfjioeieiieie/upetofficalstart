@@ -9,9 +9,10 @@ export async function visitorEvent(type, route = window.location.pathname) {
   const params = new URLSearchParams(window.location.search);
   const body = { mode: 'aggregate', type, route, referrer: document.referrer, utm: { source: params.get('utm_source'), medium: params.get('utm_medium'), campaign: params.get('utm_campaign') } };
   try {
-    await fetch('/api/visitor', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    if (type === 'page' && auth?.authStateReady) await auth.authStateReady();
+    const token = auth?.currentUser && (type === 'page' || sessionStorage.getItem('upet-diagnostic-test') === 'yes') ? await auth.currentUser.getIdToken() : '';
+    await fetch('/api/visitor', { method: 'POST', headers: { 'content-type': 'application/json', ...(type === 'page' && token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
     if (sessionStorage.getItem('upet-diagnostic-test') === 'yes' && auth?.currentUser) {
-      const token = await auth.currentUser.getIdToken();
       await fetch('/api/visitor', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ ...body, mode: 'diagnostic' }) });
     }
   } catch { /* Analytics must not interrupt the website. */ }

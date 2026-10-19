@@ -15,7 +15,7 @@ const FOUNDER_EMAILS = new Set([
   'gabeandtheowenshow@gmail.com',
 ]);
 
-export async function verifyFirebaseToken(token) {
+export async function verifyFirebaseIdentity(token) {
   if (!token) throw new Error('Sign in before managing files.');
 
   const { payload } = await jwtVerify(token, FIREBASE_KEYS, {
@@ -26,9 +26,15 @@ export async function verifyFirebaseToken(token) {
 
   const uid = String(payload.sub || '');
   const email = String(payload.email || '').trim().toLowerCase();
-  if (!uid || !FOUNDER_EMAILS.has(email)) throw new Error('This account cannot manage profile files.');
+  if (!uid) throw new Error('Invalid account token.');
 
   return { uid, email };
+}
+
+export async function verifyFirebaseToken(token) {
+  const account = await verifyFirebaseIdentity(token);
+  if (!FOUNDER_EMAILS.has(account.email)) throw new Error('This account cannot manage profile files.');
+  return account;
 }
 
 export function bearerToken(request) {

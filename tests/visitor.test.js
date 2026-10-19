@@ -5,7 +5,7 @@ import { summarize } from '../server/visitorAnalytics.js';
 import { inspectIp } from '../server/visitorIp.js';
 import { publicVisitor } from '../server/visitorStore.js';
 import { botActor } from '../server/visitorSecurity.js';
-import { notificationBody } from '../server/visitorNotify.js';
+import { diagnosticBody, notificationBody } from '../server/visitorNotify.js';
 import { estimate, sketch, union } from '../server/visitorAggregate.js';
 import { createHash } from 'node:crypto';
 import visitorHandler from '../api/visitor.js';
@@ -36,10 +36,18 @@ test('ordinary visitor projection does not include full IP or owner data', () =>
   assert.equal(result.ownerUid, undefined);
 });
 
-test('Discord notification omits full IP and account identity', () => {
-  const content = notificationBody({ id: 'abcdef012345678901234567', ip: '203.0.113.10', account: 'private@example.com', route: '/', device: 'Desktop' }).content;
-  assert.match(content, /Page visit/);
+test('aggregate Discord embed excludes individual visitor details', () => {
+  const content = JSON.stringify(notificationBody({ today: { visits: 4, pageViews: 7, signedInPageViews: 3 }, live: 2, pages: [{ name: '/', value: 7 }] }));
+  assert.match(content, /Visitor pulse/);
+  assert.match(content, /Signed-in page views/);
   assert.doesNotMatch(content, /203\.0\.113\.10|private@example\.com|abcdef012345678901234567/);
+});
+
+test('claimed diagnostic embed shows IP and public profile preview', () => {
+  const content = JSON.stringify(diagnosticBody({ visitorId: 'abcdef012345678901234567', ip: '203.0.113.10', ipVersion: 4, network: { city: 'London', isp: 'Example ISP' } }, { signedIn: true, username: 'lamp', displayName: 'Lamp', url: 'https://www.user.pet/lamp', avatar: 'https://www.user.pet/avatar.png' }));
+  assert.match(content, /203\.0\.113\.10/);
+  assert.match(content, /user\.pet\/lamp/);
+  assert.match(content, /avatar\.png/);
 });
 
 test('unauthorised requests are rejected before database access', async () => {
