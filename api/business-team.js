@@ -1,4 +1,3 @@
-import { getAuth } from 'firebase-admin/auth';
 import { database } from '../server/visitorStore.js';
 import { bearerToken, verifyFirebaseToken } from '../server/firebaseAuth.js';
 
@@ -38,31 +37,33 @@ export default async function handler(req, res) {
     const username = String(body.username || '').trim().toLowerCase();
     const email = String(body.email || '').trim().toLowerCase();
     if (!username && !email) return fail(res, 400, 'Enter an email or profile username.');
-    let account;
+    let personal;
+    let memberUid;
     if (username) {
       if (!validId(username)) return fail(res, 400, 'Invalid profile username.');
       const profile = await db.collection('profiles').doc(username).get();
       if (!profile.exists || !profile.data().ownerUid) return fail(res, 404, 'That personal profile was not found.');
-      account = await getAuth().getUser(profile.data().ownerUid);
+      memberUid = profile.data().ownerUid;
+      personal = await db.collection('users').doc(memberUid).get();
     } else {
-      try { account = await getAuth().getUserByEmail(email); }
-      catch (error) { if (error.code === 'auth/user-not-found') return fail(res, 404, 'That email needs a personal account first.'); throw error; }
+      const matches = await db.collection('users').where('email', '==', email).limit(1).get();
+      personal = matches.docs[0];
+      memberUid = personal?.id;
     }
-    if (email && account.email?.toLowerCase() !== email) return fail(res, 400, 'The email and profile belong to different accounts.');
-    if (account.uid === actor.uid) return fail(res, 400, 'The owner already has full access.');
-    const personal = await db.collection('users').doc(account.uid).get();
-    if (!personal.exists || !personal.data().username) return fail(res, 400, 'This person must claim a personal profile first.');
+    if (!personal?.exists || !personal.data().username) return fail(res, 400, 'This person must claim a personal profile first.');
+    if (email && personal.data().email !== email) return fail(res, 400, 'The email and profile belong to different accounts.');
+    if (memberUid === actor.uid) return fail(res, 400, 'The owner already has full access.');
     if (username && personal.data().username !== username) return fail(res, 400, 'That profile does not match the personal account.');
 
     await db.runTransaction(async (tx) => {
       const current = await tx.get(ref);
       if (!current.exists || current.data().ownerUid !== actor.uid) throw new Error('Business access changed.');
       const members = { ...current.data().members };
-      if (!members[account.uid] && Object.keys(members).length >= 20) throw new Error('A business can have up to 20 team members.');
-      members[account.uid] = { email: account.email.toLowerCase(), username: personal.data().username, role };
+      if (!members[memberUid] && Object.keys(members).length >= 20) throw new Error('A business can have up to 20 team members.');
+      members[memberUid] = { email: personal.data().email, username: personal.data().username, role };
       tx.update(ref, { members, memberUids: Object.keys(members), updatedAt: new Date() });
     });
-    return res.status(200).json({ ok: true, member: { uid: account.uid, username: personal.data().username, email: account.email.toLowerCase(), role } });
+    return res.status(200).json({ ok: true, member: { uid: memberUid, username: personal.data().username, email: personal.data().email, role } });
   } catch (error) {
     console.error('Business team update failed:', error);
     return fail(res, 400, error.message || 'Could not update the team.');
