@@ -52,6 +52,7 @@ export const defaultProfile = (username = '') => ({
   shownBadges: [],
   media: { avatar: media(), banner: media(), background: media(), cursor: media() },
   effects: { text: 'none', background: 'none', overlay: 'none', decoration: null, decoHue: 0, decoSize: 120 },
+  entry: { mode: 'button', title: 'click to enter', subtitle: '', textEffect: 'none', passwordSalt: '', passwordHash: '' },
   card: { layout: 'minimal', alpha: 0.6, radius: 24, width: 440, blur: 14, accent: '#6cc4ff', cardColor: '#0b1626', textColor: '#ffffff', bgColor: '#07111f', borderAlpha: 0.15, tilt: true },
   links: [],
   widgets: {
@@ -132,6 +133,14 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       } : null,
       decoHue: clamp(source.effects?.decoHue, 0, 360, 0),
       decoSize: clamp(source.effects?.decoSize, 50, 240, 120),
+    },
+    entry: {
+      mode: oneOf(source.entry?.mode, ['button', 'anywhere', 'password'], 'button'),
+      title: text(source.entry?.title ?? 'click to enter', 80),
+      subtitle: text(source.entry?.subtitle, 160),
+      textEffect: oneOf(source.entry?.textEffect, ['none', 'glitch', 'typewriter', 'flicker', 'rainbow', 'neon', 'wave', 'bounce', 'shake', 'gradient', 'blurin', 'scramble', 'rgb', 'outline', 'pulse', 'fire', 'ice', 'sparkle', 'float', 'chroma', '3d', 'swing', 'morph'], 'none'),
+      passwordSalt: /^[a-f0-9]{32}$/i.test(source.entry?.passwordSalt || '') ? source.entry.passwordSalt : '',
+      passwordHash: /^[a-f0-9]{64}$/i.test(source.entry?.passwordHash || '') ? source.entry.passwordHash : '',
     },
     card: {
       layout: oneOf(source.card?.layout, ['minimal', 'compact', 'banner', 'slideshow'], 'minimal'),

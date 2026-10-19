@@ -1,8 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createProfileDocument, migrateProfile, toRendererProfile, validateProfileForSave } from '../src/shared/profileSchema.js';
-import { redesignFromDocument } from '../src/redesign/lib/profileModel.js';
+import { redesignFromDocument, documentFromRedesign, sanitizeRedesignProfile } from '../src/redesign/lib/profileModel.js';
 import { profileName } from '../src/shared/profileIdentity.js';
+import { createEntryPassword, verifyEntryPassword } from '../src/redesign/lib/entryPassword.js';
+
+test('entry settings survive publication and entry passwords verify', async () => {
+  const password = await createEntryPassword('secret phrase');
+  const profile = sanitizeRedesignProfile({ entry: { mode: 'password', title: 'Welcome', subtitle: 'Come in', textEffect: 'glitch', ...password } }, 'lamp');
+  const saved = documentFromRedesign(profile, 'owner', 'lamp');
+  const publicProfile = redesignFromDocument(saved, 'lamp');
+  assert.equal(publicProfile.entry.mode, 'password');
+  assert.equal(publicProfile.entry.title, 'Welcome');
+  assert.equal(publicProfile.entry.textEffect, 'glitch');
+  assert.equal(await verifyEntryPassword('secret phrase', publicProfile.entry), true);
+  assert.equal(await verifyEntryPassword('wrong phrase', publicProfile.entry), false);
+  assert.equal(redesignFromDocument(null, 'kid').entry.mode, 'button');
+});
 
 test('new and existing placeholder profiles use their claimed username', () => {
   assert.equal(redesignFromDocument(null, 'kid').displayName, 'kid');

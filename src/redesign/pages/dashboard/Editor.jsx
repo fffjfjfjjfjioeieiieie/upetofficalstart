@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image, Wand2, CreditCard, Link2, Music } from "lucide-react";
+import { Image, Wand2, CreditCard, Link2, Music, DoorOpen } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { PageTitle } from "../../components/Controls";
 import { ProfileScene } from "../../components/ProfileCard";
@@ -9,8 +9,9 @@ import EffectsTab from "./editor/EffectsTab";
 import CardTab from "./editor/CardTab";
 import LinksTab from "./editor/LinksTab";
 import AudioTab from "./editor/AudioTab";
+import EntryTab from "./editor/EntryTab";
 
-const TABS = [["media", "Media", Image, MediaTab], ["effects", "Effects / VFX", Wand2, EffectsTab], ["card", "Card", CreditCard, CardTab], ["links", "Links", Link2, LinksTab], ["audio", "Audio", Music, AudioTab]];
+const TABS = [["media", "Media", Image, MediaTab], ["entry", "Entry", DoorOpen, EntryTab], ["effects", "Effects / VFX", Wand2, EffectsTab], ["card", "Card", CreditCard, CardTab], ["links", "Links", Link2, LinksTab], ["audio", "Audio", Music, AudioTab]];
 
 export default function Editor() {
   const { user } = useStore();
