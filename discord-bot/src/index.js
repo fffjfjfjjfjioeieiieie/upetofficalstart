@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
+import { Client, EmbedBuilder, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 
 const { DISCORD_TOKEN, DISCORD_GUILD_ID, DISCORD_ADMIN_IDS, VISITOR_API_URL, VISITOR_BOT_SECRET } = process.env;
 if (!DISCORD_TOKEN || !DISCORD_GUILD_ID || !DISCORD_ADMIN_IDS || !VISITOR_API_URL || !VISITOR_BOT_SECRET) throw new Error('Configure the Discord visitor bot environment before starting.');
@@ -33,6 +33,31 @@ function format(command, data) {
   return [line('Visitor ID', v.id), line('First visit', v.firstAt), line('Last visit', v.lastAt), line('Pages', v.pageViews), line('Duration (seconds)', v.durationSeconds), line('Country', v.country), line('Device', v.device), line('Browser', v.browser), line('OS', v.os), ...(d ? [line('Public IP', d.ip), line('IP version', `IPv${d.ipVersion}`), line('City', d.city), line('Region', d.region), line('IP country', d.country), line('ISP', d.isp), line('ASN', d.asn), line('Network', d.network), line('VPN', d.vpn), line('Proxy', d.proxy), line('Tor', d.tor), line('Timezone', d.timezone), line('Language', d.language), line('Screen', d.screen), line('Viewport', d.viewport)] : [])].join('\n');
 }
 
+function diagnosticEmbed(data) {
+  const d = data.diagnostic;
+  if (!d) return null;
+  const v = data.visitor;
+  const a = data.account;
+  const location = [d.city, d.region, d.country].filter(Boolean).map(safe).join(', ') || 'Unknown';
+  const profile = a?.url ? `[${safe(a.displayName || a.username)}](${a.url})` : 'No public profile';
+  const embed = new EmbedBuilder()
+    .setTitle('🔎 Visitor diagnostic')
+    .setColor(0x22c55e)
+    .setDescription(`Private details for verified test \`${safe(v.id)}\``)
+    .addFields(
+      { name: 'Public IP', value: safe(d.ip), inline: true },
+      { name: 'Account signed in', value: a?.signedIn ? 'Yes' : 'No', inline: true },
+      { name: 'Public profile', value: profile },
+      { name: 'Location estimate', value: location },
+      { name: 'ISP / ASN', value: [d.isp, d.asn].filter(Boolean).map(safe).join(' · ') || 'Unknown' },
+      { name: 'VPN / Proxy / Tor', value: `${d.vpn ? 'Yes' : 'No'} / ${d.proxy ? 'Yes' : 'No'} / ${d.tor ? 'Yes' : 'No'}` },
+      { name: 'Pages / last route', value: `${v.pageViews || 0} · ${safe(v.route)}` },
+    )
+    .setFooter({ text: 'Explicit 24-hour diagnostic test · estimates may be inaccurate' });
+  if (a?.avatar) embed.setThumbnail(a.avatar);
+  return embed;
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand() || !['visitor', 'analytics'].includes(interaction.commandName)) return;
   if (interaction.guildId !== DISCORD_GUILD_ID || !admins.has(interaction.user.id)) {
@@ -44,7 +69,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const command = interaction.options.getSubcommand();
     const visitorId = interaction.options.getString('id') || '';
     const result = await query(command, visitorId, interaction.user.id);
-    await interaction.editReply({ content: format(command, result).slice(0, 1900) || 'No data.', allowedMentions: { parse: [] } });
+    const embed = command === 'info' ? diagnosticEmbed(result) : null;
+    await interaction.editReply(embed
+      ? { embeds: [embed], allowedMentions: { parse: [] } }
+      : { content: format(command, result).slice(0, 1900) || 'No data.', allowedMentions: { parse: [] } });
   } catch (error) {
     console.error('Visitor command failed:', error);
     await interaction.editReply('Visitor lookup failed. Check the API connection and try again.');
