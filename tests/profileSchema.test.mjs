@@ -33,6 +33,19 @@ test('legacy Dome fields migrate to a versioned document without losing music or
   assert.equal(toRendererProfile(document, { username: 'dome' }).links[0].label, 'Discord');
 });
 
+test('legacy click sounds are discarded while profile music remains available', () => {
+  const document = migrateProfile({ username: 'lamp', audioUrl: '/music.mp3', clickSoundEnabled: true, clickSoundUrl: '/tick.mp3', clickSoundVolume: 100 });
+  const renderer = toRendererProfile(document, { username: 'lamp' });
+  assert.equal(renderer.audioUrl, '/music.mp3');
+  assert.equal('clickSoundEnabled' in renderer, false);
+  assert.equal('clickSoundUrl' in renderer, false);
+  assert.equal('clickSound' in document.effects, false);
+  const published = createProfileDocument({ username: 'lamp' });
+  published.effects.clickSound = '/tick.mp3';
+  published.effects.clickSoundEnabled = true;
+  assert.equal('clickSound' in migrateProfile(published).effects, false);
+});
+
 test('draft and renderer preserve ordered blocks', () => {
   const document = createProfileDocument({ username: 'lamp' });
   document.blocks.push({ id: 'one', type: 'heading', enabled: true, order: 0, style: {}, content: { text: 'Hello' } });

@@ -7,7 +7,7 @@ import { Field, Panel, inputCls, btnCls, ghostCls } from '../../../components/Co
 
 const MODES = [
   ['button', 'Click to enter', 'Visitors press the entry button.'],
-  ['anywhere', 'Click anywhere', 'Visitors can tap the backdrop or entry button.'],
+  ['anywhere', 'Click anywhere', 'Visitors can tap anywhere on the entry screen.'],
   ['password', 'Password to enter', 'Visitors enter the password you set below.'],
 ];
 
