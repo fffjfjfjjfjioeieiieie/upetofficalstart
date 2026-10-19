@@ -6,7 +6,7 @@ import { useStore } from "../lib/store";
 import { Logo } from "./Logo";
 import { Avatar } from "./ProfileBits";
 
-const TABS = [["Explore", "/explore"], ["Marketplace", "/marketplace"], ["Legal", "/legal"]];
+const TABS = [["Explore", "/explore"], ["Marketplace", "/marketplace"]];
 
 const AccountMenu = () => {
   const { user, session, db, logout, switchTo } = useStore();
@@ -47,7 +47,7 @@ export const Header = () => {
     <motion.header initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }} className="fixed inset-x-0 top-5 z-50 flex justify-center px-4">
       <nav data-testid="header-pill" className="glass flex w-full max-w-4xl items-center justify-between rounded-full py-2 pl-4 pr-2 shadow-[0_10px_40px_-12px_hsl(var(--primary)/.45)]">
         <Link to="/" data-testid="header-logo"><Logo /></Link>
-        <div className={`${user ? 'hidden sm:flex' : 'hidden'} items-center gap-1`}>
+        <div className="hidden items-center gap-1 sm:flex">
           {TABS.map(([label, to]) => (
             <NavLink key={to} to={to} data-testid={`nav-${label.toLowerCase()}`} className={({ isActive }) => `rounded-full px-3 py-1.5 text-sm font-medium transition-colors sm:px-4 ${isActive ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"}`}>
               {label}

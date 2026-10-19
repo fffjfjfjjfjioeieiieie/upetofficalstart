@@ -1,84 +1,62 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, Check, X, Loader2, Palette, ShoppingBag, BarChart3, Crown, Eye, Link2 } from "lucide-react";
-import { useStore } from "../lib/store";
-import { Avatar, BadgeIcon, isVideoMedia } from "../components/ProfileBits";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight, BarChart3, Check, Copy, Crown, Eye, LayoutTemplate, Link2, MessageCircle, Palette, ShoppingBag, Sparkles } from 'lucide-react';
+import { useStore } from '../lib/store';
+import { Avatar, BadgeIcon, isVideoMedia } from '../components/ProfileBits';
+import styles from './Home.module.css';
 
-const fade = { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.5 } };
-
-const EmptyBio = ({ i }) => (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }} data-testid={`example-bio-${i}`} className="relative h-[380px] overflow-hidden rounded-2xl border bg-card/60 backdrop-blur-sm" style={{ transform: `rotate(${[-2, 0, 2][i]}deg)` }}>
-    <div className="flex h-full flex-col items-center gap-3 p-6 pt-12">
-      <div className="h-24 w-24 rounded-full border border-dashed border-primary/30" />
-      <div className="h-4 w-28 rounded-full bg-primary/10" />
-      <div className="h-3 w-16 rounded-full bg-primary/5" />
-      <div className="mt-6 h-14 w-full rounded-xl border border-dashed border-border" />
-      <div className="mt-auto h-11 w-full rounded-xl border border-dashed border-border" />
-    </div>
-  </motion.div>
-);
-
+const reveal = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.18 }, transition: { duration: 0.5 } };
 const stillImage = (media) => media?.src && !isVideoMedia(media) ? media.src : '';
 
-const TopProfile = ({ entry, rank, slot }) => {
+const TopProfile = ({ entry, rank }) => {
   const accent = entry.card.accent;
   const image = stillImage(entry.banner) || stillImage(entry.background);
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + slot * 0.1, duration: 0.5 }} data-testid={`top-profile-${rank}`} className="group relative h-[380px] min-w-0 overflow-hidden rounded-2xl border shadow-xl transition-transform hover:-translate-y-1" style={{ backgroundColor: entry.card.bgColor, borderColor: `${accent}55` }}>
-      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-white/15 to-transparent" style={image ? { backgroundImage: `linear-gradient(to bottom, transparent, ${entry.card.bgColor}), url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35" />
-      <Link to={`/${entry.username}`} aria-label={`View ${entry.displayName}'s profile, rank ${rank}`} className="relative flex h-full min-w-0 flex-col items-center p-5 text-center text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px]" style={{ outlineColor: accent }}>
-        <div className="flex w-full items-center justify-between text-[11px] font-semibold uppercase tracking-wider"><span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2.5 py-1" style={{ color: accent }}>{rank === 1 ? <Crown className="h-3.5 w-3.5" /> : null}#{rank} all time</span><ArrowUpRight className="h-4 w-4 text-white/65 transition-colors group-hover:text-white" /></div>
-        <div className="mt-5 rounded-full p-1 shadow-lg" style={{ backgroundColor: `${accent}55` }}><Avatar media={entry.avatar} name={entry.username} size={72} /></div>
-        <h3 className="mt-3 w-full truncate font-display text-xl font-bold">{entry.displayName}</h3>
-        <p className="w-full truncate text-xs text-white/60">@{entry.username}{entry.alias && entry.alias !== entry.username ? ` · ${entry.alias}` : ''}</p>
-        <div className="mt-2 flex h-6 items-center justify-center gap-1">{entry.badges.slice(0, 2).map((badge) => <BadgeIcon key={badge} id={badge} size={11} />)}</div>
-        <p className="mt-3 line-clamp-2 min-h-9 max-w-[250px] text-xs leading-relaxed text-white/70">{entry.bio || 'Take a look at this profile.'}</p>
-        <div className="mt-auto flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 text-xs backdrop-blur-sm"><span className="inline-flex items-center gap-1.5 text-white/75"><Eye className="h-3.5 w-3.5" />{entry.views.toLocaleString()} views</span><span className="inline-flex items-center gap-1.5 text-white/60"><Link2 className="h-3.5 w-3.5" />{entry.linkCount}</span></div>
-      </Link>
-    </motion.div>
-  );
+  return <Link to={`/${entry.username}`} data-testid={`top-profile-${rank}`} aria-label={`View ${entry.displayName}'s profile, rank ${rank}`} className={styles.profileCard} style={{ '--profile-accent': accent, '--profile-bg': entry.card.bgColor }}>
+    <div className={styles.profileImage} style={image ? { backgroundImage: `linear-gradient(180deg, transparent 10%, ${entry.card.bgColor} 100%), url(${image})` } : undefined} />
+    <div className={styles.profileContent}>
+      <div className={styles.profileTopline}><span>{rank === 1 && <Crown size={13} />} #{rank} all time</span><ArrowUpRight size={17} /></div>
+      <div className={styles.profileAvatar}><Avatar media={entry.avatar} name={entry.username} size={76} /></div>
+      <h3>{entry.displayName}</h3>
+      <p className={styles.profileHandle}>@{entry.username}{entry.alias && entry.alias !== entry.username ? ` · ${entry.alias}` : ''}</p>
+      <div className={styles.profileBadges}>{entry.badges.slice(0, 2).map((badge) => <BadgeIcon key={badge} id={badge} size={11} />)}</div>
+      <p className={styles.profileBio}>{entry.bio || 'Take a look at this page.'}</p>
+      <div className={styles.profileBottom}><span><Eye size={14} />{entry.views.toLocaleString()} views</span><span><Link2 size={14} />{entry.linkCount} links</span></div>
+    </div>
+  </Link>;
 };
 
-const UsernameCheck = () => {
-  const { isTaken } = useStore();
-  const nav = useNavigate();
-  const [name, setName] = useState("");
-  const [state, setState] = useState("idle");
-  useEffect(() => {
-    const n = name.toLowerCase().trim();
-    if (!n) return setState("idle");
-    if (!/^[a-z0-9][a-z0-9._-]{2,19}$/.test(n)) return setState("invalid");
-    setState("checking");
-    let active = true;
-    const t = setTimeout(async () => {
-      const taken = await isTaken(n);
-      if (active) setState(taken ? "taken" : "available");
-    }, 400);
-    return () => { active = false; clearTimeout(t); };
-  }, [name, isTaken]);
-  const msg = { idle: "Type to check instantly", invalid: "2-20 chars: a-z, 0-9, _ or .", checking: "Checking…", taken: "Already taken", available: "Available" }[state];
-  const color = state === "available" ? "text-emerald-400" : state === "taken" || state === "invalid" ? "text-red-400" : "text-muted-foreground";
-  return (
-    <motion.section {...fade} className="mx-auto mt-32 max-w-xl px-6 text-center" data-testid="username-check-section">
-      <h2 className="text-2xl font-semibold sm:text-3xl">Check your username</h2>
-      <div className="mt-6 flex items-center gap-2 rounded-xl border bg-card/70 p-1.5 pl-4 text-left">
-        <span className="font-mono text-sm text-muted-foreground">user.pet/</span>
-        <input data-testid="username-check-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="____" className="min-w-0 flex-1 bg-transparent font-mono text-sm outline-none" />
-        <span className={color}>{state === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : state === "available" ? <Check className="h-4 w-4" /> : state === "taken" || state === "invalid" ? <X className="h-4 w-4" /> : null}</span>
-        <button data-testid="username-claim-button" disabled={state !== "available"} onClick={() => nav(`/claim?username=${name.toLowerCase().trim()}`)} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40">Claim</button>
-      </div>
-      <div data-testid="username-check-status" className={`mt-2 text-xs ${color}`}>{msg}</div>
-    </motion.section>
-  );
-};
+const ProfilePlaceholder = ({ rank }) => <div className={styles.profilePlaceholder} aria-hidden="true"><span>#{rank}</span><div className={styles.placeholderAvatar} /><div className={styles.placeholderLine} /><div className={styles.placeholderLineShort} /><div className={styles.placeholderButton} /></div>;
 
-const FEATURES = [[Palette, "Customize", "Layouts, effects, decorations and widgets."], [ShoppingBag, "Sell", "Run a shop right on your page."], [BarChart3, "Track", "Views and stats in your dashboard."]];
+const HeroPreview = () => <div className={styles.heroVisual} aria-label="Illustrative user.pet profile preview">
+  <div className={styles.previewHalo} />
+  <div className={styles.previewWindow}>
+    <div className={styles.previewBar}><span className={styles.previewDots}><i /><i /><i /></span><span>user.pet/yourname</span><ArrowUpRight size={15} /></div>
+    <div className={styles.previewBanner}><span className={styles.previewBannerMark}>make it yours</span></div>
+    <div className={styles.previewBody}>
+      <div className={styles.previewAvatar}>U</div>
+      <div className={styles.previewName}>Your name <span>✦</span></div>
+      <p>One place for everything you want people to find.</p>
+      <div className={styles.previewLink}><Link2 size={17} /><span>Your links</span><ArrowUpRight size={16} /></div>
+      <div className={styles.previewLink}><ShoppingBag size={17} /><span>Your shop</span><ArrowUpRight size={16} /></div>
+      <div className={styles.previewLink}><MessageCircle size={17} /><span>Get in touch</span><ArrowUpRight size={16} /></div>
+    </div>
+  </div>
+  <div className={styles.previewNote}><Sparkles size={16} /><span>One link. A whole world behind it.</span></div>
+</div>;
+
+const FEATURES = [
+  { icon: Palette, number: '01', title: 'Look like you', body: 'Make the first impression yours with a profile that has room for your style, story and personality.', route: 'editor', action: 'Shape your page' },
+  { icon: Link2, number: '02', title: 'Keep every link together', body: 'Put the places that matter in one easy-to-share address, so nobody has to search for the next step.', route: 'editor', action: 'Manage your links' },
+  { icon: ShoppingBag, number: '03', title: 'Show what you offer', body: 'Give your work a home with a storefront, product details and a way for people to start a conversation.', route: 'shop', action: 'Set up your shop' },
+  { icon: BarChart3, number: '04', title: 'Know what gets noticed', body: 'See page views and link activity in your workspace, then make your page better over time.', route: 'overview', action: 'View your insights' },
+];
 
 export default function Home() {
   const { user } = useStore();
   const [topProfiles, setTopProfiles] = useState(null);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     let active = true;
     const refresh = async () => {
@@ -93,38 +71,51 @@ export default function Home() {
     const timer = window.setInterval(refresh, 300000);
     return () => { active = false; clearInterval(timer); };
   }, []);
+
+  const copyPage = async () => {
+    if (!user?.username) return;
+    try { await navigator.clipboard.writeText(`${window.location.origin}/${user.username}`); setCopied(true); window.setTimeout(() => setCopied(false), 2200); }
+    catch { setCopied(false); }
+  };
   const slots = [topProfiles?.[1], topProfiles?.[0], topProfiles?.[2]];
-  return (
-    <div>
-      <section className="mx-auto max-w-5xl px-6 pt-8 text-center">
-        <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} data-testid="hero-title" className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-          Buy, Sell and Flex with your <span className="text-primary" style={{ textShadow: "0 0 24px hsl(var(--primary) / .45)" }}>user.pet</span>
-        </motion.h1>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mx-auto mt-5 max-w-md text-sm text-muted-foreground sm:text-base">
-          {user ? 'One link for your links, your music and your shop.' : "user.pet is currently unavailable, but we're cooking. Join the Discord instead?"}
-        </motion.p>
-        <div className="mt-8 flex justify-center gap-3">
-          {user ? <Link to="/dashboard" data-testid="hero-cta" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Dashboard<ArrowRight className="h-4 w-4" /></Link> : <a href="https://discord.gg/upet" target="_blank" rel="noreferrer" data-testid="hero-cta" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Join Discord<ArrowRight className="h-4 w-4" /></a>}
-          {user && <Link to="/marketplace" data-testid="hero-explore" className="rounded-xl border bg-card/60 px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-card">Marketplace</Link>}
-        </div>
-        <div className="mt-16"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Most viewed profiles</p><p className="mt-2 text-xs text-muted-foreground">All-time leaders · refreshes every 5 minutes</p></div>
-        <div className="mt-6 grid gap-6 md:grid-cols-3">{slots.map((entry, i) => <div key={entry?.username || `empty-${i}`} className={`${i === 1 ? 'order-1 md:order-2' : i === 0 ? 'order-2 md:order-1' : 'order-3'}`}>{entry ? <TopProfile entry={entry} rank={i === 1 ? 1 : i === 0 ? 2 : 3} slot={i} /> : <EmptyBio i={i} />}</div>)}</div>
-      </section>
-      {user && <UsernameCheck />}
-      <section className="mx-auto mt-28 grid max-w-5xl gap-4 px-6 md:grid-cols-3">
-        {FEATURES.map(([Icon, t, d], i) => (
-          <motion.div key={t} {...fade} data-testid={`feature-${i}`} className="rounded-2xl border bg-card/60 p-6">
-            <Icon className="h-5 w-5 text-primary" />
-            <h3 className="mt-4 font-semibold">{t}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{d}</p>
-          </motion.div>
-        ))}
-      </section>
-      <motion.section {...fade} className="mx-auto mt-28 max-w-xl px-6 text-center" data-testid="the-end-section">
-        <h2 className="text-3xl font-bold">Ready?</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{user ? 'Keep building your page.' : 'Follow development and release updates in Discord.'}</p>
-        {user ? <Link to="/dashboard" data-testid="end-cta" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Open dashboard <ArrowRight className="h-4 w-4" /></Link> : <a href="https://discord.gg/upet" target="_blank" rel="noreferrer" data-testid="end-cta" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Join Discord <ArrowRight className="h-4 w-4" /></a>}
-      </motion.section>
-    </div>
-  );
+
+  return <div className={styles.home}>
+    <section className={styles.hero}>
+      <div className={styles.heroCopy}>
+        <motion.p {...reveal} className={styles.eyebrow}><span className={styles.eyebrowDot} />Your corner of the internet</motion.p>
+        <motion.h1 {...reveal} data-testid="hero-title">One link.<br /><em>Everything you do.</em></motion.h1>
+        <motion.p {...reveal} className={styles.heroDescription}>Your link-in-bio page should do more than list URLs. Put your profile, links and offers together in a place people actually want to open.</motion.p>
+        <motion.div {...reveal} className={styles.heroActions}>
+          {user ? <>
+            <Link to="/dashboard" data-testid="hero-cta" className={styles.primaryButton}>Open your workspace <ArrowRight size={17} /></Link>
+            <Link to={`/${user.username}`} data-testid="hero-explore" className={styles.secondaryButton}>View your page <ArrowUpRight size={17} /></Link>
+          </> : <>
+            <Link to="/explore" data-testid="hero-cta" className={styles.primaryButton}>Explore pages <ArrowRight size={17} /></Link>
+            <Link to="/marketplace" data-testid="hero-explore" className={styles.secondaryButton}>Browse shops <ArrowUpRight size={17} /></Link>
+          </>}
+        </motion.div>
+        <motion.div {...reveal} className={styles.heroAside}>{user ? <span>Your page is live at <strong>user.pet/{user.username}</strong></span> : <span>Creating a page is currently limited to invited accounts. <a href="https://discord.gg/upet" target="_blank" rel="noreferrer">Join the community for updates <ArrowUpRight size={13} /></a></span>}</motion.div>
+      </div>
+      <HeroPreview />
+    </section>
+
+    <section className={styles.valueStrip} aria-label="What your page brings together">
+      <span>One address</span><span>·</span><span>Your look</span><span>·</span><span>Your links</span><span>·</span><span>Your offers</span><span>·</span><span>Your next conversation</span>
+    </section>
+
+    <section className={styles.showcase} aria-labelledby="showcase-title">
+      <div className={styles.sectionHeader}><div><p className={styles.sectionKicker}>Made on user.pet</p><h2 id="showcase-title">Pages with their own point of view.</h2><p>Open a real page and see how much can live behind one link.</p></div><Link to="/explore" className={styles.textLink}>Explore all profiles <ArrowUpRight size={16} /></Link></div>
+      <div className={styles.profileGrid}>{slots.map((entry, index) => <div key={entry?.username || `empty-${index}`} className={index === 1 ? styles.firstSlot : index === 0 ? styles.secondSlot : styles.thirdSlot}>{entry ? <TopProfile entry={entry} rank={index === 1 ? 1 : index === 0 ? 2 : 3} /> : <ProfilePlaceholder rank={index === 1 ? 1 : index === 0 ? 2 : 3} />}</div>)}</div>
+      <p className={styles.showcaseNote}><Eye size={14} /> Ranked by all-time profile views · updates every five minutes</p>
+    </section>
+
+    <section className={styles.featureSection} aria-labelledby="features-title">
+      <div className={styles.featureLead}><p className={styles.sectionKicker}>Built for more than a bio</p><h2 id="features-title">Make every visit lead somewhere.</h2><p>A good page introduces you quickly, shows what you do, and gives people a clear way forward. Build it your way and keep the whole thing at one URL.</p>{user ? <Link to="/dashboard/editor" className={styles.textLink}>Customize your page <ArrowUpRight size={16} /></Link> : <Link to="/explore" className={styles.textLink}>See what people are building <ArrowUpRight size={16} /></Link>}</div>
+      <div className={styles.featureGrid}>{FEATURES.map(({ icon: Icon, number, title, body, route, action }, index) => <motion.div {...reveal} key={number} data-testid={`feature-${index}`} className={styles.featureCard}><div className={styles.featureCardTop}><span className={styles.featureIcon}><Icon size={20} /></span><span>{number}</span></div><h3>{title}</h3><p>{body}</p>{user && <Link to={`/dashboard/${route}`} className={styles.featureAction}>{action}<ArrowUpRight size={15} /></Link>}</motion.div>)}</div>
+    </section>
+
+    <section className={styles.discovery} aria-labelledby="discovery-title"><div className={styles.discoveryVisual}><div className={styles.discoveryOrbit}><LayoutTemplate size={36} /><span>user.pet/you</span></div><span className={styles.discoveryChipOne}><Link2 size={16} /> Links</span><span className={styles.discoveryChipTwo}><ShoppingBag size={16} /> Shop</span><span className={styles.discoveryChipThree}><MessageCircle size={16} /> Contact</span></div><div className={styles.discoveryCopy}><p className={styles.sectionKicker}>More than a landing page</p><h2 id="discovery-title">A home for the things you share.</h2><p>Your profile can be the introduction. Your links take people further. Your shop gives your work a place to be seen. Everything stays connected to the same memorable address.</p><div className={styles.discoveryActions}><Link to="/marketplace" className={styles.primaryButton}>Explore the marketplace <ArrowRight size={17} /></Link><Link to="/explore" className={styles.textLink}>Browse profiles <ArrowUpRight size={16} /></Link></div></div></section>
+
+    <section className={styles.finalSection} data-testid="the-end-section"><p className={styles.sectionKicker}>Your next move</p><h2>{user ? 'Your page is ready to grow with you.' : 'See what one link can become.'}</h2><p>{user ? 'Keep shaping your page, put your best links up front, and make it easier for people to find you.' : 'Take a look around. Discover profiles and storefronts made by the user.pet community.'}</p><div className={styles.finalActions}>{user ? <><Link to="/dashboard" data-testid="end-cta" className={styles.primaryButton}>Open dashboard <ArrowRight size={17} /></Link><button type="button" onClick={copyPage} className={styles.secondaryButton}>{copied ? <><Check size={17} /> Link copied</> : <><Copy size={17} /> Copy your link</>}</button></> : <><Link to="/explore" data-testid="end-cta" className={styles.primaryButton}>Explore pages <ArrowRight size={17} /></Link><a href="https://discord.gg/upet" target="_blank" rel="noreferrer" className={styles.secondaryButton}>Join the community <ArrowUpRight size={17} /></a></>}</div></section>
+  </div>;
 }
