@@ -238,7 +238,7 @@ export const SlideshowPage = ({ p }) => {
   );
 };
 
-export const ProfileScene = ({ p, className = "", children }) => {
+export const ProfileScene = ({ p, className = "", children, scrollable = false }) => {
   const slideshow = p.card.layout === "slideshow";
   const content = children || (slideshow ? <SlideshowPage p={p} /> : <ProfileCard p={p} />);
   const bg = p.media.background;
@@ -247,7 +247,7 @@ export const ProfileScene = ({ p, className = "", children }) => {
       {bg.src && <MediaLayer media={bg} className="absolute inset-[-20px] h-[calc(100%+40px)] w-[calc(100%+40px)]" style={{ backgroundSize: "cover" }} />}
       {!bg.src && <div className="absolute inset-0" style={{ background: `radial-gradient(60% 50% at 50% 10%, ${hexA(p.card.accent, 0.35)}, transparent 70%)` }} />}
       <BackgroundFx kind={p.effects.background} />
-      {slideshow && !children ? <div className="absolute inset-0 z-10">{content}</div> : <div className="relative z-10 flex h-full w-full items-center justify-center p-6">{content}</div>}
+      {slideshow && !children ? <div className="absolute inset-0 z-10">{content}</div> : scrollable ? <div className="scroll-thin relative z-10 h-full w-full overflow-y-auto"><div className="flex min-h-full w-full items-center justify-center p-6">{content}</div></div> : <div className="relative z-10 flex h-full w-full items-center justify-center p-6">{content}</div>}
     </div>
   );
 };

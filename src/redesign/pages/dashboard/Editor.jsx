@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Image, Wand2, CreditCard, Link2, Music, DoorOpen } from "lucide-react";
-import { useStore } from "../../lib/store";
 import { PageTitle } from "../../components/Controls";
-import { ProfileScene } from "../../components/ProfileCard";
+import EditorPreview from "./editor/EditorPreview";
 import MediaTab from "./editor/MediaTab";
 import EffectsTab from "./editor/EffectsTab";
 import CardTab from "./editor/CardTab";
@@ -14,7 +13,6 @@ import EntryTab from "./editor/EntryTab";
 const TABS = [["media", "Media", Image, MediaTab], ["entry", "Entry", DoorOpen, EntryTab], ["effects", "Effects / VFX", Wand2, EffectsTab], ["card", "Card", CreditCard, CardTab], ["links", "Links", Link2, LinksTab], ["audio", "Audio", Music, AudioTab]];
 
 export default function Editor() {
-  const { user } = useStore();
   const [tab, setTab] = useState("media");
   const Active = TABS.find((t) => t[0] === tab)[3];
   return (
@@ -34,10 +32,7 @@ export default function Editor() {
             <Active />
           </motion.div>
         </AnimatePresence>
-        <div className="xl:sticky xl:top-8 xl:self-start" data-testid="editor-preview">
-          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground"><span className="uppercase tracking-[0.2em]">Live preview</span><span className="font-mono">user.pet/{user.username}</span></div>
-          <ProfileScene p={user.profile} className="h-[680px] rounded-[1.5rem] border" />
-        </div>
+        <EditorPreview tab={tab} />
       </div>
     </div>
   );
