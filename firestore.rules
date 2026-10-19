@@ -44,7 +44,7 @@ service cloud.firestore {
     function validUsername(username) {
       return username is string
         && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
-        && !(username in ['dashboard', 'business', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
+        && !(username in ['dashboard', 'business', 'business-verification', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
         && (username != 'dome' || request.auth.token.email == 'zurihcs@gmail.com');
     }
 
@@ -264,45 +264,44 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validBusinessApplication(data) {
+      return data.keys().hasOnly(['ownerUid', 'username', 'businessName', 'category', 'businessType', 'country', 'description', 'website', 'shopUrl', 'publicProofUrl', 'proofExplanation', 'ownerRole', 'supportEmail', 'fulfillment', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['ownerUid', 'username', 'businessName', 'category', 'businessType', 'country', 'description', 'website', 'shopUrl', 'publicProofUrl', 'proofExplanation', 'ownerRole', 'supportEmail', 'fulfillment', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 100
+        && data.category in ['digital', 'physical', 'services', 'creator', 'other']
+        && data.businessType in ['registered', 'sole_trader', 'creator', 'other']
+        && data.country is string && data.country.size() >= 2 && data.country.size() <= 80
+        && data.description is string && data.description.size() >= 20 && data.description.size() <= 1000
+        && data.website is string && (data.website == '' || data.website.matches('^https?://.{1,296}$'))
+        && data.shopUrl is string && data.shopUrl.matches('^https://(www[.])?user[.]pet/.{1,270}$') && data.shopUrl.size() <= 300
+        && data.publicProofUrl is string && data.publicProofUrl.matches('^https://.{1,292}$') && data.publicProofUrl.size() <= 300
+        && data.publicProofUrl != data.shopUrl
+        && data.proofExplanation is string && data.proofExplanation.size() >= 30 && data.proofExplanation.size() <= 600
+        && data.ownerRole in ['owner', 'co_owner', 'authorized_representative']
+        && data.supportEmail is string && data.supportEmail.matches('^[^ @]+@[^ @]+[.][^ @]+$') && data.supportEmail.size() <= 254
+        && data.fulfillment is string && data.fulfillment.size() >= 20 && data.fulfillment.size() <= 500;
+    }
+
     match /businessApplications/{uid} {
       allow get: if founder() && request.auth.uid == uid;
       allow list: if false;
       allow create: if founder()
         && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
-        && request.resource.data.keys().hasAll(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && validBusinessApplication(request.resource.data)
         && request.resource.data.ownerUid == uid
         && request.resource.data.username == get(/databases/$(database)/documents/users/$(uid)).data.username
         && request.resource.data.contactEmail == request.auth.token.email
         && request.resource.data.status == 'pending'
-        && request.resource.data.businessName is string
-        && request.resource.data.businessName.size() >= 2
-        && request.resource.data.businessName.size() <= 100
-        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
-        && request.resource.data.website is string
-        && (request.resource.data.website == '' || request.resource.data.website.matches('^https?://.{1,296}$'))
-        && request.resource.data.description is string
-        && request.resource.data.description.size() >= 20
-        && request.resource.data.description.size() <= 1000
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if founder()
         && request.auth.uid == uid
         && resource.data.status in ['pending', 'rejected']
-        && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'businessName', 'category', 'website', 'description', 'contactEmail', 'status', 'createdAt', 'updatedAt'])
+        && validBusinessApplication(request.resource.data)
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.username == resource.data.username
         && request.resource.data.contactEmail == resource.data.contactEmail
         && request.resource.data.status == 'pending'
-        && request.resource.data.businessName is string
-        && request.resource.data.businessName.size() >= 2
-        && request.resource.data.businessName.size() <= 100
-        && request.resource.data.category in ['digital', 'physical', 'services', 'creator', 'other']
-        && request.resource.data.website is string
-        && (request.resource.data.website == '' || request.resource.data.website.matches('^https?://.{1,296}$'))
-        && request.resource.data.description is string
-        && request.resource.data.description.size() >= 20
-        && request.resource.data.description.size() <= 1000
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;

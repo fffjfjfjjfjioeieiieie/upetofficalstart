@@ -22,8 +22,9 @@ const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const BusinessHub = lazy(() => import('./pages/business/BusinessHub'));
 const BusinessWorkspace = lazy(() => import('./pages/business/BusinessWorkspace'));
 const BusinessPublic = lazy(() => import('./pages/business/BusinessPublic'));
+const BusinessProgram = lazy(() => import('./components/BusinessProgram'));
 
-const NAMES = { "": "Home", explore: "Explore", marketplace: "Marketplace", legal: "Legal", login: "Login", privacy: "Privacy", terms: "Terms", support: "Support", status: "Status", changelog: "Changelog" };
+const NAMES = { "": "Home", explore: "Explore", marketplace: "Marketplace", legal: "Legal", login: "Login", privacy: "Privacy", terms: "Terms", support: "Support", status: "Status", changelog: "Changelog", 'business-verification': 'Business verification' };
 
 const TitleSync = () => {
   const { pathname } = useLocation();
@@ -69,6 +70,7 @@ function App() {
             <Route path="/" element={<Shell><Home /></Shell>} />
             <Route path="/explore" element={<Shell><Explore /></Shell>} />
             <Route path="/marketplace" element={<Shell><Marketplace /></Shell>} />
+            <Route path="/business-verification" element={<Shell><BusinessProgram /></Shell>} />
             <Route path="/legal" element={<Shell><ComingSoon name="Legal" /></Shell>} />
             <Route path="/privacy" element={<Shell><Privacy /></Shell>} />
             {["terms", "support", "status", "changelog"].map((p) => (

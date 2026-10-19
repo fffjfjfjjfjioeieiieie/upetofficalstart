@@ -19,7 +19,7 @@ import { getEditableRedesign, listDirectoryProfiles, saveRedesignProfile } from 
 import { defaultProfile } from './profileModel.js';
 
 export const ADMIN = { username: '', password: '' };
-export const RESERVED = ['admin', 'explore', 'marketplace', 'legal', 'login', 'dashboard', 'business', 'biz', 'api', 'settings', 'help', 'support', 'user', 'pet', 'claim', 'welcome', 'create-account', 'assets'];
+export const RESERVED = ['admin', 'explore', 'marketplace', 'legal', 'login', 'dashboard', 'business', 'business-verification', 'biz', 'api', 'settings', 'help', 'support', 'user', 'pet', 'claim', 'welcome', 'create-account', 'assets'];
 
 const Ctx = createContext(null);
 

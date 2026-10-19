@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BarChart3, Check, Copy, Crown, Eye, LayoutTemplate, Link2, MessageCircle, Palette, ShoppingBag, Sparkles } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { Avatar, BadgeIcon, isVideoMedia } from '../components/ProfileBits';
-import BusinessProgram from '../components/BusinessProgram';
 import styles from './Home.module.css';
 
 const reveal = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.18 }, transition: { duration: 0.5 } };
@@ -143,7 +142,7 @@ export default function Home() {
       <div className={styles.featureGrid}>{FEATURES.map(({ icon: Icon, number, title, body, route, action }, index) => <motion.div {...reveal} key={number} data-testid={`feature-${index}`} className={styles.featureCard}><div className={styles.featureCardTop}><span className={styles.featureIcon}><Icon size={20} /></span><span>{number}</span></div><h3>{title}</h3><p>{body}</p>{user && <Link to={`/dashboard/${route}`} className={styles.featureAction}>{action}<ArrowUpRight size={15} /></Link>}</motion.div>)}</div>
     </section>
 
-    <BusinessProgram user={user} />
+    <section className={styles.businessSection} aria-labelledby="business-title" data-testid="business-program"><div className={styles.businessIntro}><p className={styles.sectionKicker}><ShoppingBag size={15} /> The business side of user.pet</p><h2 id="business-title">Got a business?</h2><p>Give your shop a place to grow. Founders can apply for the separate Verified Business programme and have their storefront reviewed for a verified mark.</p><div className={styles.businessPoints}><span>Manual review</span><span>Storefront verification</span></div></div><div className={styles.businessTeaser}><span className={styles.businessTeaserIcon}><ShoppingBag size={30} /></span><h3>Put your shop forward.</h3><p>See what the programme looks for, then tell us about your business on the application page.</p><Link to="/business-verification" className={styles.primaryButton}>Explore the programme <ArrowRight size={17} /></Link>{user?.role === 'founder' && <Link to="/business" className={styles.textLink}>Open business mode <ArrowUpRight size={16} /></Link>}</div></section>
 
     <section className={styles.discovery} aria-labelledby="discovery-title"><div className={styles.discoveryVisual}><div className={styles.discoveryOrbit}><LayoutTemplate size={36} /><span>user.pet/you</span></div><span className={styles.discoveryChipOne}><Link2 size={16} /> Links</span><span className={styles.discoveryChipTwo}><ShoppingBag size={16} /> Shop</span><span className={styles.discoveryChipThree}><MessageCircle size={16} /> Contact</span></div><div className={styles.discoveryCopy}><p className={styles.sectionKicker}>More than a landing page</p><h2 id="discovery-title">A home for the things you share.</h2><p>Your profile can be the introduction. Your links take people further. Your shop gives your work a place to be seen. Everything stays connected to the same memorable address.</p><div className={styles.discoveryActions}><Link to="/marketplace" className={styles.primaryButton}>Explore the marketplace <ArrowRight size={17} /></Link><Link to="/explore" className={styles.textLink}>Browse profiles <ArrowUpRight size={16} /></Link></div></div></section>
 
