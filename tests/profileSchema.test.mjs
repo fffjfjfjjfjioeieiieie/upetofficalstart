@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createProfileDocument, migrateProfile, toRendererProfile, validateProfileForSave } from '../src/shared/profileSchema.js';
+import { redesignFromDocument } from '../src/redesign/lib/profileModel.js';
+import { profileName } from '../src/shared/profileIdentity.js';
+
+test('new and existing placeholder profiles use their claimed username', () => {
+  assert.equal(redesignFromDocument(null, 'kid').displayName, 'kid');
+  assert.equal(redesignFromDocument(null, 'kid').alias, 'kid');
+  assert.equal(redesignFromDocument({ redesign: { displayName: 'your name', alias: 'Your Name' } }, 'kid').displayName, 'kid');
+  assert.equal(profileName('A chosen name', 'kid'), 'A chosen name');
+});
 
 test('legacy Dome fields migrate to a versioned document without losing music or links', () => {
   const document = migrateProfile({ username: 'dome', displayName: 'dome', audioUrl: '/song.mp3', trackTitle: 'Lucid Dreams', trackArtist: 'Juice WRLD', links: [{ label: 'Discord', url: 'https://discord.gg/upet' }] });

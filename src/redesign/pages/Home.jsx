@@ -28,9 +28,36 @@ const TopProfile = ({ entry, rank }) => {
 
 const ProfilePlaceholder = ({ rank }) => <div className={styles.profilePlaceholder} aria-hidden="true"><span>#{rank}</span><div className={styles.placeholderAvatar} /><div className={styles.placeholderLine} /><div className={styles.placeholderLineShort} /><div className={styles.placeholderButton} /></div>;
 
-const HeroPreview = () => <div className={styles.heroVisual} aria-label="Illustrative user.pet profile preview">
+export const HeroPreview = ({ user }) => {
+  const profile = user?.profile;
+  const banner = stillImage(profile?.media?.banner) || stillImage(profile?.media?.background);
+  const links = profile?.links?.slice(0, 3) || [];
+  const hasShop = Boolean(profile?.shop?.enabled);
+  const rows = links.slice(0, hasShop ? 2 : 3);
+  const previewStyle = profile ? {
+    '--preview-accent': profile.card?.accent || '#6cc4ff',
+    '--preview-background': profile.card?.bgColor || '#07111f',
+    '--preview-surface': profile.card?.cardColor || '#0b1626',
+    '--preview-text': profile.card?.textColor || '#ffffff',
+  } : undefined;
+
+  return <div className={styles.heroVisual} aria-label={profile ? `Preview of ${user.username}'s profile` : 'Illustrative user.pet profile preview'} data-testid="hero-profile-preview" style={previewStyle}>
   <div className={styles.previewHalo} />
-  <div className={styles.previewWindow}>
+  {profile ? <Link to={`/${user.username}`} className={`${styles.previewWindow} ${styles.userPreviewWindow}`} aria-label={`Open your profile at user.pet/${user.username}`}>
+    <div className={styles.previewBar}><span className={styles.previewDots}><i /><i /><i /></span><span>user.pet/{user.username}</span><ArrowUpRight size={15} /></div>
+    <div className={`${styles.previewBanner} ${styles.userPreviewBanner}`} style={banner ? { backgroundImage: `linear-gradient(180deg, transparent, ${profile.card?.bgColor || '#07111f'}88), url(${banner})` } : undefined} />
+    <div className={styles.previewBody}>
+      <div className={styles.userPreviewAvatar}><Avatar media={profile.media?.avatar} name={user.username} size={76} /></div>
+      <div className={styles.previewName}>{profile.displayName || user.username}</div>
+      <div className={styles.userPreviewHandle}>@{user.username}</div>
+      {profile.bio && <p className={styles.userPreviewBio}>{profile.bio}</p>}
+      <div className={styles.userPreviewRows}>
+        {rows.map((link) => <div className={styles.previewLink} key={link.id || link.url}><Link2 size={17} /><span>{link.label || link.platform || 'Link'}</span><ArrowUpRight size={16} /></div>)}
+        {hasShop && <div className={styles.previewLink}><ShoppingBag size={17} /><span>{profile.shop.name || 'Shop'}</span><ArrowUpRight size={16} /></div>}
+        {!rows.length && !hasShop && <div className={styles.userPreviewEmpty}>Add your first link to bring your page to life.</div>}
+      </div>
+    </div>
+  </Link> : <div className={styles.previewWindow}>
     <div className={styles.previewBar}><span className={styles.previewDots}><i /><i /><i /></span><span>user.pet/yourname</span><ArrowUpRight size={15} /></div>
     <div className={styles.previewBanner}><span className={styles.previewBannerMark}>make it yours</span></div>
     <div className={styles.previewBody}>
@@ -41,9 +68,10 @@ const HeroPreview = () => <div className={styles.heroVisual} aria-label="Illustr
       <div className={styles.previewLink}><ShoppingBag size={17} /><span>Your shop</span><ArrowUpRight size={16} /></div>
       <div className={styles.previewLink}><MessageCircle size={17} /><span>Get in touch</span><ArrowUpRight size={16} /></div>
     </div>
-  </div>
-  <div className={styles.previewNote}><Sparkles size={16} /><span>One link. A whole world behind it.</span></div>
+  </div>}
+  <div className={styles.previewNote}><Sparkles size={16} /><span>{profile ? 'Your page, your way.' : 'One link. A whole world behind it.'}</span></div>
 </div>;
+};
 
 const FEATURES = [
   { icon: Palette, number: '01', title: 'Look like you', body: 'Make the first impression yours with a profile that has room for your style, story and personality.', route: 'editor', action: 'Shape your page' },
@@ -96,7 +124,7 @@ export default function Home() {
         </motion.div>
         <motion.div {...reveal} className={styles.heroAside}>{user ? <span>Your page is live at <strong>user.pet/{user.username}</strong></span> : <span>Creating a page is currently limited to invited accounts. <a href="https://discord.gg/upet" target="_blank" rel="noreferrer">Join the community for updates <ArrowUpRight size={13} /></a></span>}</motion.div>
       </div>
-      <HeroPreview />
+      <HeroPreview user={user} />
     </section>
 
     <section className={styles.valueStrip} aria-label="What your page brings together">
