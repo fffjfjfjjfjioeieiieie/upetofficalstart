@@ -41,6 +41,10 @@ export function createPublicRequestCache({
     invalidate(key) {
       entries.delete(String(key));
     },
+    invalidatePrefix(prefix) {
+      const value = String(prefix);
+      for (const key of entries.keys()) if (key.startsWith(value)) entries.delete(key);
+    },
     clear() {
       entries.clear();
     },

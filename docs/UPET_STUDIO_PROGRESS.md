@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-25  
+Last updated: 2026-10-25 (Stage 3 local security checkpoint)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -9,7 +9,7 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stages 0 through 2 are complete locally, and Stage 3's pure publish/security domain foundation is in progress. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; shared foundations and versioned contracts were added; legacy writes remain blocked; and strict public projection/publish decision helpers now have focused tests. No remote deployment or production-data operation was performed.
+Stages 0 through 2 are complete locally. Stage 3 now has an isolated, founder-preview-only draft/publish route, verified rules and projection boundaries, bounded legacy listeners, ranking aggregation/backfill code, and a local emulator gate. It is not a production migration: no live claims or ranking aggregates have been migrated, v1 autosave remains active, and the v2 route is disabled unless explicitly enabled. No remote deployment or production-data operation was performed. The verified build is served at `http://127.0.0.1:4173/` for local inspection.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -20,8 +20,8 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
 | 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
 | 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
-| 3. Draft/publish/security foundation | In progress | Pure projections/publish gates, trusted claims, cache/query policies and an isolated Admin SDK transaction repository complete; route binding, rules and Firebase emulator gates remain |
-| 4. Studio shell | Not started | Founder-only route and legacy editor escape hatch |
+| 3. Draft/publish/security foundation | Verified locally; rollout blocked | Emulator rules 6/6, v2 domain tests 32/32, build passed. Production claim migration, ranking backfill and v1 writer cutover are intentionally pending; see next gate. |
+| 4. Studio shell | Next | Founder-only route and legacy editor escape hatch; keep v2 API disabled outside local/approved preview |
 | 5. Core editor interactions | Not started | Responsive canvas, history, keyboard, drag/reorder tests |
 | 6. Materials and backgrounds | Not started | CSS fallback, quality manager, reduced-motion and performance budgets |
 | 7. Existing profile-feature parity | Not started | Identity/links/entry/effects/widgets/badges parity matrix |
@@ -92,6 +92,25 @@ node --test tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs test
 
 The projection, publish, claims, cache and query boundaries are recorded in `docs/architecture/UPET_V2_PUBLISH_SECURITY.md`. These functions perform no external I/O and are not connected to the current production writer.
 
+Stage 3 local integration verification (2026-10-25):
+
+```text
+npm run test:v2
+  32 passed, 0 failed
+JAVA_HOME=/tmp/upet-jre/jdk-21.0.13+9-jre PATH=/tmp/upet-jre/jdk-21.0.13+9-jre/bin:$PATH npm run test:rules:v2
+  6 passed against demo-upet-v2 Firestore emulator, 0 failed
+node --test tests/topProfiles.test.mjs tests/rateLimit.test.mjs tests/visitor.test.js
+  9 passed, 0 failed
+npm run build
+  passed; Vite 7.3.7; 6,421 modules transformed
+curl -I http://127.0.0.1:4173/
+  HTTP 200 from localhost production preview
+```
+
+Local browser smoke: desktop and 390px mobile homepage loaded without page errors or horizontal overflow; anonymous dashboard/help routes loaded. Captures: `/tmp/upet-stage3-home-desktop.png` and `/tmp/upet-stage3-home-mobile.png`. This is a regression check, not a visual sign-off for the new Studio, which has not been built.
+
+Stage 3 added a trusted draft save with owner/username verification and compare-and-swap draft/published revisions; unchanged saves make no write and do not publish. Explicit publish validates dependency ownership and writes canonical/public/directory/revision/lyrics projections atomically. Public profile and track-bound lyrics use bounded shared caches and strict allowlists. Claims migration and ranking backfill scripts default to dry-run. New profile views use an aggregate instead of a directory scan plus per-profile counts. Current chat/help/analytics listeners were bounded with older-record paging; any unresolved parity gaps are tracked in the next gate.
+
 ## Feature parity ledger
 
 | Capability | Existing baseline | Final target | Status |
@@ -133,24 +152,17 @@ The projection, publish, claims, cache and query boundaries are recorded in `doc
 
 ## Open release blockers
 
-1. Lossy legacy-profile adapter and autosave-to-publish behavior.
-2. Unverified Vercel preview protection and unprotected GitHub `main`.
-3. Hard-coded privileged email allowlists rather than trusted roles/claims.
-4. Unbounded listeners and N+1 ranking queries.
-5. No aggregate test command, CI, lint, typecheck, or formal performance budgets.
+1. V1 autosave-to-publish remains active until the v2 Studio can use draft save and an audited cutover. Legacy write mode remains blocked.
+2. Unverified Vercel preview protection and unprotected GitHub `main`; no remote preview deployed.
+3. Production trusted founder claims and recovery UID migration have not run. Do not enable v2 route or deploy the claim-based rules until claims are set and refreshed.
+4. One-time ranking backfill must run before enabling the aggregate reader/event writer; it has only been dry-run/unit tested. Older-record paging requires an authenticated browser parity check.
+5. CI, lint, typecheck, and formal performance budgets remain absent.
 6. Profile premium/vanity concepts conflict with the final free-profile rule.
 7. Asset licensing/provenance is unverified.
 8. Social crawler/SEO behavior for dynamic profile pages is unproven.
 
 ## Next exact task
 
-Continue Stage 3 locally:
+Proceed to Stage 4 without enabling v2 in production: add a founder-only `/studio-v2` shell behind a client flag, a clear legacy-editor escape hatch, and draft load/save/publish controls that use the new route with debounced serialized writes. Use real v2 contracts and a local-only test fixture until the live claim/ranking migrations are approved and executed. Test route gates and the save/publish sequence, build, inspect localhost, commit only scoped changes, and update this ledger.
 
-1. Add Firebase emulator coverage for the isolated Admin repository: owner/non-owner, stale revision races, public projection isolation, draft privacy and revision recovery.
-2. Define the authenticated server route contract but keep it founder-preview-only until migration and rollback are exercised end to end.
-3. Migrate privileged authorization from hard-coded emails to compatible custom claims/roles with tested founder recovery.
-4. Add cursor pagination to current unbounded conversations, messages, support tickets, ticket messages and analytics reads.
-5. Replace the top-profile N+1 query shape with maintained aggregate inputs and connect the explicit public cache/invalidation policy.
-6. Run focused security/data tests and one production build, then mark Stage 3 complete only when rules and emulator gates pass.
-
-If source integration overlaps the pre-existing uncommitted work in a way that cannot be staged safely, document the exact files and stop before overwriting or bundling unrelated changes.
+Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.

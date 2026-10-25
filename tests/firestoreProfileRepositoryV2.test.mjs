@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 import {
   createEmptyProfileDocumentV2,
   createProfileDraftV2,
@@ -39,9 +40,13 @@ class FakeFirestore {
     const transaction = {
       get: async (reference) => new FakeSnapshot(this.documents.get(reference.path)),
       set: (reference, value) => writes.push([reference.path, structuredClone(value)]),
+      delete: (reference) => writes.push([reference.path, undefined]),
     };
     const result = await callback(transaction);
-    for (const [path, value] of writes) this.documents.set(path, value);
+    for (const [path, value] of writes) {
+      if (value === undefined) this.documents.delete(path);
+      else this.documents.set(path, value);
+    }
     this.writeBatches.push(writes);
     return result;
   }
@@ -90,11 +95,16 @@ function fixture() {
 }
 
 const path = (collection, id) => `${collection}/${id}`;
+const ownership = {
+  'usernames/safe-user': { uid: 'owner-a', username: 'safe-user' },
+  'users/owner-a': { uid: 'owner-a', username: 'safe-user' },
+};
 
 test('trusted repository publishes canonical/public/directory/revision/draft documents atomically', async () => {
   const { draft, track, asset } = fixture();
   const invalidations = [];
   const db = new FakeFirestore({
+    ...ownership,
     [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft,
     [path(PROFILE_V2_COLLECTIONS.tracks, 'track-one')]: track,
     [path(PROFILE_V2_COLLECTIONS.assets, 'asset-one')]: asset,
@@ -117,12 +127,32 @@ test('trusted repository publishes canonical/public/directory/revision/draft doc
   assert.deepEqual(invalidations, ['safe-user']);
 });
 
+test('draft saves are owner-verified, conflict-safe and do not publish or repeat unchanged writes', async () => {
+  const { profile } = fixture();
+  const db = new FakeFirestore(ownership);
+  const repository = createFirestoreProfileV2Repository({ db, now: () => 2_000 });
+  const request = { actor: { uid: 'owner-a' }, username: 'safe-user', profile, basePublishedRevision: 0, expectedDraftRevision: 0 };
+  assert.deepEqual(await repository.saveDraft(request), { changed: true, draftRevision: 1, basePublishedRevision: 0 });
+  assert.deepEqual(db.writeBatches[0].map(([name]) => name), ['profileV2Drafts/owner-a']);
+  assert.equal(db.documents.has('profileV2Public/safe-user'), false);
+  assert.deepEqual(await repository.saveDraft({ ...request, expectedDraftRevision: 1 }), { changed: false, draftRevision: 1, basePublishedRevision: 0 });
+  assert.equal(db.writeBatches[1].length, 0);
+  await assert.rejects(repository.saveDraft(request), ProfileRevisionConflictError);
+  await assert.rejects(repository.saveDraft({ ...request, actor: { uid: 'owner-b' }, expectedDraftRevision: 1 }), /owner/i);
+  await assert.rejects(repository.saveDraft({ ...request, profile: { ...profile, compatibility: { ...profile.compatibility, writeMode: 'blocked-until-roundtrip' } }, expectedDraftRevision: 1 }), /blocked/i);
+  assert.equal(db.documents.get('profileV2Drafts/owner-a').draftRevision, 1);
+});
+
 test('trusted repository skips every write and invalidation for unchanged content', async () => {
   const { profile, track, asset } = fixture();
-  const published = { ...profile, revision: 4, status: 'published', updatedAtMs: 2_000 };
+  const dependenciesSignature = createHash('sha256')
+    .update(JSON.stringify({ tracks: [track], assets: [asset], publicLyrics: [] }))
+    .digest('hex');
+  const published = { ...profile, revision: 4, status: 'published', updatedAtMs: 2_000, dependenciesSignature };
   const draft = createProfileDraftV2(published, { basePublishedRevision: 4, nowMs: 3_000 });
   const invalidations = [];
   const db = new FakeFirestore({
+    ...ownership,
     [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft,
     [path(PROFILE_V2_COLLECTIONS.canonical, 'safe-user')]: published,
     [path(PROFILE_V2_COLLECTIONS.tracks, 'track-one')]: track,
@@ -140,6 +170,7 @@ test('trusted repository fails closed for stale, missing, cross-owner and oversi
   const { draft, track, asset } = fixture();
   const current = { ...draft.profile, revision: 2, status: 'published' };
   const staleDb = new FakeFirestore({
+    ...ownership,
     [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft,
     [path(PROFILE_V2_COLLECTIONS.canonical, 'safe-user')]: current,
     [path(PROFILE_V2_COLLECTIONS.tracks, 'track-one')]: track,
@@ -151,13 +182,14 @@ test('trusted repository fails closed for stale, missing, cross-owner and oversi
   );
   assert.equal(staleDb.writeBatches.length, 0);
 
-  const missingDb = new FakeFirestore({ [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft });
+  const missingDb = new FakeFirestore({ ...ownership, [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft });
   await assert.rejects(
     createFirestoreProfileV2Repository({ db: missingDb }).publish({ actor: { uid: 'owner-a' }, username: 'safe-user' }),
     /Missing referenced track/,
   );
 
   const otherOwnerDb = new FakeFirestore({
+    ...ownership,
     [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft,
     [path(PROFILE_V2_COLLECTIONS.tracks, 'track-one')]: { ...track, ownerUid: 'owner-b' },
     [path(PROFILE_V2_COLLECTIONS.assets, 'asset-one')]: asset,
@@ -170,9 +202,58 @@ test('trusted repository fails closed for stale, missing, cross-owner and oversi
   const oversized = structuredClone(draft);
   oversized.profile.music.trackIds = Array.from({ length: PROFILE_V2_PUBLISH_LIMITS.tracks + 1 }, (_, index) => `track-${index}`);
   oversized.profile.music.defaultTrackId = 'track-0';
-  const oversizedDb = new FakeFirestore({ [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: oversized });
+  const oversizedDb = new FakeFirestore({ ...ownership, [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: oversized });
   await assert.rejects(
     createFirestoreProfileV2Repository({ db: oversizedDb }).publish({ actor: { uid: 'owner-a' }, username: 'safe-user' }),
     /too many tracks/i,
   );
+
+  const unclaimedDb = new FakeFirestore({
+    [path(PROFILE_V2_COLLECTIONS.drafts, 'owner-a')]: draft,
+  });
+  await assert.rejects(
+    createFirestoreProfileV2Repository({ db: unclaimedDb }).publish({ actor: { uid: 'owner-a' }, username: 'safe-user' }),
+    /not claimed/i,
+  );
+});
+
+test('published lyrics are immutable allowlisted copies and dependency edits create a new revision', async () => {
+  const { draft, track, asset } = fixture();
+  const lyrics = {
+    schemaVersion: 1,
+    id: 'track-one-lyrics',
+    ownerUid: 'owner-a',
+    trackId: 'track-one',
+    revision: 1,
+    timingMode: 'line',
+    offsetMs: 0,
+    language: 'en',
+    stanzas: [{ id: 'verse', order: 0, label: '', lines: [{ id: 'line-one', text: 'Hello', startMs: 0, endMs: 1200, words: [], privateNote: 'keep private' }] }],
+    display: { align: 'center', privatePalette: 'keep private' },
+    legacy: { hiddenDraft: 'keep private' },
+    updatedAtMs: 1000,
+  };
+  const db = new FakeFirestore({
+    ...ownership,
+    'profileV2Drafts/owner-a': draft,
+    'profileV2Tracks/track-one': { ...track, lyricsDocumentId: lyrics.id },
+    'profileV2Assets/asset-one': asset,
+    'profileV2Lyrics/track-one-lyrics': lyrics,
+  });
+  const repository = createFirestoreProfileV2Repository({ db, now: () => 2000 });
+  const first = await repository.publish({ actor: { uid: 'owner-a' }, username: 'safe-user' });
+  assert.equal(first.revision, 1);
+  assert.equal(db.documents.get('profileV2PublicLyrics/safe-user_track-one').stanzas[0].lines[0].text, 'Hello');
+  assert.doesNotMatch(JSON.stringify(db.documents.get('profileV2PublicLyrics/safe-user_track-one')), /privateNote|hiddenDraft|privatePalette|ownerUid/);
+
+  const changedLyrics = { ...lyrics, revision: 2, stanzas: [{ ...lyrics.stanzas[0], lines: [{ ...lyrics.stanzas[0].lines[0], text: 'Hello again' }] }] };
+  db.documents.set('profileV2Lyrics/track-one-lyrics', changedLyrics);
+  const second = await repository.publish({ actor: { uid: 'owner-a' }, username: 'safe-user' });
+  assert.equal(second.revision, 2);
+  assert.equal(db.documents.get('profileV2PublicLyrics/safe-user_track-one').stanzas[0].lines[0].text, 'Hello again');
+
+  db.documents.set('profileV2Tracks/track-one', { ...track, lyricsDocumentId: '' });
+  const third = await repository.publish({ actor: { uid: 'owner-a' }, username: 'safe-user' });
+  assert.equal(third.revision, 3);
+  assert.equal(db.documents.has('profileV2PublicLyrics/safe-user_track-one'), false);
 });

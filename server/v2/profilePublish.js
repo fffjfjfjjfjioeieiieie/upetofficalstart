@@ -45,10 +45,15 @@ export function prepareProfilePublishV2({
   tracks = [],
   assets = [],
   shopEnabled = false,
+  forceChanged = false,
+  dependenciesSignature,
   nowMs = Date.now(),
 } = {}) {
   const parsedDraft = profileDraftV2Schema.parse(draft);
-  const nextSource = assertProfileDocumentV2Writable(parsedDraft.profile);
+  const writableSource = assertProfileDocumentV2Writable(parsedDraft.profile);
+  const nextSource = dependenciesSignature === undefined
+    ? writableSource
+    : { ...writableSource, dependenciesSignature };
   assertProfileOwner(actor, nextSource);
   const current = currentProfile === null ? null : profileDocumentV2Schema.parse(currentProfile);
 
@@ -62,7 +67,7 @@ export function prepareProfilePublishV2({
     throw new ProfileRevisionConflictError(expectedRevision, parsedDraft.basePublishedRevision);
   }
 
-  if (current && JSON.stringify(comparableProfile(current)) === JSON.stringify(comparableProfile(nextSource))) {
+  if (current && !forceChanged && JSON.stringify(comparableProfile(current)) === JSON.stringify(comparableProfile(nextSource))) {
     return Object.freeze({ changed: false, revision: current.revision });
   }
 

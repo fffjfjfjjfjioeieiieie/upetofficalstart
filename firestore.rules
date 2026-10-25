@@ -13,18 +13,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function founder() {
+    function hasTrustedRole(role) {
       return signedIn()
-        && request.auth.token.email in [
-          'zurihcs@gmail.com',
-          'lampjustlamp123@gmail.com',
-          'iamjayvonlol@gmail.com',
-          'riotsoffical@proton.me',
-          'daalt38@gmail.com'
-        ] || (signedIn()
-          && request.auth.token.email == 'whatdidido6969@gmail.com'
-          && request.auth.token.email_verified == true);
+        && ((request.auth.token.get('role', '') is string && request.auth.token.get('role', '') == role)
+          || (request.auth.token.get('roles', []) is list && role in request.auth.token.get('roles', []))
+          || (role == 'founder' && request.auth.token.get('founder', false) == true)
+          || (role == 'admin' && request.auth.token.get('admin', false) == true)
+          || (role == 'moderator' && request.auth.token.get('moderator', false) == true)
+          || (role == 'support' && request.auth.token.get('support', false) == true));
     }
+
+    function founder() {
+      return hasTrustedRole('founder');
+    }
+
 
     function supportMembership() {
       return get(/databases/$(database)/documents/supportStaff/$(request.auth.uid)).data;
@@ -32,6 +34,10 @@ service cloud.firestore {
 
     function supportStaff() {
       return signedIn()
+        && (hasTrustedRole('founder')
+          || hasTrustedRole('admin')
+          || hasTrustedRole('moderator')
+          || hasTrustedRole('support'))
         && exists(/databases/$(database)/documents/supportStaff/$(request.auth.uid))
         && supportMembership().active == true
         && supportMembership().role in ['owner', 'support_admin', 'support_agent', 'moderator'];
@@ -45,7 +51,81 @@ service cloud.firestore {
       return username is string
         && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
         && !(username in ['dashboard', 'business', 'business-verification', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
-        && (username != 'dome' || request.auth.token.email == 'zurihcs@gmail.com');
+        && (username != 'dome' || founder());
+    }
+
+    // V2 is server-published. Browsers can read only the explicit public
+    // projections; canonical documents, drafts, revision snapshots and asset
+    // metadata remain owner-private and cannot be mutated through client SDKs.
+    match /profileV2Canonical/{username} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /profileV2Drafts/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid && resource.data.ownerUid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /profileV2Public/{username} {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    match /profileV2Directory/{username} {
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 60;
+      allow create, update, delete: if false;
+    }
+
+    match /profileV2Revisions/{revisionId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.query.limit != null
+        && request.query.limit <= 50;
+      allow create, update, delete: if false;
+    }
+
+    match /profileV2Tracks/{trackId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.query.limit != null
+        && request.query.limit <= 100;
+      allow create, update, delete: if false;
+    }
+
+    match /profileV2Assets/{assetId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.query.limit != null
+        && request.query.limit <= 100;
+      allow create, update, delete: if false;
+    }
+
+    match /profileV2Lyrics/{lyricsId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /profileV2PublicLyrics/{lyricsId} {
+      allow get: if false;
+      allow list, create, update, delete: if false;
+    }
+
+    match /profileV2Playlists/{playlistId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.query.limit != null
+        && request.query.limit <= 100;
+      allow create, update, delete: if false;
+    }
+
+    match /profileRankingStats/{username} {
+      allow read, write: if false;
     }
 
     match /usernames/{username} {

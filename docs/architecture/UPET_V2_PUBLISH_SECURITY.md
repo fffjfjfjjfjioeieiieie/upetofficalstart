@@ -2,9 +2,9 @@
 
 Date: 2026-10-25
 
-Status: Stage 3 domain foundation; not connected to Firestore or a public endpoint
+Status: Stage 3 verified local foundation; production migration and cutover blocked
 
-Stage 3 separates canonical owner data from public data and defines the transaction decisions that a trusted server adapter must enforce. The current production save path is unchanged.
+Stage 3 separates canonical owner data from public data and defines the transaction decisions that a trusted server adapter must enforce. The current production save path is unchanged. The isolated v2 API is disabled by default and founder-claim gated when enabled.
 
 ## Projection boundary
 
@@ -21,7 +21,7 @@ Nested collection items for galleries, socials and skills also use allowlists. U
 
 The directory projection is smaller again: username, revision, display name, short bio, avatar URL, bounded badges, public accent, a trusted shop-enabled boolean and update time.
 
-Stage 3 still needs a separate strict public lyrics projection before lyrics documents can be exposed directly.
+Public lyrics are copied to immutable allowlisted `profileV2PublicLyrics` documents during publish and returned only by `/api/v2-profile-lyrics` after the requested track is confirmed in the published public profile. Direct Firestore client access to private and public lyric documents is denied. Public profile reads use `/api/v2-profile-public` and a 30-second shared cache. Media exposed by the profile endpoint is the strict public media projection; no private asset library response is provided.
 
 ## Publish decision
 
@@ -39,13 +39,13 @@ Unchanged content returns `changed: false`, allowing the eventual repository ada
 
 `createFirestoreProfileV2Repository` now executes that plan against isolated v2 collection names through a supplied trusted Admin SDK database. It reads the owner draft and current canonical revision inside the transaction, bounds referenced data to 100 tracks and 200 assets, reads every referenced document before writing, then atomically writes canonical, public, directory, revision and rebased-draft documents. An unchanged plan performs zero writes. Cache invalidation runs only after a changed transaction succeeds.
 
-The repository is deliberately dependency-injected and has no route binding. Its fake-transaction tests verify write targets, stale conflicts, missing references, cross-owner references, reference limits, unchanged-write suppression and invalidation behavior. Firebase emulator/rules tests remain mandatory before it can be connected.
+The repository is dependency-injected and bound only to a disabled-by-default founder preview route, `/api/v2-profile`. Its `saveDraft` action verifies the verified UID, claimed username, write mode and both optimistic revisions in one transaction, writes only `profileV2Drafts/{uid}`, and skips unchanged data. `publish` remains a separate explicit action. Fake-transaction and Firebase emulator tests verify privacy, stale conflicts, missing and cross-owner references, reference limits, unchanged-write suppression, public projection isolation and invalidation. The route returns revision metadata only; draft loading currently uses owner-only Firestore `get` under rules.
 
 ## Trusted roles
 
 `server/v2/authClaims.js` recognizes only server-verified token claims: founder, admin, moderator and support. Email addresses do not grant a role. A staff claim also does not replace profile ownership; publishing remains owner-only unless a separately reviewed recovery/moderation operation is designed.
 
-This module does not yet replace the hard-coded email checks in the current rules/server code. That transition requires compatible custom claims, token refresh behavior, rules tests and a founder recovery plan.
+Current rules/server checks now use verified custom roles, not email allowlists. `scripts/migrate-founder-claims.mjs` preserves unrelated claims, defaults to dry-run and can recover a founder through an operator-supplied UID. Do not deploy the new rules or enable v2 until production claims and token refresh are coordinated; neither has been run. Emulator tests prove email alone cannot grant founder authority.
 
 ## Read cost and cache policy
 
@@ -53,14 +53,10 @@ This module does not yet replace the hard-coded email checks in the current rule
 
 `QUERY_LIMITS` defines bounded defaults and maximums for directory profiles, conversations, messages, support tickets, ticket messages, revisions and analytics events. Every older-record workflow still needs a concrete cursor implementation in its repository adapter and UI.
 
-These helpers are not client quota checks and do not add Firestore reads to navigation.
+The active conversations, support ticket/message and analytics readers now use bounded pages and older-record cursors. Firestore rules limit the relevant list shapes. These helpers are not client quota checks and do not add Firestore reads to navigation. Client-visible backend errors are surfaced where touched.
 
-## Remaining Stage 3 gates
+## Ranking and rollout gate
 
-- Test the Admin SDK repository and revision races against the Firebase emulator, then bind it only to an authenticated server route.
-- Define and test strict public lyrics/media endpoints and private canonical collection paths.
-- Update Firestore rules to use trusted claims/roles without breaking founder recovery.
-- Add bounded cursors to each current unbounded listener and preserve every unsubscribe cleanup.
-- Replace the top-profile N+1 count path with maintained aggregate documents.
-- Connect the public cache to one server endpoint and verify invalidation after publish.
-- Keep the current v1 writer active until v2 migration and rollback gates pass.
+`profileRankingStats` is incremented by a trusted profile-event endpoint and read with one top-100 query plus batched profile/directory reads. A shared short-lived leaderboard snapshot prevents repeated serverless refreshes. The one-time backfill script pages legacy directory entries and skips existing aggregates; dry-run is the default. Run the backfill before any aggregate reader/event writer rollout, with a production-data backup and operator approval. No production aggregation or migration ran in this stage.
+
+The final live cutover still requires founder custom claims on real accounts, a tested recovery UID, refreshed tokens, a ranking backfill, live-data migration/rollback rehearsal, an owner-authenticated browser check, and explicit release approval. Current v1 writes remain active to preserve users; the v2 legacy migration writer remains blocked.

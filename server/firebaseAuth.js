@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { hasTrustedRole } from './v2/authClaims.js';
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || 'upet-c480b';
 const FIREBASE_ISSUER = `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`;
@@ -6,15 +7,33 @@ const FIREBASE_KEYS = createRemoteJWKSet(
   new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'),
 );
 
-const FOUNDER_EMAILS = new Set([
-  'zurihcs@gmail.com',
-  'lampjustlamp123@gmail.com',
-  'iamjayvonlol@gmail.com',
-  'riotsoffical@proton.me',
-  'daalt38@gmail.com',
-  'gabeandtheowenshow@gmail.com',
-  'whatdidido6969@gmail.com',
-]);
+const recoveryFounderUids = () => new Set(String(process.env.UPET_FOUNDER_RECOVERY_UIDS || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean));
+
+export function identityFromFirebasePayload(payload = {}) {
+  const uid = String(payload.sub || payload.uid || '');
+  const email = String(payload.email || '').trim().toLowerCase();
+  if (!uid) throw new Error('Invalid account token.');
+  return {
+    uid,
+    email,
+    emailVerified: payload.email_verified === true,
+    claims: {
+      role: typeof payload.role === 'string' ? payload.role : undefined,
+      roles: Array.isArray(payload.roles) ? payload.roles : undefined,
+      founder: payload.founder === true,
+      admin: payload.admin === true,
+      moderator: payload.moderator === true,
+      support: payload.support === true,
+    },
+  };
+}
+
+export function canUseFounderRecovery(identity, configuredUids = recoveryFounderUids()) {
+  return Boolean(identity?.uid && configuredUids.has(identity.uid));
+}
 
 export async function verifyFirebaseIdentity(token) {
   if (!token) throw new Error('Sign in before managing files.');
@@ -25,16 +44,14 @@ export async function verifyFirebaseIdentity(token) {
     issuer: FIREBASE_ISSUER,
   });
 
-  const uid = String(payload.sub || '');
-  const email = String(payload.email || '').trim().toLowerCase();
-  if (!uid) throw new Error('Invalid account token.');
-
-  return { uid, email, emailVerified: payload.email_verified === true };
+  return identityFromFirebasePayload(payload);
 }
 
 export async function verifyFirebaseToken(token) {
   const account = await verifyFirebaseIdentity(token);
-  if (!FOUNDER_EMAILS.has(account.email) || (account.email === 'whatdidido6969@gmail.com' && !account.emailVerified)) throw new Error('This account cannot manage profile files.');
+  if (!hasTrustedRole(account, 'founder') && !canUseFounderRecovery(account)) {
+    throw new Error('This account cannot manage profile files.');
+  }
   return account;
 }
 
