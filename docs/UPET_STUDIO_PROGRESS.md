@@ -9,7 +9,7 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stage 0 is complete locally: the full final masterplan and all eight reference screenshots were reviewed, the runtime/data/payment surfaces were audited, a migration architecture was recorded, the baseline test suite was run correctly, and the production build passed. No remote deployment or production-data operation was performed.
+Stages 0 and 1 are complete locally. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; the migration architecture was recorded; shared semantic tokens and the first accessible UI primitives were extracted; the baseline test suite and focused Stage 1 tests passed; and the production build passed. No remote deployment or production-data operation was performed.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -18,7 +18,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | Stage | Status | Evidence / next gate |
 | --- | --- | --- |
 | 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
-| 1. Shared tokens and primitives | Not started | Capture local visual baseline, then extract tokens/primitives without changing behavior |
+| 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
 | 2. Versioned data contracts | Not started | Lossless legacy profile round-trip fixtures required first |
 | 3. Draft/publish/security foundation | Not started | Emulator coverage, trusted roles, revision conflicts, bounded access |
 | 4. Studio shell | Not started | Founder-only route and legacy editor escape hatch |
@@ -54,6 +54,25 @@ npm run build
 ```
 
 Effective behavioral baseline: 87 passing tests under the correct invocations. The build has non-fatal Zod annotation warnings and several large chunks. There is no aggregate test script, lint script, typecheck, or CI workflow yet.
+
+Stage 1 verification:
+
+```text
+node --test tests/sharedUi.test.mjs
+  5 passed
+
+local Playwright smoke checks
+  homepage: desktop + mobile, six sections each
+  dashboard: anonymous redirect preserved at desktop + mobile
+  13/14 visual captures byte-identical; remaining hero capture visually identical
+  no unnamed interactive controls under the smoke-test heuristic
+  reduced-motion token resolves to 1ms
+
+npm run build
+  passed; Vite 7.3.6; 6,391 modules transformed
+```
+
+The visual procedure and its environment limitations are recorded in `docs/audit/UPET_V2_VISUAL_BASELINE.md`.
 
 ## Feature parity ledger
 
@@ -107,12 +126,13 @@ Effective behavioral baseline: 87 passing tests under the correct invocations. T
 
 ## Next exact task
 
-Begin Stage 1 locally:
+Begin Stage 2 locally:
 
-1. Read the local preview instructions required by the Sites workflow.
-2. Capture representative desktop and mobile baselines for the homepage, dashboard editor, and public profile without deploying.
-3. Inventory the active CSS variables and UI primitives against the final token/accessibility requirements.
-4. Introduce a single shared token source and the first accessible primitives in small commits, preserving current visuals and behavior.
-5. Run focused component tests and one production build, update this ledger, and commit only the verified Stage 1 changes.
+1. Build fixture documents for every supported legacy profile shape, including unknown blocks/fields and current redesign data.
+2. Define versioned `ProfileDocument`, `ProfileDraft`, `ProfilePage`, `ProfileBlock`, `MusicTrack`, `Playlist`, `LyricsDocument`, and `MediaAsset` validation contracts without changing production writes.
+3. Add lossless compatibility adapters and semantic round-trip tests. Unknown legacy content must survive unchanged.
+4. Wrap the current single audio item as a one-track library and current lyrics as a track-bound document without removing their existing fields.
+5. Keep all new writers disabled until the fixtures prove round-trip parity and rollback.
+6. Run focused contract tests and one production build, update this ledger, and commit only verified Stage 2 changes.
 
 If source integration overlaps the pre-existing uncommitted work in a way that cannot be staged safely, document the exact files and stop before overwriting or bundling unrelated changes.

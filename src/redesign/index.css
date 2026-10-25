@@ -1,61 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Unbounded:wght@400;600;800;900&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+@import "../shared/styles/tokens.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 208 100% 98%;
-    --foreground: 214 45% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 214 45% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 214 45% 14%;
-    --primary: 203 100% 66%;
-    --primary-foreground: 214 60% 10%;
-    --secondary: 205 100% 94%;
-    --secondary-foreground: 214 45% 18%;
-    --muted: 207 60% 94%;
-    --muted-foreground: 213 18% 44%;
-    --accent: 199 100% 88%;
-    --accent-foreground: 214 45% 14%;
-    --destructive: 0 80% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 206 60% 87%;
-    --input: 206 60% 87%;
-    --ring: 203 100% 66%;
-    --radius: 1rem;
-    --wave: 203 100% 66%;
-    --glass: 0 0% 100%;
-  }
-  .dark {
-    --background: 225 14% 4%;
-    --foreground: 210 20% 96%;
-    --card: 225 12% 7%;
-    --card-foreground: 210 20% 96%;
-    --popover: 225 12% 7%;
-    --popover-foreground: 210 20% 96%;
-    --primary: 203 100% 68%;
-    --primary-foreground: 225 30% 6%;
-    --secondary: 225 10% 11%;
-    --secondary-foreground: 210 20% 96%;
-    --muted: 225 10% 10%;
-    --muted-foreground: 220 8% 58%;
-    --accent: 225 10% 12%;
-    --accent-foreground: 210 20% 96%;
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 225 9% 14%;
-    --input: 225 9% 14%;
-    --ring: 203 100% 68%;
-    --wave: 203 100% 68%;
-    --glass: 225 12% 7%;
-  }
-
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
-    font-family: "Onest", sans-serif;
+    font-family: var(--upet-font-body);
     -webkit-font-smoothing: antialiased;
     transition: background-color .4s ease, color .4s ease;
   }
