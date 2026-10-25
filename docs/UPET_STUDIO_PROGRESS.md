@@ -20,7 +20,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
 | 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
 | 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
-| 3. Draft/publish/security foundation | In progress | Pure allowlisted projections, owner/revision/write gates, unchanged-write suppression, trusted-claim helpers, 30s request cache and bounded query policies complete; Firestore transaction/rules/emulator integration remains |
+| 3. Draft/publish/security foundation | In progress | Pure projections/publish gates, trusted claims, cache/query policies and an isolated Admin SDK transaction repository complete; route binding, rules and Firebase emulator gates remain |
 | 4. Studio shell | Not started | Founder-only route and legacy editor escape hatch |
 | 5. Core editor interactions | Not started | Responsive canvas, history, keyboard, drag/reorder tests |
 | 6. Materials and backgrounds | Not started | CSS fallback, quality manager, reduced-motion and performance budgets |
@@ -86,8 +86,8 @@ The contracts and their privacy/write boundaries are recorded in `docs/architect
 Stage 3 domain-foundation verification:
 
 ```text
-node --test tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs
-  14 passed
+node --test tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs tests/firestoreProfileRepositoryV2.test.mjs
+  17 passed
 ```
 
 The projection, publish, claims, cache and query boundaries are recorded in `docs/architecture/UPET_V2_PUBLISH_SECURITY.md`. These functions perform no external I/O and are not connected to the current production writer.
@@ -146,8 +146,8 @@ The projection, publish, claims, cache and query boundaries are recorded in `doc
 
 Continue Stage 3 locally:
 
-1. Add a trusted Admin SDK repository adapter that re-reads ownership and revision in one transaction and applies the pure publish plan; keep it disconnected from public routes.
-2. Add Firebase emulator coverage for owner/non-owner, stale revision, public projection isolation, draft privacy and revision recovery.
+1. Add Firebase emulator coverage for the isolated Admin repository: owner/non-owner, stale revision races, public projection isolation, draft privacy and revision recovery.
+2. Define the authenticated server route contract but keep it founder-preview-only until migration and rollback are exercised end to end.
 3. Migrate privileged authorization from hard-coded emails to compatible custom claims/roles with tested founder recovery.
 4. Add cursor pagination to current unbounded conversations, messages, support tickets, ticket messages and analytics reads.
 5. Replace the top-profile N+1 query shape with maintained aggregate inputs and connect the explicit public cache/invalidation policy.

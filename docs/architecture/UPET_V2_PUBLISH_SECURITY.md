@@ -37,7 +37,9 @@ Stage 3 still needs a separate strict public lyrics projection before lyrics doc
 
 Unchanged content returns `changed: false`, allowing the eventual repository adapter to skip every Firestore write. A changed publish increments the revision once and returns the published canonical document, strict public projection, directory projection, recoverable revision snapshot and rebased draft.
 
-The next adapter must execute that plan inside one trusted Admin SDK transaction or an equivalently repairable workflow. It must re-read the current revision inside the transaction rather than trusting a preflight client read.
+`createFirestoreProfileV2Repository` now executes that plan against isolated v2 collection names through a supplied trusted Admin SDK database. It reads the owner draft and current canonical revision inside the transaction, bounds referenced data to 100 tracks and 200 assets, reads every referenced document before writing, then atomically writes canonical, public, directory, revision and rebased-draft documents. An unchanged plan performs zero writes. Cache invalidation runs only after a changed transaction succeeds.
+
+The repository is deliberately dependency-injected and has no route binding. Its fake-transaction tests verify write targets, stale conflicts, missing references, cross-owner references, reference limits, unchanged-write suppression and invalidation behavior. Firebase emulator/rules tests remain mandatory before it can be connected.
 
 ## Trusted roles
 
@@ -55,7 +57,7 @@ These helpers are not client quota checks and do not add Firestore reads to navi
 
 ## Remaining Stage 3 gates
 
-- Implement the Admin SDK transaction/repository adapter and test revision races against the Firebase emulator.
+- Test the Admin SDK repository and revision races against the Firebase emulator, then bind it only to an authenticated server route.
 - Define and test strict public lyrics/media endpoints and private canonical collection paths.
 - Update Firestore rules to use trusted claims/roles without breaking founder recovery.
 - Add bounded cursors to each current unbounded listener and preserve every unsubscribe cleanup.
