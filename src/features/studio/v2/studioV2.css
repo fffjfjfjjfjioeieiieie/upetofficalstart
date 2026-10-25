@@ -46,7 +46,9 @@
 .upet-studio-v2__bio { min-height: 42px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .upet-studio-v2__empty-canvas, .upet-studio-v2__block-count { margin-top: 35px; padding: 15px; border: 1px dashed #ffffff4a; border-radius: 14px; color: #c2cad8; font-size: 12px; }
 .upet-studio-v2__canvas-blocks { position: relative; margin-top: 25px; }
+.upet-studio-v2__canvas-blocks .react-draggable { touch-action: none; }
 .upet-studio-v2__canvas-blocks button { position: absolute; display: block; padding: 8px 10px; border: 1px solid transparent; border-radius: 9px; color: #f4f7ff; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.upet-studio-v2__canvas-blocks button.upet-studio-v2__block-content { position: static; width: 100%; height: 100%; border-color: #70d7f3; background: #70d7f31a; cursor: move; touch-action: none; }
 .upet-studio-v2__canvas-blocks button:hover, .upet-studio-v2__canvas-blocks button.is-selected { border-color: #70d7f3; background: #70d7f31a; }
 .upet-studio-v2__canvas-blocks strong { font-size: 17px; }
 .upet-studio-v2__divider { display: block; border-top: 1px solid #ffffff77; }

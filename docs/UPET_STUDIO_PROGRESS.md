@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-25 (Stage 5 editor interaction checkpoint)
+Last updated: 2026-10-25 (Stage 5 local interaction gate)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -22,8 +22,8 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
 | 3. Draft/publish/security foundation | Verified locally; rollout blocked | Emulator rules 6/6, v2 domain tests 32/32, build passed. Production claim migration, ranking backfill and v1 writer cutover are intentionally pending; see next gate. |
 | 4. Studio shell | Shell verified locally; live integration pending | `/dashboard/studio-v2` localhost/flag gate, refreshed founder claim, private draft load, serialized debounced save, explicit publish, current-editor escape; desktop/mobile harness pass. Live founder-token and migrated-draft browser check blocked by safe migration gate. |
-| 5. Core editor interactions | In progress | Native v2 heading/text/divider blocks, selection and inspector, pointer/keyboard sortable layers, bounded/coalesced undo/redo, independent desktop/mobile coordinate and size controls; direct canvas drag/resize and live-save browser test remain. |
-| 6. Materials and backgrounds | Not started | CSS fallback, quality manager, reduced-motion and performance budgets |
+| 5. Core editor interactions | Complete locally; live persistence gated | Native v2 heading/text/divider blocks, selection/inspector, pointer/keyboard sortable layers, bounded/coalesced undo/redo, independent desktop/mobile layouts, direct canvas pointer/touch drag and resize, keyboard nudge; 39 tests/build and visual harness pass. Live Firebase save/reload waits for safe v2 migration. |
+| 6. Materials and backgrounds | Next | CSS fallback, quality manager, reduced-motion and performance budgets |
 | 7. Existing profile-feature parity | Not started | Identity/links/entry/effects/widgets/badges parity matrix |
 | 8. Media and galleries | Not started | Asset library, provenance, collections and responsive media |
 | 9. Music system | Not started | Existing upload/embed parity before multi-track/playlists/global player |
@@ -142,7 +142,9 @@ npm run build
 
 Visual captures: `/tmp/upet-stage5-studio-desktop.png` and `/tmp/upet-stage5-studio-mobile.png`; inspected. The canvas currently previews three core block types using a temporary shell renderer. It is not yet the shared public profile renderer; do not claim exact published parity until Stage 11. The browser harness uses only synthetic data and does not validate a real Firebase save.
 
-Stage 5 responsive-layout follow-up: independent desktop/mobile viewport controls now edit each block's validated x/y/width/height/rotation fields, and the private canvas applies those coordinates without horizontal clipping at 1440px or 390px. Focused document-ops tests pass 3/3, the local visual harness reports no page errors, and `npm run build` passes. The mobile screenshot `/tmp/upet-stage5-layout-390.png` was visually inspected. Direct manipulation on the canvas is still pending.
+Stage 5 responsive-layout follow-up: independent desktop/mobile viewport controls now edit each block's validated x/y/width/height/rotation fields, and the private canvas applies those coordinates without horizontal clipping at 1440px or 390px. The mobile screenshot `/tmp/upet-stage5-layout-390.png` was visually inspected.
+
+Stage 5 local completion gate: the existing `src/profiles/layouts/EditableCanvasItem.jsx` now accepts opt-in minimums, grids and a visible touch-sized resize handle while keeping its legacy defaults. Studio maps drag/resize commits back to normalized v2 desktop/mobile geometry only when the gesture ends; no per-frame Firebase writes. Browser checks: pointer drag changed x/y, resize changed width/height, keyboard arrow/shift-arrow nudged a selected block, and an emulated touch drag moved a block by 60px. The desktop resize capture `/tmp/upet-stage5-resize.png` was visually inspected. `npm run test:v2` passed 39/39, `npm run build` passed, and localhost production preview remains HTTP 200. The only unverified part of this stage is live Firebase save/reload with a migrated draft; it remains blocked by the safe migration gate rather than silently simulated.
 
 ## Feature parity ledger
 
@@ -196,6 +198,6 @@ Stage 5 responsive-layout follow-up: independent desktop/mobile viewport control
 
 ## Next exact task
 
-Continue Stage 5 without enabling v2 in production: add direct canvas drag/resize with commit-on-stop, keyboard nudging and pointer/touch tests against the now-validated responsive layout fields. Keep all edits in the owner-only draft coordinator; publish must stay explicit. After those gates, replace the temporary Studio preview block rendering with the shared versioned public renderer in its dedicated stage. The Stage 4 live-auth/browser save check remains pending until a safe migrated v2 draft and verified founder claim exist in an approved test environment.
+Proceed to Stage 6 locally: build the graphics quality manager and shared effect/material lifecycle first, with Lite CSS fallback, reduced-motion support, context-loss cleanup and measurable tier decisions. Use original code/assets, keep HTML text crisp, and avoid mounting a heavy GPU scene on ordinary navigation. Add focused tests and visual evidence, commit scoped changes, update this ledger, then continue to Stage 7 feature parity. The Stage 4/5 live-auth browser save check remains pending until a safe migrated v2 draft and verified founder claim exist in an approved test environment.
 
 Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.

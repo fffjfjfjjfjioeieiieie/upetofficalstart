@@ -6,8 +6,9 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../shared/ui/index.js';
 import { profileDocumentV2Schema } from '../../../shared/contracts/profileV2.js';
+import EditableCanvasItem from '../../../profiles/layouts/EditableCanvasItem.jsx';
 import { createDraftSaveCoordinator } from './studioPreviewPolicy.js';
-import { addStudioBlock, commitStudioHistory, createStudioHistory, patchStudioBlockLayout, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
+import { addStudioBlock, applyStudioBlockGeometry, commitStudioHistory, createStudioHistory, patchStudioBlockLayout, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
 import { submitStudioV2Action } from './studioV2Api.js';
 import './studioV2.css';
 
@@ -37,6 +38,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const [selectedPageId, setSelectedPageId] = useState(initialDraft.profile.pages[0]?.id);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
   const [viewport, setViewport] = useState('desktop');
+  const [canvasWidth, setCanvasWidth] = useState(300);
   const [saveState, setSaveState] = useState('Saved draft');
   const [error, setError] = useState('');
   const [publishing, setPublishing] = useState(false);
@@ -45,6 +47,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const draftRevisionRef = useRef(initialDraft.draftRevision);
   const publishedRevisionRef = useRef(initialDraft.basePublishedRevision);
   const historyRef = useRef(createStudioHistory(initialDraft.profile));
+  const canvasBlocksRef = useRef(null);
   const coordinatorRef = useRef(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -122,10 +125,21 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   };
   useEffect(() => {
     const onShortcut = (event) => {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return;
       if (event.target instanceof HTMLElement && event.target.closest('input,textarea,[contenteditable="true"]')) return;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        applyHistory(event.shiftKey ? 'redo' : 'undo');
+        return;
+      }
+      const arrows = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['y', -1], ArrowDown: ['y', 1] };
+      if (!selectedBlockId || !arrows[event.key] || event.metaKey || event.ctrlKey || event.altKey
+        || !(event.target instanceof HTMLElement) || !event.target.closest('.upet-studio-v2__canvas-blocks')) return;
       event.preventDefault();
-      applyHistory(event.shiftKey ? 'redo' : 'undo');
+      const [field, direction] = arrows[event.key];
+      const block = profileRef.current.pages.find((page) => page.id === selectedPageId)?.blocks.find((item) => item.id === selectedBlockId);
+      if (!block) return;
+      const layout = block.layout[viewport] || block.layout.desktop;
+      updateLayout(field, layout[field] + direction * (event.shiftKey ? 10 : 1));
     };
     window.addEventListener('keydown', onShortcut);
     return () => window.removeEventListener('keydown', onShortcut);
@@ -154,6 +168,10 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const reorderBlocks = ({ active, over }) => {
     if (!over) return;
     setEditedDocument(reorderStudioBlocks(profileRef.current, selectedPageId, active.id, over.id));
+  };
+  const commitGeometry = (blockId, geometry) => {
+    try { setEditedDocument(applyStudioBlockGeometry(profileRef.current, selectedPageId, blockId, viewport, geometry, canvasWidth)); }
+    catch (reason) { setError(reason?.message || 'Canvas layout could not be saved.'); }
   };
   const saveNow = async () => {
     try { await coordinatorRef.current.flush(); }
@@ -191,6 +209,14 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
     const layout = block.layout[viewport] || block.layout.desktop;
     return Math.min(1200, layout.y + Math.max(38, layout.height) + 15);
   }));
+  useEffect(() => {
+    const node = canvasBlocksRef.current;
+    if (!node || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => { if (node.clientWidth > 0) setCanvasWidth(node.clientWidth); });
+    observer.observe(node);
+    if (node.clientWidth > 0) setCanvasWidth(node.clientWidth);
+    return () => observer.disconnect();
+  }, [selectedPageId, viewport, orderedBlocks.length]);
   return <div className="upet-studio-v2" data-testid="studio-v2">
     <header className="upet-studio-v2__toolbar">
       <div className="upet-studio-v2__title"><Link to="/dashboard/editor" onClick={returnToLegacy} aria-label="Return to current editor" className="upet-studio-v2__back"><ChevronLeft size={18} /></Link><div><p>Founder preview · Studio 2.0</p><h1>Build your world</h1></div></div>
@@ -210,11 +236,12 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
           <div className="upet-studio-v2__avatar">{profile.identity.avatarUrl ? <img src={profile.identity.avatarUrl} alt="" /> : profile.identity.displayName.slice(0, 1).toUpperCase()}</div>
           <h2>{profile.identity.displayName}</h2><p className="upet-studio-v2__handle">@{profile.identity.handle}</p>
           <p className="upet-studio-v2__bio">{profile.identity.bio || 'Your story starts here.'}</p>
-          {orderedBlocks.length ? <div className="upet-studio-v2__canvas-blocks" style={{ height: layoutHeight }}>{orderedBlocks.filter((block) => block.visible).map((block) => {
+          {orderedBlocks.length ? <div ref={canvasBlocksRef} className="upet-studio-v2__canvas-blocks" style={{ height: layoutHeight }}>{orderedBlocks.filter((block) => block.visible).map((block) => {
             const layout = block.layout[viewport] || block.layout.desktop;
-            return <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} className={selectedBlockId === block.id ? 'is-selected' : ''} aria-label={`Select ${block.type} layer`} style={{ left: `${layout.x}%`, top: Math.min(1200, layout.y), width: `${Math.min(layout.width, 100 - layout.x)}%`, minHeight: Math.max(38, layout.height), transform: `rotate(${layout.rotation}deg)` }}>
-            {block.type === 'divider' ? <span className="upet-studio-v2__divider" /> : block.type === 'heading' ? <strong>{String(block.data.text || 'Heading')}</strong> : <span>{String(block.data.text || 'Text')}</span>}
-          </button>; })}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
+            const content = block.type === 'divider' ? <span className="upet-studio-v2__divider" /> : block.type === 'heading' ? <strong>{String(block.data.text || 'Heading')}</strong> : <span>{String(block.data.text || 'Text')}</span>;
+            if (selectedBlockId === block.id) return <EditableCanvasItem key={block.id} geometry={{ x: layout.x / 100 * canvasWidth, y: Math.min(1200, layout.y), w: Math.min(layout.width, 100 - layout.x) / 100 * canvasWidth, h: Math.max(38, layout.height) }} minWidth={40} minHeight={38} dragGrid={[1, 1]} resizeGrid={[1, 1]} showHandle onChange={(geometry) => commitGeometry(block.id, geometry)}><button type="button" className="upet-studio-v2__block-content is-selected" aria-label={`Select ${block.type} layer`} style={{ transform: `rotate(${layout.rotation}deg)` }}>{content}</button></EditableCanvasItem>;
+            return <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} aria-label={`Select ${block.type} layer`} style={{ left: `${layout.x}%`, top: Math.min(1200, layout.y), width: `${Math.min(layout.width, 100 - layout.x)}%`, minHeight: Math.max(38, layout.height), transform: `rotate(${layout.rotation}deg)` }}>{content}</button>;
+          })}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
         </div></div>
         <p className="upet-studio-v2__canvas-footnote"><Eye size={15} />Private draft preview · published revision {publishedRevision}</p>
       </section>

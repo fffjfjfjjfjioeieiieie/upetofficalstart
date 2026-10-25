@@ -3,6 +3,7 @@ import test from 'node:test';
 import { createEmptyProfileDocumentV2 } from '../src/shared/contracts/profileV2.js';
 import {
   addStudioBlock,
+  applyStudioBlockGeometry,
   commitStudioHistory,
   createStudioHistory,
   patchStudioBlockLayout,
@@ -35,6 +36,18 @@ test('desktop and mobile layout edits stay independent and bounded', () => {
   assert.equal(fitted.pages[0].blocks[0].layout.desktop.x, 5);
   assert.equal(fitted.pages[0].blocks[0].layout.desktop.width, 90);
   assert.throws(() => patchStudioBlockLayout(fitted, 'home', 'block', 'mobile', 'y', Infinity), /finite/);
+});
+
+test('drag/resize geometry commits normalized coordinates only for the chosen viewport', () => {
+  const original = addStudioBlock(profile(), 'home', 'heading', 'block');
+  const changed = applyStudioBlockGeometry(original, 'home', 'block', 'mobile', { x: 50, y: 75, w: 100, h: 90 }, 250);
+  const block = changed.pages[0].blocks[0];
+  assert.equal(block.layout.mobile.x, 20);
+  assert.equal(block.layout.mobile.width, 40);
+  assert.equal(block.layout.mobile.y, 75);
+  assert.equal(block.layout.mobile.height, 90);
+  assert.equal(block.layout.desktop.x, 5);
+  assert.throws(() => applyStudioBlockGeometry(original, 'home', 'block', 'mobile', { x: 1, y: 1, w: 10, h: 10 }, 0), /measured/);
 });
 
 test('history coalesces one field edit, bounds undo depth and clears redo after new work', () => {

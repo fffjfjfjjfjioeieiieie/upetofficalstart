@@ -74,6 +74,33 @@ export function patchStudioBlockLayout(profile, pageId, blockId, viewport, field
   });
 }
 
+export function applyStudioBlockGeometry(profile, pageId, blockId, viewport, geometry, canvasWidth) {
+  if (!['desktop', 'mobile'].includes(viewport) || !Number.isFinite(canvasWidth) || canvasWidth <= 0) {
+    throw new Error('A measured desktop or mobile canvas is required.');
+  }
+  const values = [geometry?.x, geometry?.y, geometry?.w, geometry?.h].map(Number);
+  if (values.some((value) => !Number.isFinite(value))) throw new Error('Canvas geometry must contain finite numbers.');
+  const [rawX, rawY, rawWidth, rawHeight] = values;
+  const roundPercent = (value) => Math.round(value * 100) / 100;
+  const x = roundPercent(Math.max(0, Math.min(99, rawX / canvasWidth * 100)));
+  const width = roundPercent(Math.max(1, Math.min(100 - x, rawWidth / canvasWidth * 100)));
+  const y = Math.max(0, Math.min(100_000, Math.round(rawY)));
+  const height = Math.max(0, Math.min(100_000, Math.round(rawHeight)));
+  return profileDocumentV2Schema.parse({
+    ...profile,
+    pages: profile.pages.map((page) => page.id === pageId ? {
+      ...page,
+      blocks: page.blocks.map((block) => block.id === blockId ? {
+        ...block,
+        layout: {
+          ...block.layout,
+          [viewport]: { ...(block.layout[viewport] || block.layout.desktop), x, y, width, height },
+        },
+      } : block),
+    } : page),
+  });
+}
+
 export function createStudioHistory(present, limit = 50) {
   return { past: [], present, future: [], group: '', atMs: 0, limit };
 }
