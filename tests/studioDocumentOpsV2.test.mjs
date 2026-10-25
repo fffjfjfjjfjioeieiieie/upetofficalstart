@@ -5,6 +5,7 @@ import {
   addStudioBlock,
   commitStudioHistory,
   createStudioHistory,
+  patchStudioBlockLayout,
   redoStudioHistory,
   reorderStudioBlocks,
   undoStudioHistory,
@@ -23,6 +24,17 @@ test('block creation and reorder preserve page data and normalize stable order',
   assert.equal(moved.pages[0].blocks[0].accessibility.decorative, true);
   assert.equal(reorderStudioBlocks(moved, 'home', 'missing', 'one'), moved);
   assert.throws(() => addStudioBlock(profile(), 'home', 'unsafe-widget', 'bad'), /Unsupported/);
+});
+
+test('desktop and mobile layout edits stay independent and bounded', () => {
+  const original = addStudioBlock(profile(), 'home', 'text', 'block');
+  const mobile = patchStudioBlockLayout(original, 'home', 'block', 'mobile', 'x', 85);
+  const fitted = patchStudioBlockLayout(mobile, 'home', 'block', 'mobile', 'width', 80);
+  assert.equal(fitted.pages[0].blocks[0].layout.mobile.x, 85);
+  assert.equal(fitted.pages[0].blocks[0].layout.mobile.width, 15);
+  assert.equal(fitted.pages[0].blocks[0].layout.desktop.x, 5);
+  assert.equal(fitted.pages[0].blocks[0].layout.desktop.width, 90);
+  assert.throws(() => patchStudioBlockLayout(fitted, 'home', 'block', 'mobile', 'y', Infinity), /finite/);
 });
 
 test('history coalesces one field edit, bounds undo depth and clears redo after new work', () => {

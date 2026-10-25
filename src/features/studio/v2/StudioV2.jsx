@@ -7,7 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../shared/ui/index.js';
 import { profileDocumentV2Schema } from '../../../shared/contracts/profileV2.js';
 import { createDraftSaveCoordinator } from './studioPreviewPolicy.js';
-import { addStudioBlock, commitStudioHistory, createStudioHistory, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
+import { addStudioBlock, commitStudioHistory, createStudioHistory, patchStudioBlockLayout, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
 import { submitStudioV2Action } from './studioV2Api.js';
 import './studioV2.css';
 
@@ -21,11 +21,22 @@ function SortableBlockRow({ block, selected, onSelect }) {
   </li>;
 }
 
+function LayoutNumberField({ label, value, minimum, maximum, onCommit }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => {
+    if (draft.trim() === '' || !Number.isFinite(Number(draft))) { setDraft(String(value)); return; }
+    onCommit(Number(draft));
+  };
+  return <label>{label}<input type="number" min={minimum} max={maximum} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>;
+}
+
 export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(initialDraft.profile);
   const [selectedPageId, setSelectedPageId] = useState(initialDraft.profile.pages[0]?.id);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [viewport, setViewport] = useState('desktop');
   const [saveState, setSaveState] = useState('Saved draft');
   const [error, setError] = useState('');
   const [publishing, setPublishing] = useState(false);
@@ -96,6 +107,10 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
       ? { ...page, blocks: page.blocks.map((block) => block.id === selectedBlockId ? { ...block, data: { ...block.data, [field]: value } } : block) }
       : page),
   }), `block.${selectedBlockId}.${field}`);
+  const updateLayout = (field, value) => {
+    try { setEditedDocument(patchStudioBlockLayout(profileRef.current, selectedPageId, selectedBlockId, viewport, field, value), `layout.${selectedBlockId}.${viewport}.${field}`); }
+    catch (reason) { setError(reason?.message || 'Layout value is invalid.'); }
+  };
   const applyHistory = (direction) => {
     const next = direction === 'undo' ? undoStudioHistory(historyRef.current) : redoStudioHistory(historyRef.current);
     if (next === historyRef.current) return;
@@ -171,6 +186,11 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const selectedPage = profile.pages.find((page) => page.id === selectedPageId) || profile.pages[0];
   const orderedBlocks = selectedPage?.blocks.slice().sort((a, b) => a.order - b.order) || [];
   const selectedBlock = orderedBlocks.find((block) => block.id === selectedBlockId);
+  const selectedLayout = selectedBlock?.layout[viewport] || selectedBlock?.layout.desktop;
+  const layoutHeight = Math.max(180, ...orderedBlocks.map((block) => {
+    const layout = block.layout[viewport] || block.layout.desktop;
+    return Math.min(1200, layout.y + Math.max(38, layout.height) + 15);
+  }));
   return <div className="upet-studio-v2" data-testid="studio-v2">
     <header className="upet-studio-v2__toolbar">
       <div className="upet-studio-v2__title"><Link to="/dashboard/editor" onClick={returnToLegacy} aria-label="Return to current editor" className="upet-studio-v2__back"><ChevronLeft size={18} /></Link><div><p>Founder preview · Studio 2.0</p><h1>Build your world</h1></div></div>
@@ -185,14 +205,16 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
         <div className="upet-studio-v2__add-blocks"><p>Add a layer</p>{['heading', 'text', 'divider'].map((type) => <Button key={type} variant="outline" size="sm" disabled={orderedBlocks.length >= 100} onClick={() => addBlock(type)}>+ {type}</Button>)}</div>
       </aside>
       <section className="upet-studio-v2__canvas-area" aria-label="Profile canvas">
-        <div className="upet-studio-v2__canvas-meta"><span>Canvas · {pageLabel(selectedPage)}</span><span>Desktop preview</span></div>
-        <div className="upet-studio-v2__canvas"><div className="upet-studio-v2__profile-card">
+        <div className="upet-studio-v2__canvas-meta"><span>Canvas · {pageLabel(selectedPage)}</span><div className="upet-studio-v2__viewport-switch" role="group" aria-label="Preview viewport"><button type="button" aria-pressed={viewport === 'desktop'} onClick={() => setViewport('desktop')}>Desktop</button><button type="button" aria-pressed={viewport === 'mobile'} onClick={() => setViewport('mobile')}>Mobile</button></div></div>
+        <div className={`upet-studio-v2__canvas ${viewport === 'mobile' ? 'is-mobile' : ''}`}><div className="upet-studio-v2__profile-card">
           <div className="upet-studio-v2__avatar">{profile.identity.avatarUrl ? <img src={profile.identity.avatarUrl} alt="" /> : profile.identity.displayName.slice(0, 1).toUpperCase()}</div>
           <h2>{profile.identity.displayName}</h2><p className="upet-studio-v2__handle">@{profile.identity.handle}</p>
           <p className="upet-studio-v2__bio">{profile.identity.bio || 'Your story starts here.'}</p>
-          {orderedBlocks.length ? <div className="upet-studio-v2__canvas-blocks">{orderedBlocks.filter((block) => block.visible).map((block) => <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} className={selectedBlockId === block.id ? 'is-selected' : ''} aria-label={`Select ${block.type} layer`}>
+          {orderedBlocks.length ? <div className="upet-studio-v2__canvas-blocks" style={{ height: layoutHeight }}>{orderedBlocks.filter((block) => block.visible).map((block) => {
+            const layout = block.layout[viewport] || block.layout.desktop;
+            return <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} className={selectedBlockId === block.id ? 'is-selected' : ''} aria-label={`Select ${block.type} layer`} style={{ left: `${layout.x}%`, top: Math.min(1200, layout.y), width: `${Math.min(layout.width, 100 - layout.x)}%`, minHeight: Math.max(38, layout.height), transform: `rotate(${layout.rotation}deg)` }}>
             {block.type === 'divider' ? <span className="upet-studio-v2__divider" /> : block.type === 'heading' ? <strong>{String(block.data.text || 'Heading')}</strong> : <span>{String(block.data.text || 'Text')}</span>}
-          </button>)}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
+          </button>; })}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
         </div></div>
         <p className="upet-studio-v2__canvas-footnote"><Eye size={15} />Private draft preview · published revision {publishedRevision}</p>
       </section>
@@ -201,6 +223,10 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
         {selectedBlock ? <>
           {selectedBlock.type !== 'divider' && <label>{selectedBlock.type === 'heading' ? 'Heading' : 'Text'}<textarea maxLength={500} rows={4} value={String(selectedBlock.data.text || '')} onChange={(event) => updateBlock('text', event.target.value)} /></label>}
           {selectedBlock.type === 'divider' && <label>Accessible label<input maxLength={80} value={String(selectedBlock.data.label || '')} onChange={(event) => updateBlock('label', event.target.value)} /></label>}
+          <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>{viewport === 'mobile' ? 'Mobile layout' : 'Desktop layout'}</h2></div>
+          <div className="upet-studio-v2__layout-fields">{[
+            ['x', 'X position %', 0, 99], ['y', 'Y position', 0, 100000], ['width', 'Width %', 1, 100], ['height', 'Height', 0, 100000], ['rotation', 'Rotation °', -180, 180],
+          ].map(([field, label, minimum, maximum]) => <LayoutNumberField key={`${selectedBlockId}:${viewport}:${field}`} label={label} value={selectedLayout[field]} minimum={minimum} maximum={maximum} onCommit={(value) => updateLayout(field, value)} />)}</div>
           <Button variant="ghost" size="sm" onClick={() => setSelectedBlockId(null)}>Back to page settings</Button>
         </> : <>
           <label>Display name<input maxLength={80} value={profile.identity.displayName} onChange={(event) => updateIdentity('displayName', event.target.value)} /></label>

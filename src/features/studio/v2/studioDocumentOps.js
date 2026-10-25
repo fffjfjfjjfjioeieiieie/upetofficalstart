@@ -14,7 +14,7 @@ export function createStudioBlock(type, { id, order = 0 } = {}) {
     type,
     order,
     visible: true,
-    layout: { desktop: { x: 5, y: order * 12, width: 90, height: 8, rotation: 0 } },
+    layout: { desktop: { x: 5, y: order * 70, width: 90, height: 60, rotation: 0 } },
     data: defaults[type],
     style: {},
     accessibility: { label: '', description: '', decorative: type === 'divider' },
@@ -48,6 +48,29 @@ export function reorderStudioBlocks(profile, pageId, activeId, overId) {
   return profileDocumentV2Schema.parse({
     ...profile,
     pages: profile.pages.map((item) => item.id === pageId ? { ...item, blocks } : item),
+  });
+}
+
+export function patchStudioBlockLayout(profile, pageId, blockId, viewport, field, rawValue) {
+  if (!['desktop', 'mobile'].includes(viewport) || !['x', 'y', 'width', 'height', 'rotation'].includes(field)) {
+    throw new Error('Unsupported responsive layout field.');
+  }
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) throw new Error('Layout values must be finite numbers.');
+  const bounds = { x: [0, 99], y: [0, 100_000], width: [1, 100], height: [0, 100_000], rotation: [-180, 180] };
+  const [minimum, maximum] = bounds[field];
+  const clamped = Math.max(minimum, Math.min(maximum, value));
+  return profileDocumentV2Schema.parse({
+    ...profile,
+    pages: profile.pages.map((page) => page.id === pageId ? {
+      ...page,
+      blocks: page.blocks.map((block) => {
+        if (block.id !== blockId) return block;
+        const layout = { ...(block.layout[viewport] || block.layout.desktop), [field]: clamped };
+        layout.width = Math.min(layout.width, 100 - layout.x);
+        return { ...block, layout: { ...block.layout, [viewport]: layout } };
+      }),
+    } : page),
   });
 }
 
