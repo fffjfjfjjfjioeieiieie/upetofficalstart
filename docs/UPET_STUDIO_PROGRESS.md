@@ -9,7 +9,7 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stages 0 through 2 are complete locally. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; the migration architecture was recorded; shared semantic tokens and accessible UI primitives were extracted; and versioned profile/page/block/music/lyrics/media contracts now have lossless legacy fixtures and write-blocked adapters. No remote deployment or production-data operation was performed.
+Stages 0 through 2 are complete locally, and Stage 3's pure publish/security domain foundation is in progress. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; shared foundations and versioned contracts were added; legacy writes remain blocked; and strict public projection/publish decision helpers now have focused tests. No remote deployment or production-data operation was performed.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -20,7 +20,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
 | 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
 | 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
-| 3. Draft/publish/security foundation | Not started | Emulator coverage, trusted roles, revision conflicts, bounded access |
+| 3. Draft/publish/security foundation | In progress | Pure allowlisted projections, owner/revision/write gates, unchanged-write suppression, trusted-claim helpers, 30s request cache and bounded query policies complete; Firestore transaction/rules/emulator integration remains |
 | 4. Studio shell | Not started | Founder-only route and legacy editor escape hatch |
 | 5. Core editor interactions | Not started | Responsive canvas, history, keyboard, drag/reorder tests |
 | 6. Materials and backgrounds | Not started | CSS fallback, quality manager, reduced-motion and performance budgets |
@@ -83,6 +83,15 @@ node --test tests/profileContracts.test.mjs
 
 The contracts and their privacy/write boundaries are recorded in `docs/architecture/UPET_V2_DATA_CONTRACTS.md`. They are additive and are not imported by the current Firestore save/publish path.
 
+Stage 3 domain-foundation verification:
+
+```text
+node --test tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs
+  14 passed
+```
+
+The projection, publish, claims, cache and query boundaries are recorded in `docs/architecture/UPET_V2_PUBLISH_SECURITY.md`. These functions perform no external I/O and are not connected to the current production writer.
+
 ## Feature parity ledger
 
 | Capability | Existing baseline | Final target | Status |
@@ -135,13 +144,13 @@ The contracts and their privacy/write boundaries are recorded in `docs/architect
 
 ## Next exact task
 
-Begin Stage 3 locally:
+Continue Stage 3 locally:
 
-1. Define strict public and directory projections that cannot expose owner-only compatibility snapshots, drafts, shop internals or private settings.
-2. Introduce trusted publish/revision service functions with explicit base-revision conflicts, unchanged-write suppression and recoverable revisions; do not connect them to production yet.
-3. Add emulator-oriented ownership, role and profile-projection rules/tests. Replace hard-coded privileged email authority through a compatible claims/roles transition plan.
-4. Design bounded query/pagination contracts for public profiles, conversations, tickets and analytics. Replace the top-profile N+1 shape with maintained aggregate inputs.
-5. Add a short explicit cache policy for identical public reads and visible error states.
-6. Run focused security/data tests and one production build, update this ledger, and commit only verified Stage 3 changes.
+1. Add a trusted Admin SDK repository adapter that re-reads ownership and revision in one transaction and applies the pure publish plan; keep it disconnected from public routes.
+2. Add Firebase emulator coverage for owner/non-owner, stale revision, public projection isolation, draft privacy and revision recovery.
+3. Migrate privileged authorization from hard-coded emails to compatible custom claims/roles with tested founder recovery.
+4. Add cursor pagination to current unbounded conversations, messages, support tickets, ticket messages and analytics reads.
+5. Replace the top-profile N+1 query shape with maintained aggregate inputs and connect the explicit public cache/invalidation policy.
+6. Run focused security/data tests and one production build, then mark Stage 3 complete only when rules and emulator gates pass.
 
 If source integration overlaps the pre-existing uncommitted work in a way that cannot be staged safely, document the exact files and stop before overwriting or bundling unrelated changes.

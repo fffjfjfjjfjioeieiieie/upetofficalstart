@@ -184,7 +184,17 @@ export const profileDocumentV2Schema = z.object({
     trackIds: z.array(id).max(500),
     playlistIds: z.array(id).max(100),
     defaultTrackId: text(120).default(''),
-  }).passthrough(),
+  }).passthrough().superRefine((music, context) => {
+    if (music.defaultTrackId && !music.trackIds.includes(music.defaultTrackId)) {
+      context.addIssue({ code: 'custom', path: ['defaultTrackId'], message: 'The default track must exist in trackIds.' });
+    }
+    if (new Set(music.trackIds).size !== music.trackIds.length) {
+      context.addIssue({ code: 'custom', path: ['trackIds'], message: 'Track IDs must be unique.' });
+    }
+    if (new Set(music.playlistIds).size !== music.playlistIds.length) {
+      context.addIssue({ code: 'custom', path: ['playlistIds'], message: 'Playlist IDs must be unique.' });
+    }
+  }),
   mediaAssetIds: z.array(id).max(2000),
   compatibility: z.object({
     source: z.enum(['native-v2', 'legacy-flat', 'legacy-v1', 'legacy-redesign']),
