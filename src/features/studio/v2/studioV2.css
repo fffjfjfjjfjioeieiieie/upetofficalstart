@@ -38,7 +38,7 @@
 .upet-studio-v2__canvas { display: grid; place-items: center; min-height: 555px; margin-top: 15px; border: 1px dashed hsl(var(--border)); border-radius: 20px; background: linear-gradient(135deg, #090d19, #11172b 55%, #092b39); }
 .upet-studio-v2__canvas.is-mobile { width: min(100%, 370px); margin-inline: auto; }
 .upet-studio-v2__canvas.is-mobile .upet-studio-v2__profile-card { width: min(93%, 330px); }
-.upet-studio-v2__profile-card { width: min(90%, 390px); min-height: 390px; padding: 35px 25px; border: 1px solid #ffffff32; border-radius: 26px; background: #10182fc7; box-shadow: 0 30px 70px #0008; text-align: center; color: #f4f7ff; }
+.upet-studio-v2__profile-card { width: min(90%, 390px); min-height: 390px; padding: 35px 25px; border: 1px solid #ffffff32; border-radius: 26px; text-align: center; color: #f4f7ff; }
 .upet-studio-v2__avatar { display: grid; place-items: center; width: 84px; height: 84px; margin: 0 auto 16px; overflow: hidden; border: 3px solid #70d7f3; border-radius: 26px; background: #183247; font-size: 30px; font-weight: 800; }
 .upet-studio-v2__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .upet-studio-v2__profile-card h2 { margin: 0; font-size: 24px; font-weight: 800; overflow-wrap: anywhere; }
@@ -54,13 +54,14 @@
 .upet-studio-v2__divider { display: block; border-top: 1px solid #ffffff77; }
 .upet-studio-v2__canvas-footnote { margin: 12px 0 0; color: hsl(var(--muted-foreground)); font-size: 11px; }
 .upet-studio-v2__inspector label { display: grid; gap: 7px; margin-top: 18px; color: hsl(var(--muted-foreground)); font-size: 11px; font-weight: 800; }
-.upet-studio-v2__inspector input:not([type="checkbox"]), .upet-studio-v2__inspector textarea { width: 100%; border: 1px solid var(--sv2-line); border-radius: 11px; padding: 10px 11px; background: hsl(var(--background) / .6); color: hsl(var(--foreground)); font-size: 13px; font-weight: 500; resize: vertical; }
+.upet-studio-v2__inspector input:not([type="checkbox"]), .upet-studio-v2__inspector textarea, .upet-studio-v2__inspector select { width: 100%; border: 1px solid var(--sv2-line); border-radius: 11px; padding: 10px 11px; background: hsl(var(--background) / .6); color: hsl(var(--foreground)); font-size: 13px; font-weight: 500; resize: vertical; }
 .upet-studio-v2__section-heading { margin-top: 26px; padding-top: 15px; border-top: 1px solid var(--sv2-line); }
 .upet-studio-v2__inspector label.upet-studio-v2__toggle { display: flex; align-items: center; gap: 8px; }
 .upet-studio-v2__layout-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 9px; }
 .upet-studio-v2__toggle input { accent-color: hsl(var(--primary)); }
 .upet-studio-v2__legacy { display: block; margin-top: 34px; padding: 13px; border: 1px solid var(--sv2-line); border-radius: 12px; color: hsl(var(--muted-foreground)); font-size: 11px; line-height: 1.6; }
 .upet-studio-v2__legacy:hover { color: hsl(var(--foreground)); }
+.upet-studio-v2__quality-note { margin-top: 12px; color: hsl(var(--muted-foreground)); font-size: 11px; text-transform: capitalize; }
 @media (max-width: 1200px) { .upet-studio-v2__grid { grid-template-columns: 190px minmax(0, 1fr); } .upet-studio-v2__inspector { grid-column: 1 / -1; border-top: 1px solid var(--sv2-line); border-left: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; } .upet-studio-v2__inspector .upet-studio-v2__panel-heading, .upet-studio-v2__inspector .upet-studio-v2__legacy { grid-column: 1 / -1; } }
 @media (max-width: 720px) { .upet-studio-v2__toolbar { align-items: flex-start; flex-direction: column; } .upet-studio-v2__actions { flex-wrap: wrap; } .upet-studio-v2__grid { display: flex; flex-direction: column; } .upet-studio-v2__panel { border-right: 0; border-bottom: 1px solid var(--sv2-line); } .upet-studio-v2__canvas-area { order: -1; padding: 14px; } .upet-studio-v2__canvas { min-height: 440px; } .upet-studio-v2__inspector { display: block; border-top: 0; } }
 @media (prefers-reduced-motion: reduce) { .upet-studio-v2 *, .upet-studio-v2 *::before, .upet-studio-v2 *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

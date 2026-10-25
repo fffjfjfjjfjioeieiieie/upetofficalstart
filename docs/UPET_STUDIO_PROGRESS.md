@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-25 (Stage 5 local interaction gate)
+Last updated: 2026-10-25 (Stage 6 graphics/material foundation checkpoint)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -9,7 +9,7 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stages 0 through 2 are complete locally. Stage 3 has an isolated, founder-preview-only draft/publish route, verified local rules/projection boundaries, bounded legacy listeners, ranking aggregation/backfill code, and an emulator gate. Stage 4 has a preview-gated Studio shell with pages, layers, canvas, inspector, private draft controls and a current-editor escape hatch. Stage 5 has begun with schema-backed blocks, selection, list reorder and undo/redo. None is a production migration: no live claims or ranking aggregates have been migrated, v1 autosave remains active, and the v2 API is disabled unless explicitly enabled. No remote deployment or production-data operation was performed. The latest verified build is served at `http://127.0.0.1:4173/` for local inspection.
+Stages 0 through 2 are complete locally. Stage 3 has an isolated, founder-preview-only draft/publish route and local security gates. Stage 4 has a preview-gated Studio shell, and Stage 5 has a locally verified core block editor. Stage 6 now has its first quality/fallback material slice; GPU/Three.js work is still pending. None is a production migration: no live claims or ranking aggregates have been migrated, v1 autosave remains active, and the v2 API is disabled unless explicitly enabled. No remote deployment or production-data operation was performed. The latest verified build is served at `http://127.0.0.1:4173/` for local inspection.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -23,7 +23,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 3. Draft/publish/security foundation | Verified locally; rollout blocked | Emulator rules 6/6, v2 domain tests 32/32, build passed. Production claim migration, ranking backfill and v1 writer cutover are intentionally pending; see next gate. |
 | 4. Studio shell | Shell verified locally; live integration pending | `/dashboard/studio-v2` localhost/flag gate, refreshed founder claim, private draft load, serialized debounced save, explicit publish, current-editor escape; desktop/mobile harness pass. Live founder-token and migrated-draft browser check blocked by safe migration gate. |
 | 5. Core editor interactions | Complete locally; live persistence gated | Native v2 heading/text/divider blocks, selection/inspector, pointer/keyboard sortable layers, bounded/coalesced undo/redo, independent desktop/mobile layouts, direct canvas pointer/touch drag and resize, keyboard nudge; 39 tests/build and visual harness pass. Live Firebase save/reload waits for safe v2 migration. |
-| 6. Materials and backgrounds | Next | CSS fallback, quality manager, reduced-motion and performance budgets |
+| 6. Materials and backgrounds | In progress | Quality budgets/manager with p75 hysteresis, cooldown, DPR cap, visibility/reduced-motion/context state; five allowlisted DOM material variants in Studio. Three.js/PBR/shaders, background catalogue, measured performance budgets and public-renderer parity remain. |
 | 7. Existing profile-feature parity | Not started | Identity/links/entry/effects/widgets/badges parity matrix |
 | 8. Media and galleries | Not started | Asset library, provenance, collections and responsive media |
 | 9. Music system | Not started | Existing upload/embed parity before multi-track/playlists/global player |
@@ -146,6 +146,20 @@ Stage 5 responsive-layout follow-up: independent desktop/mobile viewport control
 
 Stage 5 local completion gate: the existing `src/profiles/layouts/EditableCanvasItem.jsx` now accepts opt-in minimums, grids and a visible touch-sized resize handle while keeping its legacy defaults. Studio maps drag/resize commits back to normalized v2 desktop/mobile geometry only when the gesture ends; no per-frame Firebase writes. Browser checks: pointer drag changed x/y, resize changed width/height, keyboard arrow/shift-arrow nudged a selected block, and an emulated touch drag moved a block by 60px. The desktop resize capture `/tmp/upet-stage5-resize.png` was visually inspected. `npm run test:v2` passed 39/39, `npm run build` passed, and localhost production preview remains HTTP 200. The only unverified part of this stage is live Firebase save/reload with a migrated draft; it remains blocked by the safe migration gate rather than silently simulated.
 
+Stage 6 foundation verification (2026-10-25):
+
+```text
+npm run test:v2
+  43 passed, 0 failed (quality manager and material registry added)
+npm run build
+  passed; Vite 7.3.7; Stage 6 Studio chunk emitted
+local visual harness
+  crystal, frosted, chrome, holographic on dark background; holographic on bright background
+  mobile frosted with reduced motion: no page errors or horizontal overflow
+```
+
+The pure quality manager exposes Lite/Balanced/High/Ultra resource budgets, bounded DPR, p75 frame windows, downgrade cooldown and two-window upgrade hysteresis. Context loss forces Lite, context restoration returns to a conservative auto tier, and hidden/reduced-motion states suspend animation eligibility. The Studio-mounted monitor unregisters media/visibility listeners and cancels its RAF on unmount. These are policy/lifecycle foundations, not a measured FPS claim. `MaterialSurface` is a shared allowlisted DOM/CSS fallback with readable HTML content; no new paid service or WebGL context is mounted. Screenshots `/tmp/upet-stage6-crystal-dark.png`, `/tmp/upet-stage6-chrome-dark.png` and `/tmp/upet-stage6-holographic-bright.png` were visually inspected. Do not describe chrome as full PBR or glass as real DOM refraction.
+
 ## Feature parity ledger
 
 | Capability | Existing baseline | Final target | Status |
@@ -198,6 +212,6 @@ Stage 5 local completion gate: the existing `src/profiles/layouts/EditableCanvas
 
 ## Next exact task
 
-Proceed to Stage 6 locally: build the graphics quality manager and shared effect/material lifecycle first, with Lite CSS fallback, reduced-motion support, context-loss cleanup and measurable tier decisions. Use original code/assets, keep HTML text crisp, and avoid mounting a heavy GPU scene on ordinary navigation. Add focused tests and visual evidence, commit scoped changes, update this ledger, then continue to Stage 7 feature parity. The Stage 4/5 live-auth browser save check remains pending until a safe migrated v2 draft and verified founder claim exist in an approved test environment.
+Continue Stage 6 locally: add a lazy Three.js scene only for GPU-worthy selected materials/backgrounds, with explicit context-loss/restoration and resource disposal, then implement real PBR glass/chrome with an attractive Lite fallback. Benchmark before assigning performance targets, test reduced-motion and low-capability rendering, and keep public content semantic HTML. Do not enable a GPU scene on ordinary page navigation. Then continue to Stage 7 parity. The Stage 4/5 live-auth browser save check remains pending until a safe migrated v2 draft and verified founder claim exist in an approved test environment.
 
 Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.

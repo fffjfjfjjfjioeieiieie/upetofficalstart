@@ -1,0 +1,18 @@
+.upet-material { position: relative; isolation: isolate; overflow: hidden; color: #f4f7ff; }
+.upet-material::before, .upet-material::after { position: absolute; inset: 0; z-index: -1; pointer-events: none; content: ""; }
+.upet-material--matte { background: linear-gradient(145deg, #10192b, #0e1527 55%, #101a31); box-shadow: inset 0 1px #ffffff19, 0 30px 70px #0008; }
+.upet-material--matte::before { background: radial-gradient(circle at 18% 4%, #71d2ff18, transparent 50%); }
+.upet-material--crystal { background: linear-gradient(135deg, #e9faff23, #81b8ee0e 48%, #0d192c8a), #101d30d9; border-color: #e8f8ff75 !important; box-shadow: inset 0 1px #fff9, inset 1px 0 #ffffff54, inset 0 -3px 9px #66ceff30, 0 28px 60px #0008; -webkit-backdrop-filter: blur(15px) saturate(1.25); backdrop-filter: blur(15px) saturate(1.25); }
+.upet-material--crystal::before { inset: 1px; border-radius: inherit; background: linear-gradient(160deg, #ffffff2e, transparent 35%, #58c8ff12 70%, #fff2); }
+.upet-material--crystal::after { inset: 0 6% auto; height: 2px; background: linear-gradient(90deg, transparent, #fff9 35%, #ffffff27 70%, transparent); }
+.upet-material--frosted { background: linear-gradient(150deg, #dff8ff35, #8cc5eb19 45%, #12233acc), #15263bd9; border-color: #d5f2ff69 !important; box-shadow: inset 0 1px #ffffff9e, inset 0 0 35px #c8e5ff14, 0 25px 65px #0008; -webkit-backdrop-filter: blur(28px) saturate(1.1); backdrop-filter: blur(28px) saturate(1.1); }
+.upet-material--frosted::before { opacity: .35; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"); }
+.upet-material--chrome { background: linear-gradient(155deg, #e7f4ff8c 0%, #3d5265 8%, #09111f 18%, #829bb2 27%, #152334 37%, #010612 52%, #607687 62%, #0a1523 76%, #294154 89%, #c0d7e18c 100%); border-color: #a9c4d0a6 !important; box-shadow: inset 0 1px #ffffffcf, inset 0 -2px 10px #000b, 0 30px 70px #0009; }
+.upet-material--chrome::before { background: linear-gradient(115deg, transparent 10%, #ffffff20 20%, transparent 27%, transparent 60%, #ffffff23 69%, transparent 73%); }
+.upet-material--chrome::after { background: linear-gradient(#0712228c, #071222b9); }
+.upet-material--holographic { background: linear-gradient(130deg, #2d6e8966, #11162c 40%, #713a7d5e 67%, #1c627f6e), #121b30; border-color: #8ce7f0aa !important; box-shadow: inset 0 1px #ffffff8a, inset 0 0 30px #9c7aff24, 0 28px 60px #0009; }
+.upet-material--holographic::before { background: conic-gradient(from 210deg at 15% 10%, #70e9f142, #f3a5e128, #b7b0ff36, #80ece342, #70e9f142); mix-blend-mode: screen; opacity: .55; }
+.upet-material--holographic::after { background: linear-gradient(110deg, transparent 30%, #e6ffff17 45%, transparent 60%); }
+.upet-material[data-quality="lite"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.upet-material[data-reduced-motion="true"]::before, .upet-material[data-reduced-motion="true"]::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .upet-material::before, .upet-material::after { animation: none !important; transition: none !important; } }

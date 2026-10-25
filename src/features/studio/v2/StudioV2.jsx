@@ -7,6 +7,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../shared/ui/index.js';
 import { profileDocumentV2Schema } from '../../../shared/contracts/profileV2.js';
 import EditableCanvasItem from '../../../profiles/layouts/EditableCanvasItem.jsx';
+import MaterialSurface from '../../../graphics/materials/MaterialSurface.jsx';
+import { MATERIAL_VARIANTS } from '../../../graphics/materials/materialRegistry.js';
+import { useGraphicsQuality } from '../../../graphics/quality/useGraphicsQuality.js';
 import { createDraftSaveCoordinator } from './studioPreviewPolicy.js';
 import { addStudioBlock, applyStudioBlockGeometry, commitStudioHistory, createStudioHistory, patchStudioBlockLayout, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
 import { submitStudioV2Action } from './studioV2Api.js';
@@ -39,6 +42,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const [selectedBlockId, setSelectedBlockId] = useState(null);
   const [viewport, setViewport] = useState('desktop');
   const [canvasWidth, setCanvasWidth] = useState(300);
+  const graphics = useGraphicsQuality(true);
   const [saveState, setSaveState] = useState('Saved draft');
   const [error, setError] = useState('');
   const [publishing, setPublishing] = useState(false);
@@ -100,6 +104,10 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const updateIdentity = (field, value) => edit((current) => ({
     ...current, identity: { ...current.identity, [field]: value },
   }), `identity.${field}`);
+  const updateMaterial = (id) => edit((current) => ({
+    ...current,
+    theme: { ...current.theme, material: { ...(current.theme.material || {}), id } },
+  }), 'theme.material.id');
   const updatePage = (field, value) => edit((current) => ({
     ...current,
     pages: current.pages.map((page) => page.id === selectedPageId ? { ...page, [field]: value } : page),
@@ -232,7 +240,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
       </aside>
       <section className="upet-studio-v2__canvas-area" aria-label="Profile canvas">
         <div className="upet-studio-v2__canvas-meta"><span>Canvas · {pageLabel(selectedPage)}</span><div className="upet-studio-v2__viewport-switch" role="group" aria-label="Preview viewport"><button type="button" aria-pressed={viewport === 'desktop'} onClick={() => setViewport('desktop')}>Desktop</button><button type="button" aria-pressed={viewport === 'mobile'} onClick={() => setViewport('mobile')}>Mobile</button></div></div>
-        <div className={`upet-studio-v2__canvas ${viewport === 'mobile' ? 'is-mobile' : ''}`}><div className="upet-studio-v2__profile-card">
+        <div className={`upet-studio-v2__canvas ${viewport === 'mobile' ? 'is-mobile' : ''}`}><MaterialSurface className="upet-studio-v2__profile-card" variant={profile.theme?.material?.id} quality={graphics.tier} reducedMotion={!graphics.motionEnabled}>
           <div className="upet-studio-v2__avatar">{profile.identity.avatarUrl ? <img src={profile.identity.avatarUrl} alt="" /> : profile.identity.displayName.slice(0, 1).toUpperCase()}</div>
           <h2>{profile.identity.displayName}</h2><p className="upet-studio-v2__handle">@{profile.identity.handle}</p>
           <p className="upet-studio-v2__bio">{profile.identity.bio || 'Your story starts here.'}</p>
@@ -242,7 +250,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
             if (selectedBlockId === block.id) return <EditableCanvasItem key={block.id} geometry={{ x: layout.x / 100 * canvasWidth, y: Math.min(1200, layout.y), w: Math.min(layout.width, 100 - layout.x) / 100 * canvasWidth, h: Math.max(38, layout.height) }} minWidth={40} minHeight={38} dragGrid={[1, 1]} resizeGrid={[1, 1]} showHandle onChange={(geometry) => commitGeometry(block.id, geometry)}><button type="button" className="upet-studio-v2__block-content is-selected" aria-label={`Select ${block.type} layer`} style={{ transform: `rotate(${layout.rotation}deg)` }}>{content}</button></EditableCanvasItem>;
             return <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} aria-label={`Select ${block.type} layer`} style={{ left: `${layout.x}%`, top: Math.min(1200, layout.y), width: `${Math.min(layout.width, 100 - layout.x)}%`, minHeight: Math.max(38, layout.height), transform: `rotate(${layout.rotation}deg)` }}>{content}</button>;
           })}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
-        </div></div>
+        </MaterialSurface></div>
         <p className="upet-studio-v2__canvas-footnote"><Eye size={15} />Private draft preview · published revision {publishedRevision}</p>
       </section>
       <aside className="upet-studio-v2__panel upet-studio-v2__inspector" aria-label="Inspector">
@@ -261,6 +269,10 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
           <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Selected page</h2></div>
           <label>Page title<input maxLength={80} value={selectedPage?.title || ''} onChange={(event) => updatePage('title', event.target.value)} /></label>
           <label className="upet-studio-v2__toggle"><input type="checkbox" checked={selectedPage?.visible !== false} onChange={(event) => updatePage('visible', event.target.checked)} />Visible on profile</label>
+          <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Surface material</h2></div>
+          <label>Material<select value={profile.theme?.material?.id || 'matte'} onChange={(event) => updateMaterial(event.target.value)}>{MATERIAL_VARIANTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <label>Preview quality<select value={graphics.preference} onChange={(event) => graphics.setPreference(event.target.value)}>{['auto', 'lite', 'balanced', 'high'].map((tier) => <option key={tier} value={tier}>{tier[0].toUpperCase() + tier.slice(1)}</option>)}</select></label>
+          <p className="upet-studio-v2__quality-note">{graphics.tier} · {graphics.motionEnabled ? 'motion available' : 'static/Lite fallback'} · DPR cap {graphics.budget.maxDpr}</p>
         </>}
         <Link to="/dashboard/editor" onClick={returnToLegacy} className="upet-studio-v2__legacy">Need a feature from the current editor? Open it here. Your v2 draft stays separate.</Link>
       </aside>
