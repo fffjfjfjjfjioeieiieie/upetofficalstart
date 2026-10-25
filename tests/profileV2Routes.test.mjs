@@ -84,7 +84,7 @@ test('preview publish route exposes only revision metadata and invalidates publi
   const result = response();
   await handler({ method: 'POST', headers: {}, body: { action: 'publish', username: 'safe-user' } }, result);
   assert.equal(result.statusCode, 200);
-  assert.deepEqual(result.body, { changed: true, revision: 1 });
+  assert.deepEqual(result.body, { changed: true, revision: 1, draftRevision: 1 });
   assert.deepEqual(invalidations, ['safe-user']);
   assert.equal('profile' in result.body, false);
 });

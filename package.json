@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test:visitor": "node --test tests/visitor.test.js",
-    "test:v2": "node --test tests/sharedUi.test.mjs tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs tests/firestoreProfileRepositoryV2.test.mjs tests/trustedClaimsV2.test.mjs tests/profileV2Routes.test.mjs tests/profileRankingBackfillV2.test.mjs",
+    "test:v2": "node --test tests/sharedUi.test.mjs tests/profileContracts.test.mjs tests/profilePublishV2.test.mjs tests/firestoreProfileRepositoryV2.test.mjs tests/trustedClaimsV2.test.mjs tests/profileV2Routes.test.mjs tests/profileRankingBackfillV2.test.mjs tests/studioV2Shell.test.mjs",
     "test:rules:v2": "firebase emulators:exec --project demo-upet-v2 --only firestore \"node --test tests/firestoreV2.rules.test.mjs\"",
     "dev": "vite",
     "build": "vite build",

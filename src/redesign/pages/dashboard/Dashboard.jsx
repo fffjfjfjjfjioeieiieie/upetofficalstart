@@ -1,10 +1,11 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
 import { motion } from "framer-motion";
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined, BriefcaseBusiness } from "lucide-react";
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined, BriefcaseBusiness, Layers3 } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { Logo } from "../../components/Logo";
 import { Avatar } from "../../components/ProfileBits";
+import { studioPreviewEnabled } from '../../../features/studio/v2/studioPreviewPolicy.js';
 const Overview = lazy(() => import('./Overview'));
 const Editor = lazy(() => import('./Editor'));
 const Badges = lazy(() => import('./Badges'));
@@ -14,10 +15,13 @@ const Shop = lazy(() => import('../../shop/ShopEditor'));
 const Notifications = lazy(() => import('./Notifications'));
 const Conversation = lazy(() => import('./Conversation'));
 const VisitorAnalytics = lazy(() => import('./VisitorAnalytics'));
+const StudioPreview = lazy(() => import('../../../features/studio/v2/StudioV2Route'));
+const studioPreview = studioPreviewEnabled(window.location.hostname, import.meta.env.VITE_UPET_V2_STUDIO_PREVIEW);
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
   ["editor", "Editor", PenTool],
+  ...(studioPreview ? [["studio-v2", "Studio 2.0 preview", Layers3]] : []),
   ["shop", "Shop", Store],
   ["notifications", "Notifications", Bell],
   ["badges", "Badges", Award],
@@ -90,6 +94,7 @@ export default function Dashboard() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<Overview />} />
           <Route path="editor" element={<Editor />} />
+          <Route path="studio-v2" element={studioPreview ? <StudioPreview /> : <Navigate to="/dashboard/editor" replace />} />
           <Route path="shop" element={<Shop />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/:threadId" element={<Conversation />} />

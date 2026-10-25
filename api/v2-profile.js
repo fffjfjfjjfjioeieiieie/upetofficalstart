@@ -51,7 +51,7 @@ export function createV2ProfileHandler({
       }
       if (body.action === 'publish') {
         const result = await repository.publish({ actor, username: body.username });
-        return response.status(200).json({ changed: result.changed, revision: result.revision });
+        return response.status(200).json({ changed: result.changed, revision: result.revision, draftRevision: result.draft?.draftRevision ?? null });
       }
       return fail(response, 400, 'Unknown v2 profile action.');
     } catch (error) {
