@@ -9,7 +9,7 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stages 0 and 1 are complete locally. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; the migration architecture was recorded; shared semantic tokens and the first accessible UI primitives were extracted; the baseline test suite and focused Stage 1 tests passed; and the production build passed. No remote deployment or production-data operation was performed.
+Stages 0 through 2 are complete locally. The full final masterplan and all eight reference screenshots were reviewed; runtime/data/payment surfaces were audited; the migration architecture was recorded; shared semantic tokens and accessible UI primitives were extracted; and versioned profile/page/block/music/lyrics/media contracts now have lossless legacy fixtures and write-blocked adapters. No remote deployment or production-data operation was performed.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -19,7 +19,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | --- | --- | --- |
 | 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
 | 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
-| 2. Versioned data contracts | Not started | Lossless legacy profile round-trip fixtures required first |
+| 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
 | 3. Draft/publish/security foundation | Not started | Emulator coverage, trusted roles, revision conflicts, bounded access |
 | 4. Studio shell | Not started | Founder-only route and legacy editor escape hatch |
 | 5. Core editor interactions | Not started | Responsive canvas, history, keyboard, drag/reorder tests |
@@ -74,6 +74,15 @@ npm run build
 
 The visual procedure and its environment limitations are recorded in `docs/audit/UPET_V2_VISUAL_BASELINE.md`.
 
+Stage 2 verification:
+
+```text
+node --test tests/profileContracts.test.mjs
+  7 passed
+```
+
+The contracts and their privacy/write boundaries are recorded in `docs/architecture/UPET_V2_DATA_CONTRACTS.md`. They are additive and are not imported by the current Firestore save/publish path.
+
 ## Feature parity ledger
 
 | Capability | Existing baseline | Final target | Status |
@@ -126,13 +135,13 @@ The visual procedure and its environment limitations are recorded in `docs/audit
 
 ## Next exact task
 
-Begin Stage 2 locally:
+Begin Stage 3 locally:
 
-1. Build fixture documents for every supported legacy profile shape, including unknown blocks/fields and current redesign data.
-2. Define versioned `ProfileDocument`, `ProfileDraft`, `ProfilePage`, `ProfileBlock`, `MusicTrack`, `Playlist`, `LyricsDocument`, and `MediaAsset` validation contracts without changing production writes.
-3. Add lossless compatibility adapters and semantic round-trip tests. Unknown legacy content must survive unchanged.
-4. Wrap the current single audio item as a one-track library and current lyrics as a track-bound document without removing their existing fields.
-5. Keep all new writers disabled until the fixtures prove round-trip parity and rollback.
-6. Run focused contract tests and one production build, update this ledger, and commit only verified Stage 2 changes.
+1. Define strict public and directory projections that cannot expose owner-only compatibility snapshots, drafts, shop internals or private settings.
+2. Introduce trusted publish/revision service functions with explicit base-revision conflicts, unchanged-write suppression and recoverable revisions; do not connect them to production yet.
+3. Add emulator-oriented ownership, role and profile-projection rules/tests. Replace hard-coded privileged email authority through a compatible claims/roles transition plan.
+4. Design bounded query/pagination contracts for public profiles, conversations, tickets and analytics. Replace the top-profile N+1 shape with maintained aggregate inputs.
+5. Add a short explicit cache policy for identical public reads and visible error states.
+6. Run focused security/data tests and one production build, update this ledger, and commit only verified Stage 3 changes.
 
 If source integration overlaps the pre-existing uncommitted work in a way that cannot be staged safely, document the exact files and stop before overwriting or bundling unrelated changes.
