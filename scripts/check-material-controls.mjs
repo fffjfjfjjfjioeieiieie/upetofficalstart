@@ -33,6 +33,30 @@ try {
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await profileCard.screenshot({ path: `/tmp/upet-stage4-chrome-card-${width}.png` });
     await page.screenshot({ path: `/tmp/upet-stage4-chrome-${width}.png`, fullPage: true });
+    for (const metal of ['brushed-steel', 'gold', 'rose-gold', 'dark-metal']) {
+      await page.getByLabel('Profile material', { exact: true }).selectOption(metal);
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      await expect(profileCard).toHaveAttribute('data-gpu-state', 'ready');
+      if (metal === 'brushed-steel') {
+        await page.getByLabel('Material brush direction', { exact: true }).focus();
+        await page.keyboard.press('ArrowRight');
+        await expect(page.getByLabel('Material brush direction', { exact: true })).toHaveValue('5');
+        await page.evaluate(() => scrollTo(0, 0));
+        await expect(profileCard).toHaveAttribute('data-gpu-state', 'ready');
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      }
+      for (const background of ['dark', 'bright']) {
+        await page.locator('.upet-studio-v2__canvas').evaluate((element, mode) => { element.style.background = mode === 'bright' ? 'linear-gradient(135deg, #fff, #bddef0)' : 'linear-gradient(135deg, #090d19, #092b39)'; }, background);
+        await profileCard.screenshot({ path: `/tmp/upet-stage4-${metal}-${background}-${width}.png` });
+      }
+      await page.getByLabel('Preview quality', { exact: true }).selectOption('lite');
+      await expect(profileCard).toHaveAttribute('data-gpu-state', 'fallback');
+      await profileCard.screenshot({ path: `/tmp/upet-stage4-${metal}-lite-${width}.png` });
+      await page.getByLabel('Preview quality', { exact: true }).selectOption('high');
+      await expect(profileCard).toHaveAttribute('data-gpu-state', 'ready');
+    }
+    await page.getByLabel('Profile material', { exact: true }).selectOption('chrome');
     await page.getByLabel('Preview quality', { exact: true }).selectOption('lite');
     await expect(profileCard).toHaveAttribute('data-gpu-state', 'fallback');
     await expect(profileCard).toHaveAttribute('data-quality', 'lite');
@@ -52,5 +76,5 @@ try {
     await context.close();
   }
   assert.deepEqual(errors, []);
-  console.log('Material slice: chrome GPU/Lite, native content, roughness keyboard editing, glass blur, layer override/reset, desktop/mobile and no runtime errors passed. Transport is a local visual stub only.');
+  console.log('Material slice: five GPU/Lite metals on bright/dark surroundings, brush and roughness keyboard editing, glass blur, layer override/reset, desktop/mobile and no runtime/shader errors passed. Transport is a local visual stub only.');
 } finally { await browser.close(); }

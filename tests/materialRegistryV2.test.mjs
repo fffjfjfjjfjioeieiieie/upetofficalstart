@@ -8,9 +8,26 @@ import { createStudioBlock } from '../src/features/studio/v2/studioDocumentOps.j
 test('material choices have stable unique IDs and untrusted names fall back to matte', () => {
   const ids = MATERIAL_VARIANTS.map((variant) => variant.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'chrome', 'holographic']);
+  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'holographic']);
   assert.equal(normalizeMaterialVariant('chrome'), 'chrome');
   assert.equal(normalizeMaterialVariant('javascript:evil()'), 'matte');
+});
+
+test('metal defaults are physically distinct and brush controls stay bounded', () => {
+  const metals = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal'].map(createMaterialConfig);
+  assert.equal(new Set(metals.map((material) => material.tint)).size, metals.length);
+  assert.ok(metals[1].roughness > metals[0].roughness);
+  assert.throws(() => materialConfigSchema.parse({ id: 'brushed-steel', brushStrength: 20 }));
+  assert.throws(() => materialConfigSchema.parse({ id: 'brushed-steel', brushDirection: 999 }));
+});
+
+test('ID-only materials resolve to identical family defaults in owner and published views', () => {
+  for (const { id } of MATERIAL_VARIANTS) {
+    const profile = createEmptyProfileDocumentV2({ ownerUid: 'owner', username: 'family-defaults', nowMs: 1 });
+    profile.status = 'published';
+    profile.theme.material = { id };
+    assert.deepEqual(createPublicProfileProjectionV2(profile).theme.material, normalizeMaterialConfig({ id }), id);
+  }
 });
 
 test('material controls reject dangerous/unsupported writes and safely normalize untrusted reads', () => {

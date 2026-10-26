@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { assertProfileMaterialConfigs, materialConfigSchema } from '../../graphics/materials/materialRegistry.js';
+import { assertProfileMaterialConfigs, materialConfigSchema, parseMaterialConfig } from '../../graphics/materials/materialRegistry.js';
 import {
   mediaAssetV2Schema,
   musicTrackV2Schema,
@@ -201,7 +201,7 @@ function publicTheme(theme) {
   for (const [field, fields] of Object.entries(THEME_OBJECT_FIELDS)) {
     if (isRecord(theme?.[field])) projected[field] = pick(theme[field], fields);
   }
-  if (theme.material !== undefined) projected.material = materialConfigSchema.parse(theme.material);
+  if (theme.material !== undefined) projected.material = parseMaterialConfig(theme.material);
   return projected;
 }
 
@@ -217,7 +217,7 @@ function publicBlock(block) {
       ...(block.layout.mobile ? { mobile: pick(block.layout.mobile, ['x', 'y', 'width', 'height', 'rotation']) } : {}),
     },
     data: publicBlockData(block),
-    style: { ...pick(block.style, STYLE_FIELDS), ...(block.style.material !== undefined ? { material: materialConfigSchema.parse(block.style.material) } : {}) },
+    style: { ...pick(block.style, STYLE_FIELDS), ...(block.style.material !== undefined ? { material: parseMaterialConfig(block.style.material) } : {}) },
     accessibility: pick(block.accessibility, ['label', 'description', 'decorative']),
   });
 }

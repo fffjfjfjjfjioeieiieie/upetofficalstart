@@ -5,17 +5,23 @@ export const MATERIAL_VARIANTS = Object.freeze([
   { id: 'crystal', label: 'Crystal glass' },
   { id: 'frosted', label: 'Frosted glass' },
   { id: 'chrome', label: 'Polished chrome' },
+  { id: 'brushed-steel', label: 'Brushed steel' },
+  { id: 'gold', label: 'Gold' },
+  { id: 'rose-gold', label: 'Rose gold' },
+  { id: 'dark-metal', label: 'Dark metal' },
   { id: 'holographic', label: 'Holographic' },
 ]);
 
 const validVariants = new Set(MATERIAL_VARIANTS.map((item) => item.id));
+const metalVariants = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal'];
+export const isMetalMaterial = (value) => metalVariants.includes(value);
 
 export function normalizeMaterialVariant(value) {
   return validVariants.has(value) ? value : 'matte';
 }
 
 export const materialConfigSchema = z.object({
-  id: z.enum(['matte', 'crystal', 'frosted', 'chrome', 'holographic']).default('matte'),
+  id: z.enum(MATERIAL_VARIANTS.map((variant) => variant.id)).default('matte'),
   tint: z.string().regex(/^#[0-9a-f]{6}$/i).default('#a8c6dd'),
   radius: z.number().finite().min(0).max(48).default(26),
   blur: z.number().finite().min(0).max(40).default(15),
@@ -25,22 +31,39 @@ export const materialConfigSchema = z.object({
   reflection: z.number().finite().min(.1).max(2.5).default(1.2),
   lightAzimuth: z.number().finite().min(-180).max(180).default(-35),
   lightElevation: z.number().finite().min(10).max(80).default(45),
+  brushStrength: z.number().finite().min(0).max(1).default(.5),
+  brushDirection: z.number().finite().min(-180).max(180).default(0),
 });
 
 export const MATERIAL_CONTROLS = Object.freeze([
-  { key: 'tint', label: 'Tint', type: 'color', variants: ['matte', 'crystal', 'frosted', 'chrome', 'holographic'] },
+  { key: 'tint', label: 'Tint', type: 'color' },
   { key: 'radius', label: 'Corner radius', min: 0, max: 48, step: 1, unit: 'px' },
   { key: 'edgeIntensity', label: 'Edge highlight', min: .1, max: 1, step: .05 },
   { key: 'blur', label: 'Backdrop blur', min: 0, max: 40, step: 1, unit: 'px', variants: ['crystal', 'frosted'] },
   { key: 'opacity', label: 'Surface tint strength', min: .35, max: .95, step: .05, variants: ['crystal', 'frosted'] },
-  { key: 'roughness', label: 'Roughness', min: .05, max: 1, step: .05, variants: ['chrome'] },
-  { key: 'reflection', label: 'Reflection brightness', min: .1, max: 2.5, step: .1, variants: ['chrome'] },
-  { key: 'lightAzimuth', label: 'Light direction', min: -180, max: 180, step: 5, unit: '°', variants: ['chrome'] },
-  { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: ['chrome'] },
+  { key: 'roughness', label: 'Roughness', min: .05, max: 1, step: .05, variants: metalVariants },
+  { key: 'reflection', label: 'Reflection brightness', min: .1, max: 2.5, step: .1, variants: metalVariants },
+  { key: 'lightAzimuth', label: 'Light direction', min: -180, max: 180, step: 5, unit: '°', variants: metalVariants },
+  { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: metalVariants },
+  { key: 'brushStrength', label: 'Brush strength', min: 0, max: 1, step: .05, variants: ['brushed-steel'] },
+  { key: 'brushDirection', label: 'Brush direction', min: -180, max: 180, step: 5, unit: '°', variants: ['brushed-steel'] },
 ]);
 
 export function createMaterialConfig(id = 'matte') {
-  return materialConfigSchema.parse({ id: normalizeMaterialVariant(id), ...(id === 'chrome' ? { tint: '#c9d5df' } : {}), ...(id === 'frosted' ? { blur: 28 } : {}) });
+  const presets = {
+    chrome: { tint: '#c9d5df', roughness: .2 },
+    'brushed-steel': { tint: '#a9b8c4', roughness: .4, reflection: 1.1, brushStrength: .65 },
+    gold: { tint: '#e1ba65', roughness: .2, reflection: 1.3 },
+    'rose-gold': { tint: '#d4a092', roughness: .25 },
+    'dark-metal': { tint: '#4b5360', roughness: .3, reflection: 1.5 },
+    frosted: { blur: 28 },
+  };
+  return materialConfigSchema.parse({ id: normalizeMaterialVariant(id), ...presets[id] });
+}
+
+export function parseMaterialConfig(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return materialConfigSchema.parse(value);
+  return materialConfigSchema.parse({ ...createMaterialConfig(value.id), ...value });
 }
 
 // Read paths degrade safely; trusted write paths use the rejecting schema below.
@@ -58,7 +81,7 @@ export function normalizeMaterialConfig(input) {
 
 export function assertProfileMaterialConfigs(profile) {
   const check = (value) => {
-    materialConfigSchema.parse(value);
+    parseMaterialConfig(value);
     for (const key of ['shader', 'vertexShader', 'fragmentShader', 'glsl', 'script']) {
       if (Object.hasOwn(value, key)) throw new Error('Executable material settings are unsupported.');
     }

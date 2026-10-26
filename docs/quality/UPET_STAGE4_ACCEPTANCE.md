@@ -24,7 +24,7 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 | Frosted/smoked/tinted glass | Frosted DOM recipe, original grain and controls | Distinct smoked/tinted defaults, contrast, highlight interaction and complete visual matrix |
 | Liquid glass | Not implemented | Coherent bounded lens edge/normal displacement, controls, pointer behavior and Lite silhouette |
 | Polished chrome | First real PBR mesh/environment and controls | Finish visual calibration and full background/tier comparison |
-| Brushed steel/gold/rose gold/dark metal | Not implemented | Directional microtexture, distinct physical parameters and polished Lite recipes |
+| Brushed steel/gold/rose gold/dark metal | Shared PBR variants and Lite recipes implemented locally | Final art-direction, animated-background and release/device matrix remain |
 | Liquid metal/mercury | Not implemented | Coherent animated normals/displacement and controlled reflections, no random rainbow noise |
 | Water/fluid/ink | Not implemented | Continuous ripples/plumes, damping/pointer/normal behavior and bounded low-cost fallback |
 | Holographic/iridescent/thin film | CSS fallback only | Geometry/view-dependent lighting, bounded spectral parameters and motion policy |
@@ -32,6 +32,14 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 | Acrylic/ceramic/glossy plastic/matte paper/neon | Not implemented | Distinct actual recipes/physical properties, readable content and controls; midnight matte is not matte paper |
 
 Every family needs meaningful bounded controls, working shared-renderer preview, useful defaults, per-component inheritance/override, reduced-motion behavior, recovery and bright/dark/animated-background plus Lite evidence. Do not add empty catalogue entries for future materials.
+
+### Metal-family follow-up (verified 2026-10-26)
+
+The registry now has nine actual choices: the previous five plus brushed steel, gold, rose gold and dark metal. The chrome scene was moved to `metalScene.js` and reused for all five metals; the old import was replaced and the production build verifies the move. Distinct tint/roughness/reflection defaults affect the actual physical material. Brushed steel adds an original 128×128 directional normal texture, bounded anisotropy/rotation, and a matching directional surface/Lite grain treatment. These are not five independent canvases or downloaded texture packs.
+
+The same stable scene survives metal selection and parameter edits; the procedural environment stays shared. Nonmetal surfaces no longer perform pointer-layout reads for an unused GPU light. A regression test also fixes ID-only material parity: published defaults now exactly match the owner's family-specific defaults rather than generic schema defaults.
+
+`npm run test:v2` passed **56/56** and `npm run build` passed (Vite 7.3.6, 6,436 modules). The expanded material browser check passed all five metals in GPU and Lite, with bright/dark surrounding backgrounds at 1440px/390px, OS reduced motion, keyboard brush direction, override/reset, and no runtime/shader errors or overflow. Representative brushed-steel, gold GPU and rose-gold Lite screenshots were visually inspected. Evidence: `/tmp/upet-stage4-{brushed-steel,gold,rose-gold,dark-metal}-{dark,bright,lite}-{1440,390}.png`. Animated-background and wider physical-device checks remain open; this does not close Stage 4.
 
 ## Section 7 engine completion gates
 

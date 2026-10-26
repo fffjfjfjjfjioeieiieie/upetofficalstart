@@ -4,7 +4,7 @@
 .upet-material.upet-material--matte { background-color: var(--upet-material-tint); background-blend-mode: multiply; }
 .upet-material.upet-material--crystal, .upet-material.upet-material--frosted { background-color: color-mix(in srgb, var(--upet-material-tint) calc(var(--upet-material-opacity) * 30%), #0c1a2e); -webkit-backdrop-filter: blur(var(--upet-material-blur)); backdrop-filter: blur(var(--upet-material-blur)); }
 .upet-material[data-gpu-state="ready"] { background: transparent !important; }
-.upet-material--chrome[data-gpu-state="ready"]::before { background: none; }
+.upet-material--metal[data-gpu-state="ready"]::before { background: none; }
 .upet-material::before, .upet-material::after { position: absolute; inset: 0; z-index: -1; pointer-events: none; content: ""; }
 .upet-material--matte { background: linear-gradient(145deg, #10192b, #0e1527 55%, #101a31); box-shadow: inset 0 1px #ffffff19, 0 30px 70px #0008; }
 .upet-material--matte::before { background: radial-gradient(circle at 18% 4%, #71d2ff18, transparent 50%); }
@@ -13,9 +13,9 @@
 .upet-material--crystal::after { inset: 0 6% auto; height: 2px; background: linear-gradient(90deg, transparent, #fff9 35%, #ffffff27 70%, transparent); }
 .upet-material--frosted { background: linear-gradient(150deg, #dff8ff35, #8cc5eb19 45%, #12233acc), #15263bd9; border-color: #d5f2ff69 !important; box-shadow: inset 0 1px #ffffff9e, inset 0 0 35px #c8e5ff14, 0 25px 65px #0008; -webkit-backdrop-filter: blur(28px) saturate(1.1); backdrop-filter: blur(28px) saturate(1.1); }
 .upet-material--frosted::before { opacity: .35; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"); }
-.upet-material--chrome { background: linear-gradient(155deg, #e7f4ff8c 0%, #3d5265 8%, #09111f 18%, #829bb2 27%, #152334 37%, #010612 52%, #607687 62%, #0a1523 76%, #294154 89%, #c0d7e18c 100%); border-color: #a9c4d0a6 !important; box-shadow: inset 0 1px #ffffffcf, inset 0 -2px 10px #000b, 0 30px 70px #0009; }
-.upet-material--chrome::before { background: linear-gradient(115deg, transparent 10%, #ffffff20 20%, transparent 27%, transparent 60%, #ffffff23 69%, transparent 73%); }
-.upet-material--chrome::after { background: linear-gradient(#0712228c, #071222b9); }
+.upet-material--metal { background: linear-gradient(155deg, #e7f4ff8c 0%, #3d5265 8%, #09111f 18%, #829bb2 27%, #152334 37%, #010612 52%, #607687 62%, #0a1523 76%, #294154 89%, #c0d7e18c 100%); border-color: #a9c4d0a6 !important; box-shadow: inset 0 1px #ffffffcf, inset 0 -2px 10px #000b, 0 30px 70px #0009; }
+.upet-material--metal::before { background: linear-gradient(115deg, transparent 10%, #ffffff20 20%, transparent 27%, transparent 60%, #ffffff23 69%, transparent 73%); }
+.upet-material--metal::after { background: linear-gradient(#0712228c, #071222b9); }
 .upet-material--holographic { background: linear-gradient(130deg, #2d6e8966, #11162c 40%, #713a7d5e 67%, #1c627f6e), #121b30; border-color: #8ce7f0aa !important; box-shadow: inset 0 1px #ffffff8a, inset 0 0 30px #9c7aff24, 0 28px 60px #0009; }
 .upet-material--holographic::before { background: conic-gradient(from 210deg at 15% 10%, #70e9f142, #f3a5e128, #b7b0ff36, #80ece342, #70e9f142); mix-blend-mode: screen; opacity: .55; }
 .upet-material--holographic::after { background: linear-gradient(110deg, transparent 30%, #e6ffff17 45%, transparent 60%); }
@@ -24,4 +24,9 @@
 @media (prefers-reduced-motion: reduce) { .upet-material::before, .upet-material::after { animation: none !important; transition: none !important; } }
 .upet-material.upet-material { border-color: rgb(225 245 255 / var(--upet-material-edge, .55)) !important; }
 .upet-material.upet-material--holographic { background-color: color-mix(in srgb, var(--upet-material-tint) 20%, #121b30); }
-.upet-material--chrome:not([data-gpu-state="ready"])::before { background: color-mix(in srgb, var(--upet-material-tint) 25%, transparent); mix-blend-mode: color; }
+.upet-material--metal:not([data-gpu-state="ready"])::before { background: color-mix(in srgb, var(--upet-material-tint) 65%, transparent); mix-blend-mode: color; }
+.upet-material--brushed-steel:not([data-gpu-state="ready"])::before { background: repeating-linear-gradient(var(--upet-material-brush-direction), #ffffff35 0 1px, #0002 1px 2px, transparent 2px 4px), color-mix(in srgb, var(--upet-material-tint) 50%, transparent); opacity: calc(.2 + var(--upet-material-brush-strength) * .7); mix-blend-mode: soft-light; }
+.upet-material--brushed-steel[data-gpu-state="ready"]::before { background: repeating-linear-gradient(var(--upet-material-brush-direction), #ffffff20 0 1px, #00000018 1px 2px, transparent 2px 4px); opacity: var(--upet-material-brush-strength); mix-blend-mode: soft-light; }
+.upet-material--gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f5dea0, #5d4420 15%, #b7984f 27%, #3a2d1b 48%, #d8be72 62%, #4e3b20 80%, #d2b26a); }
+.upet-material--rose-gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f7d9cf, #71504b 15%, #c5988b 27%, #45302f 48%, #e2b2a4 62%, #61403d 80%, #c39486); }
+.upet-material--dark-metal:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #74818e, #10151b 15%, #414d59 27%, #080d13 48%, #5d6c7a 62%, #121a22 80%, #4c5863); }

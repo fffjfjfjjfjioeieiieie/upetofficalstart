@@ -39,10 +39,37 @@ function roundedPlate(THREE, width, height, radius) {
   shape.quadraticCurveTo(x, y + height, x, y + height - r);
   shape.lineTo(x, y + r);
   shape.quadraticCurveTo(x, y, x + r, y);
-  return new THREE.ExtrudeGeometry(shape, { depth: .06, bevelEnabled: true, bevelSize: .02, bevelThickness: .025, bevelSegments: 3, steps: 1, curveSegments: 10 });
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: .06, bevelEnabled: true, bevelSize: .02, bevelThickness: .025, bevelSegments: 3, steps: 1, curveSegments: 10 });
+  const positions = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let index = 0; index < uv.count; index++) uv.setXY(index, positions.getX(index) / width + .5, positions.getY(index) / height + .5);
+  return geometry;
 }
 
-export function createChromeScene({ THREE, resources, renderer, readSettings }) {
+function brushNormalTexture(THREE) {
+  const size = 128;
+  const pixels = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const nx = Math.sin(x / size * Math.PI * 34) * .28 + Math.sin(x / size * Math.PI * 58) * .12;
+    const nz = Math.sqrt(1 - nx * nx);
+    const index = (y * size + x) * 4;
+    pixels[index] = Math.round((nx * .5 + .5) * 255);
+    pixels[index + 1] = 128;
+    pixels[index + 2] = Math.round((nz * .5 + .5) * 255);
+    pixels[index + 3] = 255;
+  }
+  const texture = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(8, 8);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.center.set(.5, .5);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+export function createMetalScene({ THREE, resources, renderer, readSettings }) {
   const scene = new THREE.Scene();
   const environment = resources.shared('upet/original-studio-environment/128/v1', () => studioEnvironment(THREE, renderer));
   scene.environment = environment.texture;
@@ -56,6 +83,7 @@ export function createChromeScene({ THREE, resources, renderer, readSettings }) 
   scene.add(mesh, light, new THREE.AmbientLight('#b9d8ff', .25));
   let geometry;
   let geometryKey = '';
+  let brushTexture;
   return { scene, camera, update({ width, height, quality }) {
     const settings = readSettings();
     const aspect = width / height;
@@ -71,6 +99,16 @@ export function createChromeScene({ THREE, resources, renderer, readSettings }) 
     material.color.set(settings.tint);
     material.roughness = settings.roughness;
     material.envMapIntensity = settings.reflection;
+    const brushed = settings.id === 'brushed-steel';
+    if (brushed && !brushTexture) brushTexture = resources.own(brushNormalTexture(THREE));
+    const nextMap = brushed ? brushTexture : null;
+    if (material.normalMap !== nextMap) { material.normalMap = nextMap; material.needsUpdate = true; }
+    const anisotropy = brushed ? settings.brushStrength : 0;
+    if ((material.anisotropy > 0) !== (anisotropy > 0)) material.needsUpdate = true;
+    material.anisotropy = anisotropy;
+    material.anisotropyRotation = settings.brushDirection * Math.PI / 180;
+    material.normalScale.setScalar(brushed ? settings.brushStrength * .6 : 0);
+    if (brushTexture) brushTexture.rotation = settings.brushDirection * Math.PI / 180;
     const pointer = quality.reducedMotion ? { x: 0, y: 0 } : settings.pointer;
     const azimuth = (settings.lightAzimuth + pointer.x * 10) * Math.PI / 180;
     const elevation = (settings.lightElevation + pointer.y * 4) * Math.PI / 180;
