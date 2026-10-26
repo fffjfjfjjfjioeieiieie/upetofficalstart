@@ -10,6 +10,7 @@ export default function MaterialControls({ value, inheritedValue, allowInherit =
       {MATERIAL_CONTROLS.filter((control) => !control.variants || control.variants.includes(settings.id)).map((control) => <label key={control.key}>{control.label}{control.type === 'color'
         ? <input type="color" aria-label={`Material ${control.label.toLowerCase()}`} value={settings[control.key]} onChange={(event) => onChange({ ...settings, [control.key]: event.target.value }, control.key)} />
         : <><input type="range" aria-label={`Material ${control.label.toLowerCase()}`} min={control.min} max={control.max} step={control.step} value={settings[control.key]} onChange={(event) => onChange({ ...settings, [control.key]: Number(event.target.value) }, control.key)} /><output>{settings[control.key]}{control.unit || ''}</output></>}</label>)}
+      {settings.id === 'liquid-metal' && <p className="upet-studio-v2__quality-note">Flow follows your graphics and motion settings.</p>}
     </>}
   </div>;
 }

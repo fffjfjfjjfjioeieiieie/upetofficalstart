@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-26 (Stages 0–3 verified; Stage 4 metal + DOM-glass slices verified)
+Last updated: 2026-10-26 (Stages 0–3 verified; Stage 4 liquid-metal slice verified; advanced-material conformance audit ongoing)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -257,6 +257,8 @@ The pure quality manager exposes Lite/Balanced/High/Ultra resource budgets, boun
 
 ## Next exact task
 
-Continue final-masterplan Stage 4, without advancing to Stage 5. Next concrete slice: liquid metal/mercury using the existing shared PBR environment and coherent bounded mesh/normal waves, with validated amplitude/frequency/speed, actual animation, reduced-motion/Lite behavior and browser evidence. Then implement liquid glass, water/fluid/ink, true iridescence, silk and remaining Section 5 materials, plus Section 7's border/card/text/cursor/entrance engines. Reuse useful existing ProfileBits effects after inventory; do not build duplicates. All optical/full-matrix gates remain listed in `docs/quality/UPET_STAGE4_ACCEPTANCE.md`. Stage 5 remains the full Section 6 background catalogue.
+Continue final-masterplan Stage 4, without advancing to Stage 5. Liquid metal now has real animated Three.js physical rendering, bounded wave controls and scheduler freeze/resume without scene replacement; 58 tests, production build and desktop/mobile pixel-animation browser checks passed. Static Lite reflection poster is safe but does not yet satisfy the animated Lite gate. Evidence and remaining gates: `docs/quality/UPET_STAGE4_ACCEPTANCE.md`.
+
+The user's explicit Three.js correction triggered a renderer conformance audit. Next concrete correction: holographic is currently CSS-only despite being selectable; replace its advanced path with actual Three.js physical iridescence in the shared PBR engine, keeping CSS only as Lite/no-WebGL fallback. Preserve ordinary DOM glass (explicitly allowed by Sections 5.1–5.2). Then implement genuine physical/GPU-composited liquid glass/refraction, water/fluid/ink, silk and remaining Section 5 materials, plus Section 7's border/card/text/cursor/entrance engines. Reuse useful existing ProfileBits effects after inventory; do not build duplicates. Do not label absent physical transmission/refraction as implemented, or claim a canvas refracts arbitrary DOM. Stage 5 remains the full Section 6 background catalogue.
 
 Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.

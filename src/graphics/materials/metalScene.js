@@ -1,3 +1,5 @@
+import { configureLiquidMetalShader } from './liquidMetalShader.js';
+
 // Original procedural studio lights. No downloaded environment maps or artwork.
 function studioEnvironment(THREE, renderer) {
   const scene = new THREE.Scene();
@@ -69,6 +71,23 @@ function brushNormalTexture(THREE) {
   return texture;
 }
 
+function liquidPlate(THREE, width, height, radius, segments) {
+  const geometry = new THREE.PlaneGeometry(width, height, Math.max(16, Math.min(96, Math.round(segments * width / height))), segments);
+  const positions = geometry.attributes.position;
+  const r = Math.max(.005, Math.min(radius, width / 2, height / 2));
+  const centerX = width / 2 - r;
+  const centerY = height / 2 - r;
+  for (let index = 0; index < positions.count; index++) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const dx = Math.max(0, Math.abs(x) - centerX);
+    const dy = Math.max(0, Math.abs(y) - centerY);
+    const distance = Math.hypot(dx, dy);
+    if (dx && dy && distance > r) positions.setXY(index, Math.sign(x) * (centerX + dx / distance * r), Math.sign(y) * (centerY + dy / distance * r));
+  }
+  return geometry;
+}
+
 export function createMetalScene({ THREE, resources, renderer, readSettings }) {
   const scene = new THREE.Scene();
   const environment = resources.shared('upet/original-studio-environment/128/v1', () => studioEnvironment(THREE, renderer));
@@ -84,13 +103,27 @@ export function createMetalScene({ THREE, resources, renderer, readSettings }) {
   let geometry;
   let geometryKey = '';
   let brushTexture;
-  return { scene, camera, update({ width, height, quality }) {
+  let liquidEnabled = false;
+  let flowPhase = 0;
+  let previousTime = null;
+  const uniforms = { upetTime: { value: 0 }, upetWaveAmplitude: { value: .045 }, upetWaveFrequency: { value: 3 } };
+  material.onBeforeCompile = (shader) => { if (liquidEnabled) configureLiquidMetalShader(shader, uniforms); };
+  material.customProgramCacheKey = () => liquidEnabled ? 'upet-liquid-metal-v1' : 'upet-metal-v1';
+  return { scene, camera, update({ time, width, height, quality, motionEnabled }) {
     const settings = readSettings();
     const aspect = width / height;
-    const key = `${Math.round(width)}:${Math.round(height)}:${settings.radius}`;
+    const liquid = settings.id === 'liquid-metal';
+    const segments = quality.tier === 'ultra' ? 96 : quality.tier === 'high' ? 64 : 32;
+    if (liquid !== liquidEnabled) { liquidEnabled = liquid; material.needsUpdate = true; }
+    const key = `${Math.round(width)}:${Math.round(height)}:${settings.radius}:${liquid}:${liquid ? segments : 0}`;
     if (key !== geometryKey) {
       if (geometry) resources.release(geometry);
-      geometry = resources.own(roundedPlate(THREE, Math.max(.12, aspect * 1.94), 1.94, settings.radius / height * 1.94));
+      // Overscan the moving face so a receding wave cannot expose a dark gap
+      // inside the native rounded clipping mask.
+      const plateHeight = liquid ? 2.14 : 1.94;
+      const plateWidth = Math.max(.12, aspect * plateHeight);
+      const radius = settings.radius / height * plateHeight;
+      geometry = resources.own(liquid ? liquidPlate(THREE, plateWidth, plateHeight, radius, segments) : roundedPlate(THREE, plateWidth, plateHeight, radius));
       mesh.geometry = geometry;
       geometryKey = key;
     }
@@ -99,6 +132,13 @@ export function createMetalScene({ THREE, resources, renderer, readSettings }) {
     material.color.set(settings.tint);
     material.roughness = settings.roughness;
     material.envMapIntensity = settings.reflection;
+    if (liquid && motionEnabled && settings.flowSpeed > 0) {
+      if (previousTime !== null) flowPhase = (flowPhase + Math.max(0, Math.min(.1, time - previousTime)) * settings.flowSpeed) % (20 * Math.PI);
+      previousTime = time;
+    } else previousTime = null;
+    uniforms.upetTime.value = flowPhase;
+    uniforms.upetWaveAmplitude.value = settings.waveAmplitude;
+    uniforms.upetWaveFrequency.value = settings.waveFrequency;
     const brushed = settings.id === 'brushed-steel';
     if (brushed && !brushTexture) brushTexture = resources.own(brushNormalTexture(THREE));
     const nextMap = brushed ? brushTexture : null;

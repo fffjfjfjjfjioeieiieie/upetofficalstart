@@ -11,11 +11,12 @@ export const MATERIAL_VARIANTS = Object.freeze([
   { id: 'gold', label: 'Gold' },
   { id: 'rose-gold', label: 'Rose gold' },
   { id: 'dark-metal', label: 'Dark metal' },
+  { id: 'liquid-metal', label: 'Liquid metal' },
   { id: 'holographic', label: 'Holographic' },
 ]);
 
 const validVariants = new Set(MATERIAL_VARIANTS.map((item) => item.id));
-const metalVariants = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal'];
+const metalVariants = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal'];
 export const isMetalMaterial = (value) => metalVariants.includes(value);
 const glassVariants = ['crystal', 'frosted', 'smoked-glass', 'tinted-glass'];
 export const isGlassMaterial = (value) => glassVariants.includes(value);
@@ -40,6 +41,9 @@ export const materialConfigSchema = z.object({
   lightElevation: z.number().finite().min(10).max(80).default(45),
   brushStrength: z.number().finite().min(0).max(1).default(.5),
   brushDirection: z.number().finite().min(-180).max(180).default(0),
+  waveAmplitude: z.number().finite().min(0).max(.12).default(.045),
+  waveFrequency: z.number().finite().min(1).max(8).default(3),
+  flowSpeed: z.number().finite().min(0).max(1).default(.2),
 });
 
 export const MATERIAL_CONTROLS = Object.freeze([
@@ -57,6 +61,9 @@ export const MATERIAL_CONTROLS = Object.freeze([
   { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: metalVariants },
   { key: 'brushStrength', label: 'Brush strength', min: 0, max: 1, step: .05, variants: ['brushed-steel'] },
   { key: 'brushDirection', label: 'Brush direction', min: -180, max: 180, step: 5, unit: '°', variants: ['brushed-steel'] },
+  { key: 'waveAmplitude', label: 'Wave depth', min: 0, max: .12, step: .005, variants: ['liquid-metal'] },
+  { key: 'waveFrequency', label: 'Wave frequency', min: 1, max: 8, step: .25, variants: ['liquid-metal'] },
+  { key: 'flowSpeed', label: 'Flow speed', min: 0, max: 1, step: .05, variants: ['liquid-metal'] },
 ]);
 
 export function createMaterialConfig(id = 'matte') {
@@ -66,6 +73,7 @@ export function createMaterialConfig(id = 'matte') {
     gold: { tint: '#e1ba65', roughness: .2, reflection: 1.3 },
     'rose-gold': { tint: '#d4a092', roughness: .25 },
     'dark-metal': { tint: '#4b5360', roughness: .3, reflection: 1.5 },
+    'liquid-metal': { tint: '#c5d4df', roughness: .1, reflection: 1.5, waveAmplitude: .045, waveFrequency: 3, flowSpeed: .2 },
     crystal: { blur: 12, opacity: .55, grain: 0, edgeIntensity: .65 },
     frosted: { blur: 28, opacity: .75, grain: .3 },
     'smoked-glass': { tint: '#59616c', blur: 10, opacity: .85, grain: .15, edgeIntensity: .35 },

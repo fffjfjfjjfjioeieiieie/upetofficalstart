@@ -25,7 +25,7 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 | Liquid glass | Not implemented | Coherent bounded lens edge/normal displacement, controls, pointer behavior and Lite silhouette |
 | Polished chrome | First real PBR mesh/environment and controls | Finish visual calibration and full background/tier comparison |
 | Brushed steel/gold/rose gold/dark metal | Shared PBR variants and Lite recipes implemented locally | Final art-direction, animated-background and release/device matrix remain |
-| Liquid metal/mercury | Not implemented | Coherent animated normals/displacement and controlled reflections, no random rainbow noise |
+| Liquid metal/mercury | Real PBR mesh, coherent animated displacement/analytic normals, bounded wave/flow controls | Lite currently has a static reflection poster; required inexpensive animated fallback and full optical/device matrix remain |
 | Water/fluid/ink | Not implemented | Continuous ripples/plumes, damping/pointer/normal behavior and bounded low-cost fallback |
 | Holographic/iridescent/thin film | CSS fallback only | Geometry/view-dependent lighting, bounded spectral parameters and motion policy |
 | Silk/fabric | Not implemented | Fold/sheen/flow behavior with coherent lighting and useful Lite rendering |
@@ -50,6 +50,12 @@ Clear, frosted, smoked and tinted glass now have distinct diffusion/absorption d
 `npm run test:v2` passed **57/57**; the production build passed (Vite 7.3.6, 6,436 modules). The registry has eleven working material choices. These are DOM glass implementations, not claims of physical mesh transmission or refraction of arbitrary HTML. Full Stage 4 optical/effect and animated-background gates remain open.
 
 ## Section 7 engine completion gates
+
+### Liquid-metal follow-up (verified 2026-10-26)
+
+The shared physical scene now renders liquid metal with original deterministic GLSL displacement and analytic wave normals. Balanced/High/Ultra use bounded 32/64/96-row meshes; the existing PMREM environment supplies actual reflected lighting. Zero flow freezes the current phase; resuming does not allocate another scene. Hidden/reduced-motion handling stops integration, and dynamic scheduler metadata no longer remounts a layer merely to change animation eligibility. There is no shader text accepted from profile data.
+
+`npm run test:v2` passed **58/58** and the production build passed (6,437 modules). `scripts/check-liquid-metal.mjs` passed actual pixel-changing GPU animation, zero-speed freeze/resume, manual reduced-motion freeze, Lite/native content, desktop/mobile and no shader/page errors or overflow. `/tmp/upet-stage4-liquid-metal-{active,reduced,lite}-{1440,390}.png` are synthetic local evidence; the active mobile surface was visually inspected. Save transport remains a stub, not Firebase proof. The static Lite poster is a safe fallback, **not** completion of Section 5.5's animated Lite requirement. Stage 4 remains open.
 
 Inventory and wrap useful existing effects in `src/redesign/components/ProfileBits.jsx` before introducing replacements. The active legacy effects are preserved; no new registry can claim complete parity merely because their names exist.
 

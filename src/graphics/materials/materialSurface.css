@@ -30,6 +30,7 @@
 .upet-material--gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f5dea0, #5d4420 15%, #b7984f 27%, #3a2d1b 48%, #d8be72 62%, #4e3b20 80%, #d2b26a); }
 .upet-material--rose-gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f7d9cf, #71504b 15%, #c5988b 27%, #45302f 48%, #e2b2a4 62%, #61403d 80%, #c39486); }
 .upet-material--dark-metal:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #74818e, #10151b 15%, #414d59 27%, #080d13 48%, #5d6c7a 62%, #121a22 80%, #4c5863); }
+.upet-material--liquid-metal:not([data-gpu-state="ready"]) { background-image: radial-gradient(ellipse at 20% 25%, #d7eaff99, transparent 35%), radial-gradient(ellipse at 80% 65%, #99b8cb99, transparent 35%), linear-gradient(155deg, #dae8ef, #0b1420 25%, #819caa 45%, #07101a 65%, #bbd0db); }
 .upet-material--dom-glass { background-color: #0d1b2ee0; box-shadow: inset 0 1px #ffffff88, 0 26px 60px #0006; }
 .upet-material--dom-glass::before { inset: 1px; border-radius: inherit; box-shadow: inset 0 0 var(--upet-material-edge-depth) #b5e6ff55; }
 .upet-material--dom-glass.upet-material--crystal { background-image: radial-gradient(ellipse at center, #071222b8 0 50%, transparent 90%), linear-gradient(135deg, #e9faff23, #81b8ee0e 48%, #0d192c45); }

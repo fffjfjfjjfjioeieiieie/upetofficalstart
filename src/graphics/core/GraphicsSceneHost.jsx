@@ -33,10 +33,14 @@ function OwnedSceneHost({ children, className, onEngine }) {
 export function useGraphicsLayer(elementRef, createScene, { enabled = true, animated = true } = {}) {
   const engine = useContext(SceneContext)?.engine;
   const [status, setStatus] = useState('fallback');
+  const registrationRef = useRef(null);
   useEffect(() => {
     if (!engine || !enabled || !elementRef.current) { setStatus('fallback'); return undefined; }
-    return engine.register({ element: elementRef.current, createScene, animated, onStatus: setStatus });
-  }, [engine, elementRef, createScene, enabled, animated]);
+    const unregister = engine.register({ element: elementRef.current, createScene, animated, onStatus: setStatus });
+    registrationRef.current = unregister;
+    return () => { unregister(); registrationRef.current = null; };
+  }, [engine, elementRef, createScene, enabled]);
+  useEffect(() => registrationRef.current?.setAnimated?.(animated), [engine, enabled, animated]);
   return status;
 }
 

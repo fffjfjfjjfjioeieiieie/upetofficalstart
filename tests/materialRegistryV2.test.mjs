@@ -8,7 +8,7 @@ import { createStudioBlock } from '../src/features/studio/v2/studioDocumentOps.j
 test('material choices have stable unique IDs and untrusted names fall back to matte', () => {
   const ids = MATERIAL_VARIANTS.map((variant) => variant.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'smoked-glass', 'tinted-glass', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'holographic']);
+  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'smoked-glass', 'tinted-glass', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal', 'holographic']);
   assert.equal(normalizeMaterialVariant('chrome'), 'chrome');
   assert.equal(normalizeMaterialVariant('javascript:evil()'), 'matte');
 });
@@ -34,6 +34,15 @@ test('DOM glass has distinct diffusion/absorption defaults and bounded rim/grain
   assert.throws(() => materialConfigSchema.parse({ id: 'crystal', edgeWidth: 100 }));
   assert.throws(() => materialConfigSchema.parse({ id: 'crystal', edgeDepth: -1 }));
   assert.throws(() => materialConfigSchema.parse({ id: 'frosted', grain: Infinity }));
+});
+
+test('liquid metal limits wave geometry and permits an explicit stopped flow', () => {
+  const material = createMaterialConfig('liquid-metal');
+  assert.ok(material.waveAmplitude > 0 && material.waveAmplitude <= .12);
+  assert.doesNotThrow(() => materialConfigSchema.parse({ ...material, flowSpeed: 0 }));
+  assert.throws(() => materialConfigSchema.parse({ ...material, waveAmplitude: 1 }));
+  assert.throws(() => materialConfigSchema.parse({ ...material, waveFrequency: 1000 }));
+  assert.throws(() => materialConfigSchema.parse({ ...material, flowSpeed: Infinity }));
 });
 
 test('ID-only materials resolve to identical family defaults in owner and published views', () => {

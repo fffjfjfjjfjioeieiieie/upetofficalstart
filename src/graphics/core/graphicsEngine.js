@@ -222,11 +222,17 @@ export function createGraphicsEngine({ host, canvas, manager, onState = () => {}
       intersectionObserver?.observe(element);
       resizeObserver?.observe(element);
       reconcile();
-      return () => {
+      const unregister = () => {
         intersectionObserver?.unobserve(element);
         resizeObserver?.unobserve(element);
         try { disposeEntry(entry); } finally { entries.delete(id); reconcile(); }
       };
+      unregister.setAnimated = (value) => {
+        if (disposed || !entries.has(id)) return;
+        entry.animated = Boolean(value);
+        reconcile();
+      };
+      return unregister;
     },
     invalidate: reconcile,
     diagnostics: snapshot,

@@ -19,8 +19,8 @@ export default function MaterialSurface({ variant = 'matte', config, reducedMoti
   const highlightY = useMotionValue(10);
   const springX = useSpring(highlightX, { stiffness: 170, damping: 25, mass: .7 });
   const springY = useSpring(highlightY, { stiffness: 170, damping: 25, mass: .7 });
-  const createScene = useMemo(() => (context) => createMetalScene({ ...context, readSettings: () => ({ ...settingsRef.current, pointer: pointerRef.current }) }), []);
-  const status = useGraphicsLayer(elementRef, createScene, { enabled: metal && graphics.tier !== 'lite', animated: false });
+  const createScene = useMemo(() => (context) => createMetalScene({ ...context, readSettings: () => ({ ...settingsRef.current, pointer: pointerRef.current }) }), [createMetalScene]);
+  const status = useGraphicsLayer(elementRef, createScene, { enabled: metal && graphics.tier !== 'lite', animated: settings.id === 'liquid-metal' && settings.flowSpeed > 0 && !reducedMotion });
   const effectiveStatus = metal && graphics.tier !== 'lite' ? status : 'fallback';
   const invalidate = useGraphicsInvalidation();
   const settingsKey = JSON.stringify(settings);
