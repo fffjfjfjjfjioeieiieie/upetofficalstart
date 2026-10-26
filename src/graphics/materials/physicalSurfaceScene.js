@@ -157,7 +157,21 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
   let fabricEnabled = false;
   let flowPhase = 0;
   let previousTime = null;
-  const uniforms = { upetTime: { value: 0 }, upetWaveAmplitude: { value: .045 }, upetWaveFrequency: { value: 3 }, upetLensHalfSize: { value: new THREE.Vector2(1, 1) }, upetLensCurvature: { value: .65 }, upetRipples: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1, 0)) }, upetRippleRadius: { value: .2 }, upetRippleDamping: { value: 1.5 }, upetRippleSpeed: { value: .7 }, upetFabricContrast: { value: .75 } };
+  const uniforms = {
+    upetTime: { value: 0 },
+    upetWaveAmplitude: { value: .045 },
+    upetWaveFrequency: { value: 3 },
+    upetLensHalfSize: { value: new THREE.Vector2(1, 1) },
+    upetLensCurvature: { value: .65 },
+    upetLensRadius: { value: .15 },
+    upetLensEdgeWidth: { value: .32 },
+    upetLensWaveStrength: { value: .2 },
+    upetRipples: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1, 0)) },
+    upetRippleRadius: { value: .2 },
+    upetRippleDamping: { value: 1.5 },
+    upetRippleSpeed: { value: .7 },
+    upetFabricContrast: { value: .75 },
+  };
   material.onBeforeCompile = (shader) => {
     compiledShader = shader;
     // Original related heightfields, with an anisotropic cloth domain rather
@@ -167,7 +181,7 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
     if (glassEnabled) configureLiquidGlassShader(shader, uniforms);
     if (waterEnabled) configureWaterShader(shader, uniforms);
   };
-  material.customProgramCacheKey = () => fabricEnabled ? 'upet-silk-folds-v1' : foldsEnabled ? 'upet-coherent-folds-v1' : glassEnabled ? 'upet-liquid-glass-v1' : waterEnabled ? 'upet-water-v1' : 'upet-physical-surface-v1';
+  material.customProgramCacheKey = () => fabricEnabled ? 'upet-silk-folds-v1' : foldsEnabled ? 'upet-coherent-folds-v1' : glassEnabled ? 'upet-liquid-glass-v2' : waterEnabled ? 'upet-water-v1' : 'upet-physical-surface-v1';
   mesh.onAfterRender = () => {
     // Three's native volume-transmission pass allocates per scene/camera. Adopt
     // its documented Texture.renderTarget reference into our scope so switching
@@ -204,6 +218,7 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
       const radius = settings.radius / height * plateHeight;
       geometry = resources.own(folded || refractive ? roundedGridPlate(THREE, plateWidth, plateHeight, radius, segments) : roundedPlate(THREE, plateWidth, plateHeight, radius));
       uniforms.upetLensHalfSize.value.set(plateWidth / 2, plateHeight / 2);
+      uniforms.upetLensRadius.value = Math.max(.005, Math.min(radius, plateWidth / 2, plateHeight / 2));
       mesh.geometry = geometry;
       geometryKey = key;
     }
@@ -223,6 +238,8 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
     material.attenuationColor.set(refractive ? settings.tint : '#ffffff');
     material.attenuationDistance = refractive ? 2 : Infinity;
     uniforms.upetLensCurvature.value = settings.lensCurvature;
+    uniforms.upetLensEdgeWidth.value = settings.lensEdgeWidth;
+    uniforms.upetLensWaveStrength.value = settings.lensWaveStrength;
     if (refractive && !backdrop) {
       const map = resources.shared('upet/original-lens-backdrop/128/v1', () => lensBackdropTexture(THREE));
       backdrop = new THREE.Mesh(resources.own(new THREE.PlaneGeometry(1, 1)), resources.own(new THREE.MeshBasicMaterial({ map })));
@@ -239,11 +256,12 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
     }
     material.roughness = settings.roughness;
     material.envMapIntensity = settings.reflection;
-    const speed = folded || water ? settings.flowSpeed : holographic ? settings.shimmerSpeed : 0;
+    const speed = folded || water ? settings.flowSpeed : holographic ? settings.shimmerSpeed : glass && settings.lensWaveStrength > 0 ? settings.lensWaveSpeed : 0;
     let elapsed = 0;
     if (motionEnabled && speed > 0) {
       if (previousTime !== null) elapsed = Math.max(0, Math.min(.1, time - previousTime)) * speed;
-      flowPhase = (flowPhase + elapsed) % (20 * Math.PI);
+      // Common period for the coherent metal/fabric waves and .35/.28 lens waves.
+      flowPhase = (flowPhase + elapsed) % (200 * Math.PI);
       previousTime = time;
     } else previousTime = null;
     uniforms.upetTime.value = flowPhase;

@@ -8,7 +8,7 @@ const errors = [];
 const settle = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 try {
   for (const width of [1440, 390]) {
-    const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' });
+    const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion: 'no-preference' });
     let revision = 0;
     await context.route('**/*', (route) => {
       const url = new URL(route.request().url());
@@ -35,6 +35,8 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.getByLabel('Preview quality', { exact: true }).selectOption('balanced');
     await page.getByLabel('Profile material', { exact: true }).selectOption('liquid-glass');
+    await page.getByLabel('Motion', { exact: true }).selectOption('reduce');
+    await page.evaluate(() => scrollTo(0, 0));
     const card = page.locator('.upet-studio-v2__profile-card');
     await expect(card).toHaveAttribute('data-gpu-state', 'ready');
     await page.waitForTimeout(500);
@@ -62,6 +64,21 @@ try {
     const noDispersion = await card.screenshot();
     await setRange('colour dispersion', 'End');
     assert.equal(noDispersion.equals(await card.screenshot()), false, 'dispersion changes native spectral sampling');
+    await setRange('lens rim width', 'Home');
+    const narrowRim = await card.screenshot();
+    await setRange('lens rim width', 'End');
+    assert.equal(narrowRim.equals(await card.screenshot()), false, 'signed-distance rim width changes the refracting geometry');
+    await setRange('lens liquid distortion', 'End');
+    await setRange('lens liquid speed', 'End');
+    await page.getByLabel('Motion', { exact: true }).selectOption('system');
+    await page.evaluate(() => scrollTo(0, 0));
+    await settle(page);
+    const moving = await card.screenshot();
+    await page.waitForTimeout(400);
+    assert.equal(moving.equals(await card.screenshot()), false, 'bounded liquid distortion changes the actual physical lens');
+    await page.getByLabel('Motion', { exact: true }).selectOption('reduce');
+    await page.evaluate(() => scrollTo(0, 0));
+    await settle(page);
     for (const background of ['dark', 'bright']) {
       await page.locator('.upet-studio-v2__canvas').evaluate((element, bright) => { element.style.background = bright ? '#f4f6fa' : '#050b16'; }, background === 'bright');
       await card.screenshot({ path: `/tmp/upet-stage4-liquid-glass-${background}-${width}.png` });

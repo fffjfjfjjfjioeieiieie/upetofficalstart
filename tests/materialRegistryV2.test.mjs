@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createPhysicalSurfaceScene } from '../src/graphics/materials/physicalSurfaceScene.js';
+import { configureLiquidGlassShader } from '../src/graphics/materials/liquidGlassShader.js';
 import { assertProfileMaterialConfigs, createMaterialConfig, isGlassMaterial, isGpuMaterial, materialConfigSchema, MATERIAL_VARIANTS, normalizeMaterialConfig, normalizeMaterialVariant } from '../src/graphics/materials/materialRegistry.js';
 import { createEmptyProfileDocumentV2 } from '../src/shared/contracts/profileV2.js';
 import { createPublicProfileProjectionV2 } from '../src/shared/contracts/publicProfileV2.js';
@@ -192,7 +193,8 @@ test('physical lens uses native transmission and adopts its render target for sc
     assert.ok(renderer.transmissionResolutionScale * 2000 * 2 <= 512);
     const shader = { vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.physical.uniforms) };
     mesh.material.onBeforeCompile(shader);
-    assert.ok(shader.vertexShader.includes('upetLensState'));
+    assert.ok(shader.vertexShader.includes('upetRoundedLensDistance'));
+    assert.ok(shader.vertexShader.includes('objectNormal = upetGlassNormal(position.xy)'));
     const target = new THREE.WebGLRenderTarget(32, 32);
     shader.uniforms.transmissionSamplerMap.value = target.texture;
     mesh.onAfterRender();
@@ -211,6 +213,24 @@ test('physical lens uses native transmission and adopts its render target for sc
     for (const resource of owned) resource.dispose();
     for (const resource of shared.values()) resource.dispose();
     environment.dispose();
+  }
+});
+
+test('rounded glass shader validates every hook and preserves caller-owned optical uniforms', () => {
+  for (const missing of ['common', 'beginnormal_vertex', 'begin_vertex']) {
+    const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.physical.vertexShader.replace(`#include <${missing}>`, '') };
+    assert.throws(() => configureLiquidGlassShader(shader), new RegExp(`chunk: ${missing}`));
+  }
+  const time = { value: 12 };
+  const halfSize = { value: new THREE.Vector2(.6, 1.1) };
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.physical.vertexShader };
+  configureLiquidGlassShader(shader, { upetTime: time, upetLensHalfSize: halfSize });
+  assert.equal(shader.uniforms.upetTime, time);
+  assert.equal(shader.uniforms.upetLensHalfSize, halfSize);
+  assert.equal(shader.uniforms.upetLensWaveStrength.value, .2);
+  assert.ok(shader.vertexShader.includes('transformed.z += upetGlassHeight(position.xy)'));
+  for (const invalid of [{ lensEdgeWidth: 0 }, { lensWaveStrength: 2 }, { lensWaveSpeed: Infinity }]) {
+    assert.throws(() => materialConfigSchema.parse({ ...createMaterialConfig('liquid-glass'), ...invalid }));
   }
 });
 
