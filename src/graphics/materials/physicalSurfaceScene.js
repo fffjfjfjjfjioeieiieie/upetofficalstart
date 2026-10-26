@@ -1,5 +1,7 @@
 import { configureLiquidMetalShader } from './liquidMetalShader.js';
 import { configureLiquidGlassShader } from './liquidGlassShader.js';
+import { configureWaterShader } from './waterShader.js';
+import { configureSilkShader } from './silkShader.js';
 
 // Original procedural studio lights. No downloaded environment maps or artwork.
 function studioEnvironment(THREE, renderer) {
@@ -72,7 +74,7 @@ function brushNormalTexture(THREE) {
   return texture;
 }
 
-function liquidPlate(THREE, width, height, radius, segments) {
+function roundedGridPlate(THREE, width, height, radius, segments) {
   const geometry = new THREE.PlaneGeometry(width, height, Math.max(16, Math.min(96, Math.round(segments * width / height))), segments);
   const positions = geometry.attributes.position;
   const r = Math.max(.005, Math.min(radius, width / 2, height / 2));
@@ -146,18 +148,26 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
   let filmTexture;
   let backdrop;
   let glassEnabled = false;
+  let waterEnabled = false;
+  let lastRippleSequence = readSettings().ripple?.sequence || 0;
+  let rippleIndex = 0;
   let compiledShader;
   const transmissionTargets = new Set();
-  let liquidEnabled = false;
+  let foldsEnabled = false;
+  let fabricEnabled = false;
   let flowPhase = 0;
   let previousTime = null;
-  const uniforms = { upetTime: { value: 0 }, upetWaveAmplitude: { value: .045 }, upetWaveFrequency: { value: 3 }, upetLensHalfSize: { value: new THREE.Vector2(1, 1) }, upetLensCurvature: { value: .65 } };
+  const uniforms = { upetTime: { value: 0 }, upetWaveAmplitude: { value: .045 }, upetWaveFrequency: { value: 3 }, upetLensHalfSize: { value: new THREE.Vector2(1, 1) }, upetLensCurvature: { value: .65 }, upetRipples: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, -1, 0)) }, upetRippleRadius: { value: .2 }, upetRippleDamping: { value: 1.5 }, upetRippleSpeed: { value: .7 }, upetFabricContrast: { value: .75 } };
   material.onBeforeCompile = (shader) => {
     compiledShader = shader;
-    if (liquidEnabled) configureLiquidMetalShader(shader, uniforms);
+    // Original related heightfields, with an anisotropic cloth domain rather
+    // than relabelling metal's physical response or its CSS fallback.
+    if (foldsEnabled && !fabricEnabled) configureLiquidMetalShader(shader, uniforms);
+    if (fabricEnabled) configureSilkShader(shader, uniforms);
     if (glassEnabled) configureLiquidGlassShader(shader, uniforms);
+    if (waterEnabled) configureWaterShader(shader, uniforms);
   };
-  material.customProgramCacheKey = () => liquidEnabled ? 'upet-liquid-metal-v1' : glassEnabled ? 'upet-liquid-glass-v1' : 'upet-physical-surface-v1';
+  material.customProgramCacheKey = () => fabricEnabled ? 'upet-silk-folds-v1' : foldsEnabled ? 'upet-coherent-folds-v1' : glassEnabled ? 'upet-liquid-glass-v1' : waterEnabled ? 'upet-water-v1' : 'upet-physical-surface-v1';
   mesh.onAfterRender = () => {
     // Three's native volume-transmission pass allocates per scene/camera. Adopt
     // its documented Texture.renderTarget reference into our scope so switching
@@ -169,20 +179,30 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
     const settings = readSettings();
     const aspect = width / height;
     const liquid = settings.id === 'liquid-metal';
+    const silk = settings.id === 'silk';
+    const folded = liquid || silk;
     const holographic = settings.id === 'holographic';
     const glass = settings.id === 'liquid-glass';
+    const water = settings.id === 'water';
+    const refractive = glass || water;
     const segments = quality.tier === 'ultra' ? 96 : quality.tier === 'high' ? 64 : 32;
-    if (liquid !== liquidEnabled) { liquidEnabled = liquid; material.needsUpdate = true; }
+    if (folded !== foldsEnabled) { foldsEnabled = folded; material.needsUpdate = true; }
+    if (silk !== fabricEnabled) { fabricEnabled = silk; material.needsUpdate = true; }
     if (glass !== glassEnabled) { glassEnabled = glass; material.needsUpdate = true; }
-    const key = `${Math.round(width)}:${Math.round(height)}:${settings.radius}:${liquid}:${holographic}:${glass}:${liquid || glass ? segments : 0}`;
+    if (water !== waterEnabled) {
+      waterEnabled = water; material.needsUpdate = true;
+      for (const ring of uniforms.upetRipples.value) ring.set(0, 0, -1, 0);
+      lastRippleSequence = settings.ripple?.sequence || 0;
+    }
+    const key = `${Math.round(width)}:${Math.round(height)}:${settings.radius}:${folded}:${holographic}:${glass}:${water}:${folded || refractive ? segments : 0}`;
     if (key !== geometryKey) {
       if (geometry) resources.release(geometry);
       // Overscan the moving face so a receding wave cannot expose a dark gap
       // inside the native rounded clipping mask.
-      const plateHeight = liquid || holographic || glass ? 2.14 : 1.94;
+      const plateHeight = folded || holographic || refractive ? 2.14 : 1.94;
       const plateWidth = Math.max(.12, aspect * plateHeight);
       const radius = settings.radius / height * plateHeight;
-      geometry = resources.own(liquid || glass ? liquidPlate(THREE, plateWidth, plateHeight, radius, segments) : roundedPlate(THREE, plateWidth, plateHeight, radius));
+      geometry = resources.own(folded || refractive ? roundedGridPlate(THREE, plateWidth, plateHeight, radius, segments) : roundedPlate(THREE, plateWidth, plateHeight, radius));
       uniforms.upetLensHalfSize.value.set(plateWidth / 2, plateHeight / 2);
       mesh.geometry = geometry;
       geometryKey = key;
@@ -190,48 +210,71 @@ export function createPhysicalSurfaceScene({ THREE, resources, renderer, readSet
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     material.color.set(settings.tint);
-    material.metalness = glass ? 0 : holographic ? .75 : 1;
-    material.clearcoat = glass ? .6 : .12;
-    material.transmission = glass ? settings.transmission : 0;
-    material.ior = glass ? settings.ior : 1.5;
-    material.thickness = glass ? settings.thickness : 0;
-    material.dispersion = glass ? settings.dispersion : 0;
-    material.attenuationColor.set(glass ? settings.tint : '#ffffff');
-    material.attenuationDistance = glass ? 2 : Infinity;
+    material.metalness = refractive || silk ? 0 : holographic ? .75 : 1;
+    material.clearcoat = silk ? 0 : glass ? .6 : .12;
+    material.sheen = silk ? settings.sheen : 0;
+    material.sheenColor.set('#ffffff');
+    if (silk) material.sheenColor.lerp(material.color, .25);
+    material.sheenRoughness = settings.sheenRoughness;
+    material.transmission = refractive ? settings.transmission : 0;
+    material.ior = refractive ? settings.ior : 1.5;
+    material.thickness = refractive ? settings.thickness : 0;
+    material.dispersion = refractive ? settings.dispersion : 0;
+    material.attenuationColor.set(refractive ? settings.tint : '#ffffff');
+    material.attenuationDistance = refractive ? 2 : Infinity;
     uniforms.upetLensCurvature.value = settings.lensCurvature;
-    if (glass && !backdrop) {
+    if (refractive && !backdrop) {
       const map = resources.shared('upet/original-lens-backdrop/128/v1', () => lensBackdropTexture(THREE));
       backdrop = new THREE.Mesh(resources.own(new THREE.PlaneGeometry(1, 1)), resources.own(new THREE.MeshBasicMaterial({ map })));
       backdrop.position.z = -.6;
       scene.add(backdrop);
     }
     if (backdrop) {
-      backdrop.visible = glass;
+      backdrop.visible = refractive;
       backdrop.scale.set(aspect * 3, 3, 1);
     }
-    if (glass && renderer) {
+    if (refractive && renderer) {
       const maxSize = Math.min(quality.budget.maxTextureSize, quality.tier === 'balanced' ? 512 : 1024);
       renderer.transmissionResolutionScale = Math.min(.5, maxSize / (Math.max(width, height) * renderer.getPixelRatio()));
     }
     material.roughness = settings.roughness;
     material.envMapIntensity = settings.reflection;
-    const speed = liquid ? settings.flowSpeed : holographic ? settings.shimmerSpeed : 0;
+    const speed = folded || water ? settings.flowSpeed : holographic ? settings.shimmerSpeed : 0;
+    let elapsed = 0;
     if (motionEnabled && speed > 0) {
-      if (previousTime !== null) flowPhase = (flowPhase + Math.max(0, Math.min(.1, time - previousTime)) * speed) % (20 * Math.PI);
+      if (previousTime !== null) elapsed = Math.max(0, Math.min(.1, time - previousTime)) * speed;
+      flowPhase = (flowPhase + elapsed) % (20 * Math.PI);
       previousTime = time;
     } else previousTime = null;
     uniforms.upetTime.value = flowPhase;
     uniforms.upetWaveAmplitude.value = settings.waveAmplitude;
     uniforms.upetWaveFrequency.value = settings.waveFrequency;
+    uniforms.upetFabricContrast.value = settings.fabricContrast * Math.min(1, settings.waveAmplitude / .12);
+    uniforms.upetRippleRadius.value = settings.rippleRadius;
+    uniforms.upetRippleDamping.value = settings.rippleDamping;
+    uniforms.upetRippleSpeed.value = settings.rippleSpeed;
+    if (water) {
+      for (const ring of uniforms.upetRipples.value) {
+        if (ring.z >= 0) { ring.z += elapsed * 3; if (ring.z > 8) ring.set(0, 0, -1, 0); }
+      }
+      if (settings.ripple && settings.ripple.sequence !== lastRippleSequence) {
+        lastRippleSequence = settings.ripple.sequence;
+        if (motionEnabled) {
+          const halfSize = uniforms.upetLensHalfSize.value;
+          uniforms.upetRipples.value[rippleIndex].set(settings.ripple.x * halfSize.x, settings.ripple.y * halfSize.y, 0, 1);
+          rippleIndex = (rippleIndex + 1) % 4;
+        }
+      }
+    }
     const brushed = settings.id === 'brushed-steel';
-    if (brushed && !brushTexture) brushTexture = resources.own(brushNormalTexture(THREE));
-    const nextMap = brushed ? brushTexture : null;
+    if ((brushed || silk) && !brushTexture) brushTexture = resources.own(brushNormalTexture(THREE));
+    const nextMap = brushed || silk ? brushTexture : null;
     if (material.normalMap !== nextMap) { material.normalMap = nextMap; material.needsUpdate = true; }
-    const anisotropy = brushed ? settings.brushStrength : 0;
+    const anisotropy = brushed ? settings.brushStrength : silk ? settings.fabricAnisotropy : 0;
     if ((material.anisotropy > 0) !== (anisotropy > 0)) material.needsUpdate = true;
     material.anisotropy = anisotropy;
     material.anisotropyRotation = settings.brushDirection * Math.PI / 180;
-    material.normalScale.setScalar(brushed ? settings.brushStrength * .6 : 0);
+    material.normalScale.setScalar(brushed ? settings.brushStrength * .6 : silk ? settings.fabricGrain * .12 : 0);
     if (brushTexture) brushTexture.rotation = settings.brushDirection * Math.PI / 180;
     if (holographic && !filmTexture) filmTexture = resources.shared('upet/original-thin-film/64/v1', () => thinFilmTexture(THREE));
     const nextFilmMap = holographic ? filmTexture : null;

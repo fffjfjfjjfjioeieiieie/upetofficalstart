@@ -26,9 +26,9 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 | Polished chrome | First real PBR mesh/environment and controls | Finish visual calibration and full background/tier comparison |
 | Brushed steel/gold/rose gold/dark metal | Shared PBR variants and Lite recipes implemented locally | Final art-direction, animated-background and release/device matrix remain |
 | Liquid metal/mercury | Real PBR mesh, coherent animated displacement/analytic normals, bounded wave/flow controls | Lite currently has a static reflection poster; required inexpensive animated fallback and full optical/device matrix remain |
-| Water/fluid/ink | Not implemented | Continuous ripples/plumes, damping/pointer/normal behavior and bounded low-cost fallback |
+| Water/fluid/ink | Real Three.js water waves, native refraction and up to four analytic damped mouse/touch rings; validated spread/damping/speed | Ink/plume diffusion is absent; animated Lite and complete optical/device matrix remain |
 | Holographic/iridescent/thin film | Actual MeshPhysicalMaterial thin-film iridescence, bounded thickness/IOR/intensity, original thickness map, pointer tilt and coherent shimmer | Full optical/device matrix and remaining hue/saturation controls; CSS only for Lite/unavailable |
-| Silk/fabric | Not implemented | Fold/sheen/flow behavior with coherent lighting and useful Lite rendering |
+| Silk/fabric | Real moving directional mesh folds, nonmetal PBR fabric sheen/softness, fibres/grain, bounded fold-valley contrast and static Lite lighting bands | Flow-vector controls, required animated Lite and full optical/device matrix remain |
 | Acrylic/ceramic/glossy plastic/matte paper/neon | Not implemented | Distinct actual recipes/physical properties, readable content and controls; midnight matte is not matte paper |
 
 Every family needs meaningful bounded controls, working shared-renderer preview, useful defaults, per-component inheritance/override, reduced-motion behavior, recovery and bright/dark/animated-background plus Lite evidence. Do not add empty catalogue entries for future materials.
@@ -49,8 +49,6 @@ Clear, frosted, smoked and tinted glass now have distinct diffusion/absorption d
 
 `npm run test:v2` passed **57/57**; the production build passed (Vite 7.3.6, 6,436 modules). The registry has eleven working material choices. These are DOM glass implementations, not claims of physical mesh transmission or refraction of arbitrary HTML. Full Stage 4 optical/effect and animated-background gates remain open.
 
-## Section 7 engine completion gates
-
 ### Three.js conformance correction (2026-10-26)
 
 See `docs/audit/UPET_V2_GRAPHICS_CONFORMANCE.md` for the requested renderer-by-renderer audit. The selectable CSS-only holographic advanced path was a deviation and is corrected. The shared scene is now named `physicalSurfaceScene.js` (verified replacement of `metalScene.js`), not a duplicated engine. Actual thin-film iridescence uses a bounded original 64×64 thickness map and physical viewing/light angle. Ordinary DOM glass remains DOM glass as explicitly permitted by the masterplan.
@@ -64,6 +62,18 @@ Separate liquid glass now uses native MeshPhysicalMaterial volume transmission, 
 The shared physical scene now renders liquid metal with original deterministic GLSL displacement and analytic wave normals. Balanced/High/Ultra use bounded 32/64/96-row meshes; the existing PMREM environment supplies actual reflected lighting. Zero flow freezes the current phase; resuming does not allocate another scene. Hidden/reduced-motion handling stops integration, and dynamic scheduler metadata no longer remounts a layer merely to change animation eligibility. There is no shader text accepted from profile data.
 
 `npm run test:v2` passed **58/58** and the production build passed (6,437 modules). `scripts/check-liquid-metal.mjs` passed actual pixel-changing GPU animation, zero-speed freeze/resume, manual reduced-motion freeze, Lite/native content, desktop/mobile and no shader/page errors or overflow. `/tmp/upet-stage4-liquid-metal-{active,reduced,lite}-{1440,390}.png` are synthetic local evidence; the active mobile surface was visually inspected. Save transport remains a stub, not Firebase proof. The static Lite poster is a safe fallback, **not** completion of Section 5.5's animated Lite requirement. Stage 4 remains open.
+
+### Water and silk follow-up (2026-10-26)
+
+Water adds an original bounded four-ring analytic shader over coherent waves, with true physical transmission/refraction, pointer/touch propagation, spread/damping/speed controls and ring expiration. It reuses the bounded native transmission target and original scene backdrop. No full-fluid simulation, feedback textures, document capture or per-frame randomness. Zero flow/reduced motion freezes the current wave state; reduced motion does not accept new decorative ripples. Ink/plume diffusion remains unimplemented.
+
+Silk uses a related coherent heightfield in a distinct anisotropic domain for long parallel folds, with nonmetal PBR response, soft tinted-white fabric sheen, directional fibre lighting and an original fine normal texture. Fold depth/frequency, flow, sheen/softness, directionality and grain are bounded controls. Initial visual inspection found the defaults too flat; stronger directional folds and softened bright sheen were implemented before final verification. This is neither metallic chrome nor a claimed real cloth simulation.
+
+Both retain readable native HTML and static Lite fallbacks; those static posters **do not** close the specified animated Lite gates. Flow vector and full optical/device/background comparisons remain open. The registry has fifteen working choices, not a finished catalogue.
+
+Verification: `npm run test:v2` passed **65/65**; final production build passed with **6,440 modules** and the lazy Three.js chunk warning retained. Water browser checks passed twice at 1440px/390px with actual ring uniform uploads from mouse/touch, bounded shader array, coherent changing pixels, damping editing, reduced-motion freeze and Lite/native content. Silk checks verify actual fold depth/sheen/anisotropy pixels, stopped flow and reduced motion, bright/dark/Lite, readable native content and no shader/page errors or horizontal overflow. Evidence: `/tmp/upet-stage4-water-{active,reduced,lite}-{1440,390}.png` and `/tmp/upet-stage4-silk-{dark,bright,lite}-{1440,390}.png`; representative mobile views were inspected. Local synthetic transport only, not live Firebase persistence. Import scanner reports 334 files/702 local edges, no missing local imports or parse errors; previously quarantined inactive package gaps remain unchanged.
+
+## Section 7 engine completion gates
 
 Inventory and wrap useful existing effects in `src/redesign/components/ProfileBits.jsx` before introducing replacements. The active legacy effects are preserved; no new registry can claim complete parity merely because their names exist.
 

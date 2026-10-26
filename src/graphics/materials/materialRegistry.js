@@ -7,6 +7,8 @@ export const MATERIAL_VARIANTS = Object.freeze([
   { id: 'smoked-glass', label: 'Smoked glass' },
   { id: 'tinted-glass', label: 'Tinted glass' },
   { id: 'liquid-glass', label: 'Liquid glass (3D lens)' },
+  { id: 'water', label: 'Water ripples' },
+  { id: 'silk', label: 'Flowing silk' },
   { id: 'chrome', label: 'Polished chrome' },
   { id: 'brushed-steel', label: 'Brushed steel' },
   { id: 'gold', label: 'Gold' },
@@ -19,7 +21,7 @@ export const MATERIAL_VARIANTS = Object.freeze([
 const validVariants = new Set(MATERIAL_VARIANTS.map((item) => item.id));
 const metalVariants = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal'];
 export const isMetalMaterial = (value) => metalVariants.includes(value);
-const physicalVariants = [...metalVariants, 'holographic', 'liquid-glass'];
+const physicalVariants = [...metalVariants, 'holographic', 'liquid-glass', 'water', 'silk'];
 export const isGpuMaterial = (value) => physicalVariants.includes(value);
 const glassVariants = ['crystal', 'frosted', 'smoked-glass', 'tinted-glass'];
 export const isGlassMaterial = (value) => glassVariants.includes(value);
@@ -57,6 +59,14 @@ export const materialConfigSchema = z.object({
   thickness: z.number().finite().min(0).max(1).default(.45),
   dispersion: z.number().finite().min(0).max(1).default(.15),
   pointerIntensity: z.number().finite().min(0).max(1).default(.5),
+  rippleRadius: z.number().finite().min(.05).max(.5).default(.2),
+  rippleDamping: z.number().finite().min(.25).max(5).default(1.5),
+  rippleSpeed: z.number().finite().min(.1).max(2).default(.7),
+  sheen: z.number().finite().min(0).max(1).default(.8),
+  sheenRoughness: z.number().finite().min(.2).max(1).default(.6),
+  fabricAnisotropy: z.number().finite().min(0).max(1).default(.5),
+  fabricGrain: z.number().finite().min(0).max(1).default(.25),
+  fabricContrast: z.number().finite().min(0).max(1).default(.75),
 });
 
 export const MATERIAL_CONTROLS = Object.freeze([
@@ -74,19 +84,29 @@ export const MATERIAL_CONTROLS = Object.freeze([
   { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: physicalVariants },
   { key: 'brushStrength', label: 'Brush strength', min: 0, max: 1, step: .05, variants: ['brushed-steel'] },
   { key: 'brushDirection', label: 'Brush direction', min: -180, max: 180, step: 5, unit: '°', variants: ['brushed-steel'] },
-  { key: 'waveAmplitude', label: 'Wave depth', min: 0, max: .12, step: .005, variants: ['liquid-metal'] },
-  { key: 'waveFrequency', label: 'Wave frequency', min: 1, max: 8, step: .25, variants: ['liquid-metal'] },
-  { key: 'flowSpeed', label: 'Flow speed', min: 0, max: 1, step: .05, variants: ['liquid-metal'] },
+  { key: 'waveAmplitude', label: 'Wave depth', min: 0, max: .12, step: .005, variants: ['liquid-metal', 'water'] },
+  { key: 'waveFrequency', label: 'Wave frequency', min: 1, max: 8, step: .25, variants: ['liquid-metal', 'water'] },
+  { key: 'flowSpeed', label: 'Flow speed', min: 0, max: 1, step: .05, variants: ['liquid-metal', 'water', 'silk'] },
+  { key: 'waveAmplitude', label: 'Fold depth', min: 0, max: .12, step: .005, variants: ['silk'] },
+  { key: 'waveFrequency', label: 'Fold frequency', min: 1, max: 8, step: .25, variants: ['silk'] },
+  { key: 'sheen', label: 'Fabric sheen', min: 0, max: 1, step: .05, variants: ['silk'] },
+  { key: 'sheenRoughness', label: 'Sheen softness', min: .2, max: 1, step: .05, variants: ['silk'] },
+  { key: 'fabricAnisotropy', label: 'Fibre directionality', min: 0, max: 1, step: .05, variants: ['silk'] },
+  { key: 'fabricGrain', label: 'Fibre grain', min: 0, max: 1, step: .05, variants: ['silk'] },
+  { key: 'fabricContrast', label: 'Fold contrast', min: 0, max: 1, step: .05, variants: ['silk'] },
   { key: 'iridescence', label: 'Iridescence intensity', min: 0, max: 1, step: .05, variants: ['holographic'] },
   { key: 'filmThickness', label: 'Film thickness', min: 100, max: 1000, step: 10, unit: 'nm', variants: ['holographic'] },
   { key: 'filmIOR', label: 'Film refractive index', min: 1, max: 2.5, step: .05, variants: ['holographic'] },
   { key: 'shimmerSpeed', label: 'Shimmer speed', min: 0, max: .5, step: .01, variants: ['holographic'] },
   { key: 'lensCurvature', label: 'Lens curvature', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
-  { key: 'transmission', label: 'Light transmission', min: .1, max: 1, step: .05, variants: ['liquid-glass'] },
-  { key: 'ior', label: 'Refractive index', min: 1, max: 2, step: .05, variants: ['liquid-glass'] },
-  { key: 'thickness', label: 'Optical thickness', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
-  { key: 'dispersion', label: 'Colour dispersion', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'transmission', label: 'Light transmission', min: .1, max: 1, step: .05, variants: ['liquid-glass', 'water'] },
+  { key: 'ior', label: 'Refractive index', min: 1, max: 2, step: .05, variants: ['liquid-glass', 'water'] },
+  { key: 'thickness', label: 'Optical thickness', min: 0, max: 1, step: .05, variants: ['liquid-glass', 'water'] },
+  { key: 'dispersion', label: 'Colour dispersion', min: 0, max: 1, step: .05, variants: ['liquid-glass', 'water'] },
   { key: 'pointerIntensity', label: 'Pointer lens response', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'rippleRadius', label: 'Ripple spread', min: .05, max: .5, step: .05, variants: ['water'] },
+  { key: 'rippleDamping', label: 'Ripple damping', min: .25, max: 5, step: .25, variants: ['water'] },
+  { key: 'rippleSpeed', label: 'Ripple speed', min: .1, max: 2, step: .1, variants: ['water'] },
 ]);
 
 export function createMaterialConfig(id = 'matte') {
@@ -99,6 +119,8 @@ export function createMaterialConfig(id = 'matte') {
     'liquid-metal': { tint: '#c5d4df', roughness: .1, reflection: 1.5, waveAmplitude: .045, waveFrequency: 3, flowSpeed: .2 },
     holographic: { tint: '#66758a', roughness: .25, reflection: 1.1, iridescence: .9, filmThickness: 380, filmIOR: 1.4, shimmerSpeed: .08 },
     'liquid-glass': { tint: '#c4e5ed', roughness: .08, reflection: 1.1, lensCurvature: .65, transmission: .95, ior: 1.45, thickness: .45, dispersion: .15, pointerIntensity: .5 },
+    water: { tint: '#76afc4', roughness: .12, reflection: 1.3, transmission: .85, ior: 1.33, thickness: .3, dispersion: .05, waveAmplitude: .025, waveFrequency: 3, flowSpeed: .25, rippleRadius: .2, rippleDamping: 1.5, rippleSpeed: .7 },
+    silk: { tint: '#655486', roughness: .55, reflection: .6, waveAmplitude: .12, waveFrequency: 5, flowSpeed: .1, sheen: .8, sheenRoughness: .6, fabricAnisotropy: .5, fabricGrain: .25 },
     crystal: { blur: 12, opacity: .55, grain: 0, edgeIntensity: .65 },
     frosted: { blur: 28, opacity: .75, grain: .3 },
     'smoked-glass': { tint: '#59616c', blur: 10, opacity: .85, grain: .15, edgeIntensity: .35 },

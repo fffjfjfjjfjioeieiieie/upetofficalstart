@@ -13,6 +13,8 @@ export default function MaterialControls({ value, inheritedValue, allowInherit =
       {settings.id === 'liquid-metal' && <p className="upet-studio-v2__quality-note">Flow follows your graphics and motion settings.</p>}
       {settings.id === 'holographic' && <p className="upet-studio-v2__quality-note">Physical thin-film reflections on GPU tiers; a lightweight colour highlight in Lite. Shimmer respects reduced motion.</p>}
       {settings.id === 'liquid-glass' && <p className="upet-studio-v2__quality-note">A physical lens refracts an original GPU-scene backdrop, not the HTML behind this canvas. Lite uses a static glass silhouette.</p>}
+      {settings.id === 'water' && <p className="upet-studio-v2__quality-note">Tap the surface for damped ripples. Flow zero or reduced motion freezes the physical waves. Lite keeps a static water silhouette; animated Lite remains in development.</p>}
+      {settings.id === 'silk' && <p className="upet-studio-v2__quality-note">Coherent mesh folds with physical fabric sheen and directional fibres, not a cloth simulation. Reduced motion freezes the folds; Lite uses static lighting bands.</p>}
     </>}
   </div>;
 }

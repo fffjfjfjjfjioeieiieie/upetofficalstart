@@ -10,7 +10,7 @@ import { createStudioBlock } from '../src/features/studio/v2/studioDocumentOps.j
 test('material choices have stable unique IDs and untrusted names fall back to matte', () => {
   const ids = MATERIAL_VARIANTS.map((variant) => variant.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'smoked-glass', 'tinted-glass', 'liquid-glass', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal', 'holographic']);
+  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'smoked-glass', 'tinted-glass', 'liquid-glass', 'water', 'silk', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal', 'holographic']);
   assert.equal(normalizeMaterialVariant('chrome'), 'chrome');
   assert.equal(normalizeMaterialVariant('javascript:evil()'), 'matte');
 });
@@ -64,6 +64,103 @@ test('physical liquid glass bounds transmission, lens shape and optical controls
   assert.equal(isGlassMaterial(glass.id), false, 'physical glass is not ordinary DOM glass');
   for (const invalid of [{ lensCurvature: 20 }, { transmission: -1 }, { ior: 10 }, { thickness: Infinity }, { dispersion: 2 }, { pointerIntensity: 10 }]) {
     assert.throws(() => materialConfigSchema.parse({ ...glass, ...invalid }));
+  }
+});
+
+test('water bounds damped ripple settings and uses the physical backend', () => {
+  const water = createMaterialConfig('water');
+  assert.equal(isGpuMaterial(water.id), true);
+  assert.equal(water.ior, 1.33);
+  for (const invalid of [{ rippleRadius: 0 }, { rippleDamping: -1 }, { rippleSpeed: 1000 }]) {
+    assert.throws(() => materialConfigSchema.parse({ ...water, ...invalid }));
+  }
+});
+
+test('silk uses nonmetal physical sheen/fibres and clears fabric settings on metal switch', () => {
+  let settings = { ...createMaterialConfig('silk'), pointer: { x: 0, y: 0 } };
+  assert.equal(isGpuMaterial('silk'), true);
+  for (const invalid of [{ sheen: 2 }, { sheenRoughness: 0 }, { fabricAnisotropy: -1 }, { fabricGrain: Infinity }, { fabricContrast: 2 }]) {
+    assert.throws(() => materialConfigSchema.parse({ ...settings, ...invalid }));
+  }
+  const owned = new Set();
+  const environment = new THREE.Texture();
+  const surface = createPhysicalSurfaceScene({ THREE, readSettings: () => settings, resources: {
+    own(resource) { owned.add(resource); return resource; },
+    release(resource) { owned.delete(resource); resource.dispose(); },
+    shared() { return { texture: environment }; },
+  } });
+  const frame = { time: 1, width: 480, height: 600, quality: { tier: 'high', reducedMotion: false }, motionEnabled: true };
+  try {
+    surface.update(frame);
+    const mesh = surface.scene.children.find((child) => child.isMesh);
+    assert.equal(mesh.material.metalness, 0);
+    assert.equal(mesh.material.transmission, 0);
+    assert.equal(mesh.material.clearcoat, 0);
+    assert.equal(mesh.material.sheen, settings.sheen);
+    assert.equal(mesh.material.sheenRoughness, settings.sheenRoughness);
+    assert.equal(mesh.material.anisotropy, settings.fabricAnisotropy);
+    assert.ok(mesh.material.normalMap.isDataTexture);
+    const shader = { vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.physical.uniforms) };
+    mesh.material.onBeforeCompile(shader);
+    assert.ok(shader.vertexShader.includes('upetLiquidWave(vec2(position.x * 1.7, position.y * 0.35))'));
+    surface.update({ ...frame, time: 1.1 });
+    assert.ok(shader.uniforms.upetTime.value > 0);
+    const phase = shader.uniforms.upetTime.value;
+    surface.update({ ...frame, time: 2, motionEnabled: false });
+    assert.equal(shader.uniforms.upetTime.value, phase);
+    settings = { ...createMaterialConfig('chrome'), pointer: { x: 0, y: 0 } };
+    surface.update(frame);
+    assert.equal(mesh.material.sheen, 0);
+    assert.equal(mesh.material.anisotropy, 0);
+    assert.equal(mesh.material.normalMap, null);
+    assert.equal(mesh.material.metalness, 1);
+  } finally { for (const resource of owned) resource.dispose(); environment.dispose(); }
+});
+
+test('water has four bounded analytic rings, damping controls and frozen/expired states', () => {
+  let settings = { ...createMaterialConfig('water'), flowSpeed: 1, pointer: { x: 0, y: 0 }, ripple: { sequence: 0, x: 0, y: 0 } };
+  const owned = new Set();
+  const environment = new THREE.Texture();
+  const shared = new Map();
+  const surface = createPhysicalSurfaceScene({ THREE, readSettings: () => settings, resources: {
+    own(resource) { owned.add(resource); return resource; },
+    release(resource) { owned.delete(resource); resource.dispose(); },
+    shared(key, factory) {
+      if (key.includes('studio-environment')) return { texture: environment };
+      if (!shared.has(key)) shared.set(key, factory());
+      return shared.get(key);
+    },
+  } });
+  const frame = { time: 1, width: 480, height: 600, quality: { tier: 'high', reducedMotion: false }, motionEnabled: true };
+  try {
+    surface.update(frame);
+    const mesh = surface.scene.children.find((child) => child.isMesh && child.material.isMeshPhysicalMaterial);
+    const shader = { vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.physical.uniforms) };
+    mesh.material.onBeforeCompile(shader);
+    assert.ok(shader.vertexShader.includes('upetLiquidWave(position.xy) + upetWaterRipples(position.xy)'));
+    assert.ok(shader.vertexShader.indexOf('uniform float upetWaveFrequency') < shader.vertexShader.indexOf('vec3 upetWaterRipples'));
+    const rings = shader.uniforms.upetRipples.value;
+    assert.equal(rings.length, 4);
+    assert.ok(rings.every((ring) => ring.z === -1));
+    for (let sequence = 1; sequence <= 8; sequence++) {
+      settings.ripple = { sequence, x: .5, y: -.5 };
+      surface.update({ ...frame, time: 1 + sequence * .1 });
+    }
+    assert.ok(rings.every((ring) => ring.w === 1 && ring.z >= 0));
+    assert.equal(shader.uniforms.upetRippleDamping.value, settings.rippleDamping);
+    const ages = rings.map((ring) => ring.z);
+    surface.update({ ...frame, time: 3, motionEnabled: false });
+    assert.deepEqual(rings.map((ring) => ring.z), ages);
+    for (let index = 0; index < 60; index++) surface.update({ ...frame, time: 3 + index * .1 });
+    assert.ok(rings.every((ring) => ring.z === -1), 'rings expire rather than accumulating forever');
+    settings = { ...createMaterialConfig('chrome'), pointer: { x: 0, y: 0 } };
+    surface.update(frame);
+    assert.equal(mesh.material.transmission, 0);
+    assert.equal(mesh.material.customProgramCacheKey(), 'upet-physical-surface-v1');
+  } finally {
+    for (const resource of owned) resource.dispose();
+    for (const resource of shared.values()) resource.dispose();
+    environment.dispose();
   }
 });
 
