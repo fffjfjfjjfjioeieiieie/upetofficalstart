@@ -8,6 +8,8 @@ Visual reference set: all eight images in `Upet_Noiz_Reference_Screenshots.zip`
 
 This is the Stage 0 inventory for the final UPET rebuild. It describes what exists today, what is active at runtime, and which behavior must be preserved during migration. It is not a claim that the final specification is implemented.
 
+Sequential recheck on 2026-10-26: this document remains the original baseline. The repeatable full source graph, runtime dependency chains, actual unresolved package references and source classifications are now in `docs/audit/UPET_V2_IMPORT_MAP.md`. The corrected canonical stage numbering is in the progress ledger and migration map; the masterplan's Section 23 is authoritative.
+
 ## Safety and release state
 
 - The branch was created from the current working tree without resetting, stashing, deleting, or rewriting existing work.

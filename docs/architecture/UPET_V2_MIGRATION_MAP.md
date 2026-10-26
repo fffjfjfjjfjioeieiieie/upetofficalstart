@@ -119,26 +119,26 @@ Each stage is complete only when all applicable gates pass:
 | --- | --- | --- |
 | 0 | Repository/data audit, migration map, progress ledger | Local only |
 | 1 | Shared tokens and accessible primitives without functional redesign | Local only |
-| 2 | Versioned profile/page/block/music/lyrics/media contracts and lossless adapters | Local only |
-| 3 | Draft, revision, publish, projection, role, and rules foundation | Emulator/local only |
-| 4 | V2 Studio shell with pages/layers/canvas/inspector and legacy escape hatch | Founder-local only |
-| 5 | Responsive layout controls, history, selection, drag/reorder, keyboard editing | Founder-local only |
-| 6 | Materials/background engine with CSS fallback and quality tiers | Founder preview candidate |
-| 7 | Identity, links, entry, text, badges, and existing widget parity | Protected founder preview |
-| 8 | Media library, gallery, video, collections, and provenance tooling | Protected founder preview |
-| 9 | Music library, playlists, global player, embeds, uploads, and skins | Protected founder preview |
-| 10 | Advanced waveform and lyrics editor while preserving all current LRC/tap-sync behavior | Protected founder preview |
-| 11 | Multipage public profiles and responsive versioned renderer | Protected founder preview |
-| 12 | Polls, guestbook, social/community moderation and abuse controls | Protected founder preview |
-| 13 | Discovery, analytics, ranking projections, privacy and retention | Protected founder preview |
-| 14 | Domains/vanity behavior as a free profile capability, with safe claim verification | Protected founder preview |
-| 15 | 50+ functional, compatibility-labelled presets | Protected founder preview |
-| 16 | Homepage rebuilt around the real renderer, Studio, materials, music, and pages | Protected founder preview |
-| 17 | Shop/help/business compatibility and cross-product regression pass | Protected founder preview |
-| 18 | Accessibility, browser/device, security, cost, performance, and migration hardening | Release candidate |
-| 19 | Approved migration/cutover, monitoring, rollback rehearsal, and obsolete-file cleanup | Public only after explicit gate approval |
+| 2 | Profile schemas, lossless legacy adapters and shared renderer foundations | Local only |
+| 3 | Graphics quality manager and shared renderer lifecycle | Local only |
+| 4 | Complete material/effect engine in Sections 5–7 | Local only |
+| 5 | Complete background/effect catalogue in Sections 6–7 | Local only |
+| 6 | Studio canvas/inspector, responsive authoring, history, draft/publish and security | Local/emulator; founder gate |
+| 7 | Multi-page layouts and navigation | Local; deep-link/back/forward/mobile proof |
+| 8 | Music migration, playlists/skins/analysis and complete waveform/synced lyrics parity | Local/emulator |
+| 9 | Galleries, collections and user content widgets | Local/emulator |
+| 10 | Authorized external social integrations | Local with explicit unavailable states |
+| 11 | Guestbook, polls, reactions and donor badges | Local/emulator |
+| 12 | Analytics, link enhancements, SEO/sharing | Local/emulator |
+| 13 | 50+ presets, theme scheduling and backups | Local/emulator |
+| 14 | Original homepage using actual shared demos | Local only |
+| 15 | Free vanity subdomains / optional BYOD | Local plus infrastructure verification |
+| 16 | Safe legacy cleanup and dead-code removal | Reviewable deletions only after parity |
+| 17 | Comprehensive quality/security/performance and shop/help/business regression pass | Release candidate |
+| 18 | Protected founder preview release | Verified access control, public site unaffected |
+| 19 | Public launch | Only after explicit user approval |
 
-Stage numbering follows the final masterplan. A later stage may be split into smaller commits, but it may not bypass earlier data/security gates.
+This table was corrected on 2026-10-26 to match Section 23 of the final masterplan exactly. The earlier table incorrectly substituted an internal feature sequence. Earlier draft/publish, editor and graphics commits remain useful groundwork, but cannot count as completion of differently scoped final stages. A stage can have several commits; finish and verify all its acceptance criteria before advancing. Preserve the trusted draft/publish/security foundation while implementing the earlier graphics stages.
 
 ## Deletion protocol
 
