@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-26 (Stages 0–3 verified; Stage 4 metal family verified locally)
+Last updated: 2026-10-26 (Stages 0–3 verified; Stage 4 metal + DOM-glass slices verified)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -23,7 +23,7 @@ The working tree was already dirty before this stage. At branch creation it cont
 | 1. Shared design tokens and compatible UI primitives | Verified locally | Shared tokens/Button/IconButton/VisuallyHidden; existing working Radix controls reused; five tests and recorded visual comparison. Inactive unresolved wrappers quarantined in import map |
 | 2. Profile schemas, legacy adapters and renderer foundations | Verified locally | Lossless rollback/write gate; shared versioned ProfileRenderer powers Studio; strict public/private boundary; four legacy fixtures across three formats; verification below |
 | 3. Graphics quality manager and shared renderer lifecycle | Verified locally | Shared provider/scene host, one lazy context, actual-frame scheduler, DPR/pixel/layer limits, scoped/ref-count disposal, persisted visitor controls; production context loss/restore, WebGL-disabled, hidden/offscreen/reduced-motion and repeated-unmount matrix passed |
-| 4. Material/effect engine (Sections 5–7) | In progress — remain here | Bounded trusted controls/public projections and per-layer overrides; five real PBR metals/shared procedural PMREM; directional brush normals/anisotropy; nine material choices with Lite recipes. Other material families and Section 7 engines/full visual matrix remain; acceptance checklist linked above |
+| 4. Material/effect engine (Sections 5–7) | In progress — remain here | Bounded controls/projections and overrides; five PBR metals/shared environment; directional brush normals; four adaptive DOM glass recipes with spring highlights; eleven choices/Lite recipes. Other families and Section 7 engines/full visual matrix remain |
 | 5. Background/effect catalogue (Sections 6–7) | Not started | Every named effect needs actual renderer, controls, fallbacks, tier and screenshot proof |
 | 6. Studio canvas/inspector/draft/publish | Partial groundwork | Founder shell, core blocks/layout/history, serialized private draft API, explicit publish, local rules tests. Full component/feature parity, real isolated save/reload and responsive UX remain |
 | 7. Multi-page layouts/navigation | Not started | Deep link/back/forward/mobile, layout catalogue and public versioned route integration |
@@ -72,6 +72,12 @@ The previous localhost preview process stopped responding during work; it was re
 Added brushed steel, gold, rose gold and dark metal by reusing the chrome implementation as `metalScene.js`. Brushed steel uses a bounded original normal texture and anisotropy/direction controls; each metal has meaningful physical defaults and a distinct Lite recipe. ID-only material projections now match owner defaults exactly. The registry has nine working choices, not a completed full material catalogue.
 
 `npm run test:v2`: 56/56 passed. Production build: passed, 6,436 modules. Expanded material browser checks passed all five metals in GPU/Lite on bright/dark surrounds at 1440px/390px with reduced motion, brush direction/roughness keyboard controls, layer override/reset and no runtime/shader errors or overflow. Representative snapshots were visually inspected. Preview on localhost port 4173 returned HTTP 200. No remote deployment or production data operation. The full checklist and evidence remain in `docs/quality/UPET_STAGE4_ACCEPTANCE.md`.
+
+### Stage 4 DOM-glass follow-up (2026-10-26; stage remains open)
+
+Added distinct smoked/tinted recipes; improved clear/frosted translucency, independent grain, bounded rim width/depth and damped pointer lighting. Lite disables backdrop filters; reduced motion resets the highlight and touch keeps it static. Glass uses zero GL contexts/Three.js downloads. The shared renderer's explicit schema-version-zero legacy fallback was also preserved and regression-tested.
+
+`npm run test:v2`: 57/57 passed. Production build: passed, 6,436 modules. New glass browser checks passed four recipes on bright/dark backgrounds and Lite at desktop/mobile, actual computed blur/rim/grain controls, spring response, reduced-motion reset, touch fallback, zero GL/download, no errors/overflow. Shared renderer/legacy/Studio regression passed. Representative clear, smoked mobile and tinted screenshots were visually inspected. No production writes/deployments; local preview remains the release surface.
 
 ## Earlier verification records
 
@@ -251,6 +257,6 @@ The pure quality manager exposes Lite/Balanced/High/Ultra resource budgets, boun
 
 ## Next exact task
 
-Continue final-masterplan Stage 4, without advancing to Stage 5. Next concrete slice: complete the DOM glass family (distinct clear/frosted/smoked/tinted recipes, bounded optical/tint/edge controls, pointer-eased highlight, Lite/reduced-motion behavior), reusing MaterialSurface and its schema. Then implement liquid glass, liquid metal, water/fluid/ink, true iridescence, silk and the remaining Section 5 materials, plus Section 7's border/card/text/cursor/entrance engines. Reuse useful existing ProfileBits effects after inventory; do not build duplicates. All remaining visual/interaction gates are in `docs/quality/UPET_STAGE4_ACCEPTANCE.md`. Stage 5 remains the full Section 6 background catalogue. No stage may be declared complete merely because its first slice builds.
+Continue final-masterplan Stage 4, without advancing to Stage 5. Next concrete slice: liquid metal/mercury using the existing shared PBR environment and coherent bounded mesh/normal waves, with validated amplitude/frequency/speed, actual animation, reduced-motion/Lite behavior and browser evidence. Then implement liquid glass, water/fluid/ink, true iridescence, silk and remaining Section 5 materials, plus Section 7's border/card/text/cursor/entrance engines. Reuse useful existing ProfileBits effects after inventory; do not build duplicates. All optical/full-matrix gates remain listed in `docs/quality/UPET_STAGE4_ACCEPTANCE.md`. Stage 5 remains the full Section 6 background catalogue.
 
 Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.

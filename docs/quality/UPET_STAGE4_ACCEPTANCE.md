@@ -20,8 +20,8 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 
 | Required family | Current state | Remaining gate |
 | --- | --- | --- |
-| Clear/crystal glass | DOM recipe and bounded blur/tint/radius/edge controls | Complete safe thickness/edge/reflection/lighting behavior and applicable GPU compositing; no arbitrary DOM-refraction claim |
-| Frosted/smoked/tinted glass | Frosted DOM recipe, original grain and controls | Distinct smoked/tinted defaults, contrast, highlight interaction and complete visual matrix |
+| Clear/crystal glass | DOM translucency, bounded blur/tint/radius/rim depth/width and spring pointer light | Remaining optical controls/optional GPU-composited cases and complete visual matrix; no arbitrary DOM-refraction claim |
+| Frosted/smoked/tinted glass | Distinct DOM diffusion/absorption recipes, independent grain, rim controls and spring pointer light | Animated-background and wider device/contrast matrix remains |
 | Liquid glass | Not implemented | Coherent bounded lens edge/normal displacement, controls, pointer behavior and Lite silhouette |
 | Polished chrome | First real PBR mesh/environment and controls | Finish visual calibration and full background/tier comparison |
 | Brushed steel/gold/rose gold/dark metal | Shared PBR variants and Lite recipes implemented locally | Final art-direction, animated-background and release/device matrix remain |
@@ -40,6 +40,14 @@ The registry now has nine actual choices: the previous five plus brushed steel, 
 The same stable scene survives metal selection and parameter edits; the procedural environment stays shared. Nonmetal surfaces no longer perform pointer-layout reads for an unused GPU light. A regression test also fixes ID-only material parity: published defaults now exactly match the owner's family-specific defaults rather than generic schema defaults.
 
 `npm run test:v2` passed **56/56** and `npm run build` passed (Vite 7.3.6, 6,436 modules). The expanded material browser check passed all five metals in GPU and Lite, with bright/dark surrounding backgrounds at 1440px/390px, OS reduced motion, keyboard brush direction, override/reset, and no runtime/shader errors or overflow. Representative brushed-steel, gold GPU and rose-gold Lite screenshots were visually inspected. Evidence: `/tmp/upet-stage4-{brushed-steel,gold,rose-gold,dark-metal}-{dark,bright,lite}-{1440,390}.png`. Animated-background and wider physical-device checks remain open; this does not close Stage 4.
+
+### DOM-glass follow-up (verified 2026-10-26)
+
+Clear, frosted, smoked and tinted glass now have distinct diffusion/absorption defaults, an actual translucent background, independently adjustable grain, bounded edge width/depth, and a damped spring highlight using the existing Motion dependency. Grain zero removes the noise layer. The native text has a deliberate contrast veil; the Lite recipe removes backdrop filtering and keeps the surface/foreground. OS/manual reduced motion resets and stops pointer lighting; touch does not start it. Ordinary glass never allocates WebGL or downloads Three.js.
+
+`scripts/check-glass-materials.mjs` passed all four on bright/dark backgrounds and Lite at 1440px/390px, including actual computed blur/edge/grain, spring response, reduced-motion reset, touch fallback, zero GL/download calls, no errors and no horizontal overflow. Representative clear, smoked mobile and tinted screenshots were visually inspected. Evidence: `/tmp/upet-stage4-{crystal,frosted,smoked-glass,tinted-glass}-{bright,dark,lite}-{1440,390}.png`. The existing shared renderer/legacy/Studio browser regression also passed, and explicit schema-version-zero legacy documents retain their classic fallback.
+
+`npm run test:v2` passed **57/57**; the production build passed (Vite 7.3.6, 6,436 modules). The registry has eleven working material choices. These are DOM glass implementations, not claims of physical mesh transmission or refraction of arbitrary HTML. Full Stage 4 optical/effect and animated-background gates remain open.
 
 ## Section 7 engine completion gates
 

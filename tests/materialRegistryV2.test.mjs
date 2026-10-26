@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assertProfileMaterialConfigs, createMaterialConfig, materialConfigSchema, MATERIAL_VARIANTS, normalizeMaterialConfig, normalizeMaterialVariant } from '../src/graphics/materials/materialRegistry.js';
+import { assertProfileMaterialConfigs, createMaterialConfig, isGlassMaterial, materialConfigSchema, MATERIAL_VARIANTS, normalizeMaterialConfig, normalizeMaterialVariant } from '../src/graphics/materials/materialRegistry.js';
 import { createEmptyProfileDocumentV2 } from '../src/shared/contracts/profileV2.js';
 import { createPublicProfileProjectionV2 } from '../src/shared/contracts/publicProfileV2.js';
 import { createStudioBlock } from '../src/features/studio/v2/studioDocumentOps.js';
@@ -8,7 +8,7 @@ import { createStudioBlock } from '../src/features/studio/v2/studioDocumentOps.j
 test('material choices have stable unique IDs and untrusted names fall back to matte', () => {
   const ids = MATERIAL_VARIANTS.map((variant) => variant.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'holographic']);
+  assert.deepEqual(ids, ['matte', 'crystal', 'frosted', 'smoked-glass', 'tinted-glass', 'chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'holographic']);
   assert.equal(normalizeMaterialVariant('chrome'), 'chrome');
   assert.equal(normalizeMaterialVariant('javascript:evil()'), 'matte');
 });
@@ -19,6 +19,21 @@ test('metal defaults are physically distinct and brush controls stay bounded', (
   assert.ok(metals[1].roughness > metals[0].roughness);
   assert.throws(() => materialConfigSchema.parse({ id: 'brushed-steel', brushStrength: 20 }));
   assert.throws(() => materialConfigSchema.parse({ id: 'brushed-steel', brushDirection: 999 }));
+});
+
+test('DOM glass has distinct diffusion/absorption defaults and bounded rim/grain controls', () => {
+  const clear = createMaterialConfig('crystal');
+  const frosted = createMaterialConfig('frosted');
+  const smoked = createMaterialConfig('smoked-glass');
+  const tinted = createMaterialConfig('tinted-glass');
+  assert.equal(clear.grain, 0);
+  assert.ok(frosted.blur > clear.blur);
+  assert.ok(smoked.opacity > clear.opacity);
+  assert.notEqual(tinted.tint, smoked.tint);
+  assert.ok([clear, frosted, smoked, tinted].every((material) => isGlassMaterial(material.id)));
+  assert.throws(() => materialConfigSchema.parse({ id: 'crystal', edgeWidth: 100 }));
+  assert.throws(() => materialConfigSchema.parse({ id: 'crystal', edgeDepth: -1 }));
+  assert.throws(() => materialConfigSchema.parse({ id: 'frosted', grain: Infinity }));
 });
 
 test('ID-only materials resolve to identical family defaults in owner and published views', () => {

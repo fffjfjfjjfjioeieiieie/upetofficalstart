@@ -27,6 +27,7 @@ test('all supported legacy source shapes stay on the existing renderer without m
     assert.deepEqual(source, before, name);
     assert.equal(prepareLegacyProfileMigration(source).profile.schemaVersion, 2, name);
   }
+  assert.equal(resolveProfileRenderSource({ ...profileContractFixtures[0][1], schemaVersion: 0 }).kind, 'legacy');
 });
 
 test('public renderer accepts only strict projections, not owner-private canonical data', () => {

@@ -2,7 +2,7 @@
 .upet-material__content { position: relative; z-index: 1; min-width: 0; }
 .upet-material { border-color: rgb(225 245 255 / var(--upet-material-edge, .55)); }
 .upet-material.upet-material--matte { background-color: var(--upet-material-tint); background-blend-mode: multiply; }
-.upet-material.upet-material--crystal, .upet-material.upet-material--frosted { background-color: color-mix(in srgb, var(--upet-material-tint) calc(var(--upet-material-opacity) * 30%), #0c1a2e); -webkit-backdrop-filter: blur(var(--upet-material-blur)); backdrop-filter: blur(var(--upet-material-blur)); }
+.upet-material.upet-material--dom-glass { background-color: color-mix(in srgb, color-mix(in srgb, var(--upet-material-tint) 15%, #071222) calc(50% + var(--upet-material-opacity) * 35%), transparent); -webkit-backdrop-filter: blur(var(--upet-material-blur)) saturate(1.15); backdrop-filter: blur(var(--upet-material-blur)) saturate(1.15); }
 .upet-material[data-gpu-state="ready"] { background: transparent !important; }
 .upet-material--metal[data-gpu-state="ready"]::before { background: none; }
 .upet-material::before, .upet-material::after { position: absolute; inset: 0; z-index: -1; pointer-events: none; content: ""; }
@@ -30,3 +30,12 @@
 .upet-material--gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f5dea0, #5d4420 15%, #b7984f 27%, #3a2d1b 48%, #d8be72 62%, #4e3b20 80%, #d2b26a); }
 .upet-material--rose-gold:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #f7d9cf, #71504b 15%, #c5988b 27%, #45302f 48%, #e2b2a4 62%, #61403d 80%, #c39486); }
 .upet-material--dark-metal:not([data-gpu-state="ready"]) { background-image: linear-gradient(155deg, #74818e, #10151b 15%, #414d59 27%, #080d13 48%, #5d6c7a 62%, #121a22 80%, #4c5863); }
+.upet-material--dom-glass { background-color: #0d1b2ee0; box-shadow: inset 0 1px #ffffff88, 0 26px 60px #0006; }
+.upet-material--dom-glass::before { inset: 1px; border-radius: inherit; box-shadow: inset 0 0 var(--upet-material-edge-depth) #b5e6ff55; }
+.upet-material--dom-glass.upet-material--crystal { background-image: radial-gradient(ellipse at center, #071222b8 0 50%, transparent 90%), linear-gradient(135deg, #e9faff23, #81b8ee0e 48%, #0d192c45); }
+.upet-material--dom-glass.upet-material--crystal::before { background: radial-gradient(circle at calc(var(--upet-material-highlight-x, 20) * 1%) calc(var(--upet-material-highlight-y, 10) * 1%), #ffffff30, transparent 55%), linear-gradient(160deg, #ffffff18, transparent 35%, #58c8ff12 70%, #fff2); }
+.upet-material--dom-glass.upet-material--frosted { background-image: radial-gradient(ellipse at center, #071222a8 0 50%, transparent 90%), linear-gradient(150deg, #dff8ff28, #8cc5eb19 45%, #12233a45); }
+.upet-material--smoked-glass { background-image: radial-gradient(ellipse at center, #030912cc 0 50%, transparent 90%), linear-gradient(145deg, #8e9ba51c, #050a1255 65%); }
+.upet-material--tinted-glass { background-image: radial-gradient(ellipse at center, #071222b8 0 50%, transparent 90%), linear-gradient(130deg, color-mix(in srgb, var(--upet-material-tint) 40%, transparent), #121e3b35 65%); }
+.upet-material--dom-glass:not(.upet-material--crystal)::before { background-image: radial-gradient(circle at calc(var(--upet-material-highlight-x, 20) * 1%) calc(var(--upet-material-highlight-y, 10) * 1%), #ffffff40, transparent 65%); opacity: .5; }
+.upet-material--dom-glass:not(.upet-material--crystal)::after { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"); opacity: var(--upet-material-grain); border-radius: inherit; }

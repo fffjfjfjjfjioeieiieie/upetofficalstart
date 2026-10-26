@@ -7,7 +7,7 @@ const SUPPORTED_BLOCK_TYPES = new Set(['heading', 'text', 'divider']);
 // have parity. Never coerce a private canonical document into a public response.
 export function resolveProfileRenderSource(source, { audience = 'public' } = {}) {
   if (!source || typeof source !== 'object') throw new TypeError('A profile document is required.');
-  if (source.schemaVersion === undefined || source.schemaVersion === 1) return { kind: 'legacy', source };
+  if (source.schemaVersion == null || source.schemaVersion === 0 || source.schemaVersion === 1) return { kind: 'legacy', source };
   if (source.schemaVersion !== 2) throw new TypeError('Unsupported profile schema version.');
   if (audience === 'public') return { kind: 'v2', profile: publicProfileProjectionV2Schema.parse(source) };
   if (audience === 'owner') return { kind: 'v2', profile: profileDocumentV2Schema.parse(source) };
