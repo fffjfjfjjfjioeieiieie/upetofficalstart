@@ -1,10 +1,10 @@
 export const GRAPHICS_TIERS = Object.freeze(['lite', 'balanced', 'high', 'ultra']);
 
 export const GRAPHICS_BUDGETS = Object.freeze({
-  lite: Object.freeze({ maxDpr: 1, particles: 0, shaderPasses: 0, animatedSurfaces: 0 }),
-  balanced: Object.freeze({ maxDpr: 1.25, particles: 80, shaderPasses: 1, animatedSurfaces: 1 }),
-  high: Object.freeze({ maxDpr: 1.75, particles: 300, shaderPasses: 2, animatedSurfaces: 2 }),
-  ultra: Object.freeze({ maxDpr: 2, particles: 700, shaderPasses: 3, animatedSurfaces: 3 }),
+  lite: Object.freeze({ maxDpr: 1, maxPixels: 0, maxTextureSize: 0, particles: 0, shaderPasses: 0, animatedSurfaces: 0 }),
+  balanced: Object.freeze({ maxDpr: 1.25, maxPixels: 1_500_000, maxTextureSize: 1024, particles: 80, shaderPasses: 1, animatedSurfaces: 1 }),
+  high: Object.freeze({ maxDpr: 1.75, maxPixels: 3_000_000, maxTextureSize: 2048, particles: 300, shaderPasses: 2, animatedSurfaces: 2 }),
+  ultra: Object.freeze({ maxDpr: 2, maxPixels: 4_000_000, maxTextureSize: 2048, particles: 700, shaderPasses: 3, animatedSurfaces: 3 }),
 });
 
 const tierIndex = (tier) => GRAPHICS_TIERS.indexOf(tier);
@@ -32,7 +32,8 @@ export function createGraphicsQualityManager({
   fastFrameMs = 16,
   maximumTier = 'ultra',
 } = {}) {
-  let tier = boundedTier(initialTier);
+  const ceiling = Math.max(0, tierIndex(boundedTier(maximumTier)));
+  let tier = GRAPHICS_TIERS[Math.min(ceiling, tierIndex(boundedTier(initialTier)))];
   let preference = 'auto';
   let visible = true;
   let reducedMotion = false;
@@ -40,7 +41,6 @@ export function createGraphicsQualityManager({
   let lastChangeAt = -Infinity;
   let fastWindows = 0;
   let samples = [];
-  const ceiling = Math.max(0, tierIndex(boundedTier(maximumTier)));
   const listeners = new Set();
 
   const state = () => Object.freeze({
@@ -65,11 +65,16 @@ export function createGraphicsQualityManager({
     if (value !== 'auto' && !GRAPHICS_TIERS.includes(value)) throw new Error('Unknown graphics quality preference.');
     preference = value;
     samples = [];
-    if (value !== 'auto') return setTier(value);
+    fastWindows = 0;
+    if (value !== 'auto') {
+      const previous = tier;
+      const result = setTier(value);
+      return previous === tier ? notify() : result;
+    }
     return notify();
   };
-  const setVisible = (value) => { visible = Boolean(value); samples = []; return notify(); };
-  const setReducedMotion = (value) => { reducedMotion = Boolean(value); return notify(); };
+  const setVisible = (value) => { visible = Boolean(value); samples = []; fastWindows = 0; return notify(); };
+  const setReducedMotion = (value) => { reducedMotion = Boolean(value); samples = []; fastWindows = 0; return notify(); };
   const contextLost = () => { contextAvailable = false; samples = []; fastWindows = 0; return notify(); };
   const contextRestored = () => {
     contextAvailable = true;
@@ -79,7 +84,7 @@ export function createGraphicsQualityManager({
     return notify();
   };
   const recordFrame = (durationMs) => {
-    if (!visible || !contextAvailable || preference !== 'auto' || !Number.isFinite(durationMs) || durationMs <= 0 || durationMs > 1000) return state();
+    if (!visible || reducedMotion || !contextAvailable || preference !== 'auto' || !Number.isFinite(durationMs) || durationMs <= 0 || durationMs > 1000) return state();
     samples.push(durationMs);
     if (samples.length < sampleSize) return state();
     const sorted = samples.slice().sort((a, b) => a - b);

@@ -32,6 +32,11 @@ try {
     assert.equal(await publicView.getByText('<script>Rendered as text</script>', { exact: true }).count(), 1);
     assert.equal(await publicView.getByText(/not yet previewable/).count(), 0);
     assert.equal(await ownerView.getByText(/future-widget is preserved/).count(), 1);
+    await publicView.locator('summary').click();
+    await publicView.getByLabel('Visitor graphics quality', { exact: true }).selectOption('lite');
+    await expect(publicView.locator('.upet-profile-renderer')).toHaveAttribute('data-quality', 'lite');
+    await publicView.getByLabel('Visitor motion preference', { exact: true }).selectOption('reduce');
+    await expect(publicView.locator('.upet-profile-renderer')).toHaveAttribute('data-reduced-motion', 'true');
     assert.equal(await page.locator('[data-testid^="legacy-"] .upet-profile-renderer').count(), 0, 'legacy uses its existing renderer');
     for (const username of ['night-sky', 'schema-user', 'complete-schema', 'redesign-user']) {
       assert.ok((await page.getByTestId(`legacy-${username}`).innerText()).length > 20);

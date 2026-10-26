@@ -1,4 +1,7 @@
 import { Fragment } from 'react';
+import { GraphicsProvider, useGraphicsContext } from '../../../graphics/core/GraphicsProvider.jsx';
+import { GraphicsSceneHost } from '../../../graphics/core/GraphicsSceneHost.jsx';
+import GraphicsPreferences from '../../../graphics/quality/GraphicsPreferences.jsx';
 import MaterialSurface from '../../../graphics/materials/MaterialSurface.jsx';
 import ProfileBlockContent from './ProfileBlockContent.jsx';
 import { getBlockLayout, getBlockRenderStyle, getRenderablePage, isRenderableBlockType, resolveProfileRenderSource } from './profileRenderModel.js';
@@ -37,7 +40,12 @@ export function ProfilePageContent({ page, audience = 'public', viewport = 'desk
 
 // Public usage accepts only the strict allowlisted projection. Legacy remains on
 // the current ProfileCard route until full parity, preserving old profiles.
-export default function ProfileRenderer({ source, pageIdOrSlug = '', audience = 'public', viewport = 'desktop', quality = 'lite', reducedMotion = false, legacyRenderer, renderBlock, blocksRef, blocksClassName, emptyContent, className = '' }) {
+export default function ProfileRenderer(props) {
+  return <GraphicsProvider><GraphicsSceneHost className="upet-profile-renderer-host"><ProfileView {...props} /></GraphicsSceneHost></GraphicsProvider>;
+}
+
+function ProfileView({ source, pageIdOrSlug = '', audience = 'public', viewport = 'desktop', reducedMotion = false, legacyRenderer, renderBlock, blocksRef, blocksClassName, emptyContent, className = '' }) {
+  const graphics = useGraphicsContext();
   let resolved;
   try { resolved = resolveProfileRenderSource(source, { audience }); }
   catch { return <p role="status">This profile cannot be displayed right now.</p>; }
@@ -45,8 +53,8 @@ export default function ProfileRenderer({ source, pageIdOrSlug = '', audience = 
   const { profile } = resolved;
   const page = getRenderablePage(profile, pageIdOrSlug, audience);
   if (!page) return <p role="status">This page is unavailable.</p>;
-  return <MaterialSurface className={`upet-profile-renderer ${className}`.trim()} variant={profile.theme?.material?.id} quality={quality} reducedMotion={reducedMotion}>
+  return <><MaterialSurface className={`upet-profile-renderer ${className}`.trim()} variant={profile.theme?.material?.id} quality={graphics.tier} reducedMotion={reducedMotion || graphics.reducedMotion}>
     <ProfileIdentity identity={profile.identity} headingLevel={audience === 'owner' ? 2 : 1} />
     <ProfilePageContent page={page} audience={audience} viewport={viewport} renderBlock={renderBlock} blocksRef={blocksRef} blocksClassName={blocksClassName} emptyContent={emptyContent} />
-  </MaterialSurface>;
+  </MaterialSurface>{audience === 'public' && <GraphicsPreferences />}</>;
 }

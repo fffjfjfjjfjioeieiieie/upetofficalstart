@@ -10,6 +10,8 @@ import EditableCanvasItem from '../../../profiles/layouts/EditableCanvasItem.jsx
 import ProfileRenderer from '../../profiles/renderer/ProfileRenderer.jsx';
 import { MATERIAL_VARIANTS } from '../../../graphics/materials/materialRegistry.js';
 import { useGraphicsQuality } from '../../../graphics/quality/useGraphicsQuality.js';
+import { GraphicsProvider } from '../../../graphics/core/GraphicsProvider.jsx';
+import { QUALITY_CHOICES } from '../../../graphics/quality/qualityPreferences.js';
 import { createDraftSaveCoordinator } from './studioPreviewPolicy.js';
 import { addStudioBlock, applyStudioBlockGeometry, commitStudioHistory, createStudioHistory, patchStudioBlockLayout, redoStudioHistory, reorderStudioBlocks, undoStudioHistory } from './studioDocumentOps.js';
 import { submitStudioV2Action } from './studioV2Api.js';
@@ -35,14 +37,18 @@ function LayoutNumberField({ label, value, minimum, maximum, onCommit }) {
   return <label>{label}<input type="number" min={minimum} max={maximum} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>;
 }
 
-export default function StudioV2({ user, firebaseUser, initialDraft }) {
+export default function StudioV2(props) {
+  return <GraphicsProvider><StudioWorkspace {...props} /></GraphicsProvider>;
+}
+
+function StudioWorkspace({ user, firebaseUser, initialDraft }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(initialDraft.profile);
   const [selectedPageId, setSelectedPageId] = useState(initialDraft.profile.pages[0]?.id);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
   const [viewport, setViewport] = useState('desktop');
   const [canvasWidth, setCanvasWidth] = useState(300);
-  const graphics = useGraphicsQuality(true);
+  const graphics = useGraphicsQuality();
   const [saveState, setSaveState] = useState('Saved draft');
   const [error, setError] = useState('');
   const [publishing, setPublishing] = useState(false);
@@ -268,7 +274,8 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
           <label className="upet-studio-v2__toggle"><input type="checkbox" checked={selectedPage?.visible !== false} onChange={(event) => updatePage('visible', event.target.checked)} />Visible on profile</label>
           <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Surface material</h2></div>
           <label>Material<select value={profile.theme?.material?.id || 'matte'} onChange={(event) => updateMaterial(event.target.value)}>{MATERIAL_VARIANTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-          <label>Preview quality<select value={graphics.preference} onChange={(event) => graphics.setPreference(event.target.value)}>{['auto', 'lite', 'balanced', 'high'].map((tier) => <option key={tier} value={tier}>{tier[0].toUpperCase() + tier.slice(1)}</option>)}</select></label>
+          <label>Preview quality<select aria-label="Preview quality" value={graphics.preference} onChange={(event) => graphics.setPreference(event.target.value)}>{QUALITY_CHOICES.map((tier) => <option key={tier} value={tier}>{tier[0].toUpperCase() + tier.slice(1)}</option>)}</select></label>
+          <label>Motion<select aria-label="Motion" value={graphics.motionPreference} onChange={(event) => graphics.setMotionPreference(event.target.value)}><option value="system">Follow device setting</option><option value="reduce">Reduce motion</option></select></label>
           <p className="upet-studio-v2__quality-note">{graphics.tier} · {graphics.motionEnabled ? 'motion available' : 'static/Lite fallback'} · DPR cap {graphics.budget.maxDpr}</p>
         </>}
         <Link to="/dashboard/editor" onClick={returnToLegacy} className="upet-studio-v2__legacy">Need a feature from the current editor? Open it here. Your v2 draft stays separate.</Link>

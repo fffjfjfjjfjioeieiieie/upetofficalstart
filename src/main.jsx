@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Analytics } from '@vercel/analytics/react';
 import App from './redesign/App.jsx';
+import { GraphicsProvider } from './graphics/core/GraphicsProvider.jsx';
 import HelpApp from './help/HelpApp.jsx';
 import './redesign/index.css';
 
@@ -20,9 +21,9 @@ function VisitorStatistics() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <>
+  <GraphicsProvider>
     {helpHost || helpPreview ? <HelpApp basename={helpPreview ? '/help-preview' : undefined} /> : <App />}
     <VisitorStatistics />
-  </>,
+  </GraphicsProvider>,
 );
 
