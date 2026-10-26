@@ -12,3 +12,4 @@
 .upet-profile-block-heading { margin: 0; font-size: 17px; line-height: 1.35; font-weight: 700; }
 .upet-profile-block-divider { display: block; border-top: 1px solid currentColor; opacity: .55; }
 .upet-profile-block-unknown { display: block; padding: 10px; border: 1px dashed currentColor; border-radius: 8px; font-size: 12px; }
+.upet-profile-block-surface { width: 100%; padding: 10px 12px; border: 1px solid #d5f2ff55; }

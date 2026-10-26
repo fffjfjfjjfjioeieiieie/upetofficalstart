@@ -43,8 +43,11 @@ test('scenes share resources until the final lease and dispose private geometry/
   const geometry = () => ({ dispose: () => disposed.push('shared geometry') });
   assert.equal(first.shared('geometry', geometry), second.shared('geometry', geometry));
   for (const type of ['material', 'texture', 'render target']) first.own({ dispose: () => disposed.push(type) });
+  const replaced = first.own({ dispose: () => disposed.push('replaced geometry') });
+  first.release(replaced);
+  first.release(replaced);
   first.dispose(); first.dispose();
-  assert.deepEqual(disposed, ['material', 'texture', 'render target']);
+  assert.deepEqual(disposed, ['replaced geometry', 'material', 'texture', 'render target']);
   assert.equal(cache.snapshot().references, 1);
   second.dispose();
   assert.equal(disposed.filter((item) => item === 'shared geometry').length, 1);

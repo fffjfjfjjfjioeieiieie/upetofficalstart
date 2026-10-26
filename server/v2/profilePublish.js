@@ -8,6 +8,7 @@ import {
   profileDraftV2Schema,
 } from '../../src/shared/contracts/profileV2.js';
 import { assertProfileOwner } from './authClaims.js';
+import { assertProfileMaterialConfigs } from '../../src/graphics/materials/materialRegistry.js';
 
 export class ProfileRevisionConflictError extends Error {
   constructor(expected, received) {
@@ -50,7 +51,7 @@ export function prepareProfilePublishV2({
   nowMs = Date.now(),
 } = {}) {
   const parsedDraft = profileDraftV2Schema.parse(draft);
-  const writableSource = assertProfileDocumentV2Writable(parsedDraft.profile);
+  const writableSource = assertProfileMaterialConfigs(assertProfileDocumentV2Writable(parsedDraft.profile));
   const nextSource = dependenciesSignature === undefined
     ? writableSource
     : { ...writableSource, dependenciesSignature };

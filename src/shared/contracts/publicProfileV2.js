@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assertProfileMaterialConfigs, materialConfigSchema } from '../../graphics/materials/materialRegistry.js';
 import {
   mediaAssetV2Schema,
   musicTrackV2Schema,
@@ -27,7 +28,7 @@ const publicBlockSchema = z.object({
     mobile: publicResponsiveLayoutSchema.optional(),
   }).strict(),
   data: z.record(z.string(), z.unknown()),
-  style: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+  style: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null(), materialConfigSchema])).refine((style) => Object.entries(style).every(([key, value]) => value === null || typeof value !== 'object' || key === 'material'), 'Only material settings may be nested.'),
   accessibility: z.object({
     label: text(160),
     description: text(500),
@@ -200,6 +201,7 @@ function publicTheme(theme) {
   for (const [field, fields] of Object.entries(THEME_OBJECT_FIELDS)) {
     if (isRecord(theme?.[field])) projected[field] = pick(theme[field], fields);
   }
+  if (theme.material !== undefined) projected.material = materialConfigSchema.parse(theme.material);
   return projected;
 }
 
@@ -215,7 +217,7 @@ function publicBlock(block) {
       ...(block.layout.mobile ? { mobile: pick(block.layout.mobile, ['x', 'y', 'width', 'height', 'rotation']) } : {}),
     },
     data: publicBlockData(block),
-    style: pick(block.style, STYLE_FIELDS),
+    style: { ...pick(block.style, STYLE_FIELDS), ...(block.style.material !== undefined ? { material: materialConfigSchema.parse(block.style.material) } : {}) },
     accessibility: pick(block.accessibility, ['label', 'description', 'decorative']),
   });
 }
@@ -225,6 +227,7 @@ export function createPublicProfileProjectionV2(
   { tracks = [], assets = [] } = {},
 ) {
   const canonical = profileDocumentV2Schema.parse(profile);
+  assertProfileMaterialConfigs(canonical);
   if (canonical.status !== 'published') throw new Error('Only a published profile can produce a public projection.');
   const allowedTrackIds = new Set(canonical.music.trackIds);
   const allowedAssetIds = new Set(canonical.mediaAssetIds);

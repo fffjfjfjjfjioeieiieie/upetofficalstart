@@ -63,6 +63,10 @@
 .upet-studio-v2__legacy { display: block; margin-top: 34px; padding: 13px; border: 1px solid var(--sv2-line); border-radius: 12px; color: hsl(var(--muted-foreground)); font-size: 11px; line-height: 1.6; }
 .upet-studio-v2__legacy:hover { color: hsl(var(--foreground)); }
 .upet-studio-v2__quality-note { margin-top: 12px; color: hsl(var(--muted-foreground)); font-size: 11px; text-transform: capitalize; }
+.upet-material-controls input[type="range"] { min-height: 36px; padding: 0; accent-color: hsl(var(--primary)); }
+.upet-material-controls input[type="color"] { height: 42px; padding: 4px; }
+.upet-material-controls output { font-size: 11px; color: hsl(var(--foreground)); font-weight: 500; }
+@media (min-width: 1201px) { .upet-studio-v2__inspector { max-height: max(680px, calc(100dvh - 160px)); overflow-y: auto; overscroll-behavior: contain; } }
 @media (max-width: 1200px) { .upet-studio-v2__grid { grid-template-columns: 190px minmax(0, 1fr); } .upet-studio-v2__inspector { grid-column: 1 / -1; border-top: 1px solid var(--sv2-line); border-left: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; } .upet-studio-v2__inspector .upet-studio-v2__panel-heading, .upet-studio-v2__inspector .upet-studio-v2__legacy { grid-column: 1 / -1; } }
 @media (max-width: 720px) { .upet-studio-v2__toolbar { align-items: flex-start; flex-direction: column; } .upet-studio-v2__actions { flex-wrap: wrap; } .upet-studio-v2__grid { display: flex; flex-direction: column; } .upet-studio-v2__panel { border-right: 0; border-bottom: 1px solid var(--sv2-line); } .upet-studio-v2__canvas-area { order: -1; padding: 14px; } .upet-studio-v2__canvas { min-height: 440px; } .upet-studio-v2__inspector { display: block; border-top: 0; } }
 @media (prefers-reduced-motion: reduce) { .upet-studio-v2 *, .upet-studio-v2 *::before, .upet-studio-v2 *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

@@ -39,3 +39,7 @@ export function useGraphicsLayer(elementRef, createScene, { enabled = true, anim
   }, [engine, elementRef, createScene, enabled, animated]);
   return status;
 }
+
+export function useGraphicsInvalidation() {
+  return useContext(SceneContext)?.engine?.invalidate;
+}

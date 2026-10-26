@@ -33,6 +33,7 @@ export function createGraphicsEngine({ host, canvas, manager, onState = () => {}
     status, lastError, contextCount: contextOwners.size, layers: entries.size,
     scheduler: scheduler.snapshot(), resources: resources.snapshot(),
     memory: renderer ? { ...renderer.info.memory } : { geometries: 0, textures: 0 },
+    programs: renderer?.info.programs?.length || 0,
     pixelWidth: canvas.width, pixelHeight: canvas.height,
     frameTimesMs: frameTimes.slice(),
   });
@@ -70,6 +71,13 @@ export function createGraphicsEngine({ host, canvas, manager, onState = () => {}
       THREE = await loadThree();
       if (disposed) return;
       renderer = new THREE.WebGLRenderer({ canvas, context, alpha: true, antialias: false });
+      renderer.debug.onShaderError = (gl, program, vertexShader, fragmentShader) => {
+        // Three has cached the program by first use; scene disposal releases it.
+        // Delete both attached shaders before leaving its normal cleanup path.
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        throw new Error('Graphics shader compilation failed.');
+      };
       renderer.autoClear = false;
       renderer.setClearColor(0, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -97,6 +105,7 @@ export function createGraphicsEngine({ host, canvas, manager, onState = () => {}
     if (!eligible) {
       previousFrame = 0;
       scheduler.setPaused(true);
+      for (const entry of entries.values()) if (!entry.failed) setEntryStatus(entry, 'fallback');
       if (manager.state().tier === 'lite') clearScenes();
       if (!lost && !failed) emit('paused');
       return;

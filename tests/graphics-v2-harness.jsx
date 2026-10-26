@@ -24,7 +24,18 @@ function diagnosticScene({ THREE, resources }) {
     mesh.rotation.set(time * .15, time * .25, .2);
   } };
 }
-const failingScene = () => { throw new Error('Deliberate isolated scene failure'); };
+const failingScene = ({ THREE, resources }) => {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, .1, 10);
+  camera.position.z = 2;
+  const geometry = resources.own(new THREE.BoxGeometry(.5, .5, .5));
+  const material = resources.own(new THREE.ShaderMaterial({
+    vertexShader: 'void main() { deliberate_invalid_shader; gl_Position = vec4(position, 1.0); }',
+    fragmentShader: 'void main() { gl_FragColor = vec4(1.0); }',
+  }));
+  scene.add(new THREE.Mesh(geometry, material));
+  return { scene, camera };
+};
 window.__upetGraphics = { engines: [], graphicsContextCount };
 const recordEngine = (engine) => window.__upetGraphics.engines.push(engine);
 

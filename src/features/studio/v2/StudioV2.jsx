@@ -8,7 +8,7 @@ import { Button } from '../../../shared/ui/index.js';
 import { profileDocumentV2Schema } from '../../../shared/contracts/profileV2.js';
 import EditableCanvasItem from '../../../profiles/layouts/EditableCanvasItem.jsx';
 import ProfileRenderer from '../../profiles/renderer/ProfileRenderer.jsx';
-import { MATERIAL_VARIANTS } from '../../../graphics/materials/materialRegistry.js';
+import MaterialControls from '../../../graphics/materials/MaterialControls.jsx';
 import { useGraphicsQuality } from '../../../graphics/quality/useGraphicsQuality.js';
 import { GraphicsProvider } from '../../../graphics/core/GraphicsProvider.jsx';
 import { QUALITY_CHOICES } from '../../../graphics/quality/qualityPreferences.js';
@@ -110,10 +110,21 @@ function StudioWorkspace({ user, firebaseUser, initialDraft }) {
   const updateIdentity = (field, value) => edit((current) => ({
     ...current, identity: { ...current.identity, [field]: value },
   }), `identity.${field}`);
-  const updateMaterial = (id) => edit((current) => ({
+  const updateMaterial = (material, field) => edit((current) => ({
     ...current,
-    theme: { ...current.theme, material: { ...(current.theme.material || {}), id } },
-  }), 'theme.material.id');
+    theme: { ...current.theme, material },
+  }), `theme.material.${field}`);
+  const updateBlockMaterial = (material, field) => edit((current) => ({
+    ...current,
+    pages: current.pages.map((page) => page.id === selectedPageId ? {
+      ...page,
+      blocks: page.blocks.map((block) => {
+        if (block.id !== selectedBlockId) return block;
+        const { material: previousMaterial, ...style } = block.style;
+        return { ...block, style: material ? { ...style, material } : style };
+      }),
+    } : page),
+  }), `block.${selectedBlockId}.material.${field}`);
   const updatePage = (field, value) => edit((current) => ({
     ...current,
     pages: current.pages.map((page) => page.id === selectedPageId ? { ...page, [field]: value } : page),
@@ -265,6 +276,8 @@ function StudioWorkspace({ user, firebaseUser, initialDraft }) {
           <div className="upet-studio-v2__layout-fields">{[
             ['x', 'X position %', 0, 99], ['y', 'Y position', 0, 100000], ['width', 'Width %', 1, 100], ['height', 'Height', 0, 100000], ['rotation', 'Rotation °', -180, 180],
           ].map(([field, label, minimum, maximum]) => <LayoutNumberField key={`${selectedBlockId}:${viewport}:${field}`} label={label} value={selectedLayout[field]} minimum={minimum} maximum={maximum} onCommit={(value) => updateLayout(field, value)} />)}</div>
+          <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Layer material</h2></div>
+          <MaterialControls value={selectedBlock.style.material} inheritedValue={profile.theme?.material} allowInherit onChange={updateBlockMaterial} />
           <Button variant="ghost" size="sm" onClick={() => setSelectedBlockId(null)}>Back to page settings</Button>
         </> : <>
           <label>Display name<input maxLength={80} value={profile.identity.displayName} onChange={(event) => updateIdentity('displayName', event.target.value)} /></label>
@@ -273,10 +286,10 @@ function StudioWorkspace({ user, firebaseUser, initialDraft }) {
           <label>Page title<input maxLength={80} value={selectedPage?.title || ''} onChange={(event) => updatePage('title', event.target.value)} /></label>
           <label className="upet-studio-v2__toggle"><input type="checkbox" checked={selectedPage?.visible !== false} onChange={(event) => updatePage('visible', event.target.checked)} />Visible on profile</label>
           <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Surface material</h2></div>
-          <label>Material<select value={profile.theme?.material?.id || 'matte'} onChange={(event) => updateMaterial(event.target.value)}>{MATERIAL_VARIANTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <MaterialControls value={profile.theme?.material} onChange={updateMaterial} />
           <label>Preview quality<select aria-label="Preview quality" value={graphics.preference} onChange={(event) => graphics.setPreference(event.target.value)}>{QUALITY_CHOICES.map((tier) => <option key={tier} value={tier}>{tier[0].toUpperCase() + tier.slice(1)}</option>)}</select></label>
           <label>Motion<select aria-label="Motion" value={graphics.motionPreference} onChange={(event) => graphics.setMotionPreference(event.target.value)}><option value="system">Follow device setting</option><option value="reduce">Reduce motion</option></select></label>
-          <p className="upet-studio-v2__quality-note">{graphics.tier} · {graphics.motionEnabled ? 'motion available' : 'static/Lite fallback'} · DPR cap {graphics.budget.maxDpr}</p>
+          <p className="upet-studio-v2__quality-note">{graphics.tier} · {graphics.motionEnabled ? 'motion available' : 'static preview'} · DPR cap {graphics.budget.maxDpr}</p>
         </>}
         <Link to="/dashboard/editor" onClick={returnToLegacy} className="upet-studio-v2__legacy">Need a feature from the current editor? Open it here. Your v2 draft stays separate.</Link>
       </aside>

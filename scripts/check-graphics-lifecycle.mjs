@@ -107,6 +107,8 @@ try {
   await page.getByRole('button', { name: 'Break one scene', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('[data-layer-state="unavailable"]').length === 1);
   assert.equal(await page.locator('[data-layer-state="ready"]').count(), 2, 'one scene failure stays isolated');
+  assert.equal((await diagnostics()).memory.geometries, 1, 'failed shader releases its private geometry');
+  assert.equal((await diagnostics()).programs, 1, 'failed shader program is released');
   await page.getByRole('button', { name: 'Restore valid scene', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('[data-layer-state="ready"]').length === 3);
 

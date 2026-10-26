@@ -28,7 +28,10 @@ export function ProfilePageContent({ page, audience = 'public', viewport = 'desk
     {!blocks.length && emptyContent}
     {blocks.map((block) => {
       const layout = getBlockLayout(block, viewport);
-      const content = <ProfileBlockContent block={block} audience={audience} />;
+      const blockContent = <ProfileBlockContent block={block} audience={audience} />;
+      const content = block.style.material
+        ? <MaterialSurface config={block.style.material} className="upet-profile-block-surface" style={{ minHeight: Math.max(22, layout.height - 16) }}>{blockContent}</MaterialSurface>
+        : blockContent;
       const style = getBlockRenderStyle(block, viewport);
       if (audience === 'owner' && renderBlock) return <Fragment key={block.id}>{renderBlock({ block, layout, content, style })}</Fragment>;
       return <div key={block.id} className="upet-profile-renderer__block" style={style}>
@@ -53,7 +56,7 @@ function ProfileView({ source, pageIdOrSlug = '', audience = 'public', viewport 
   const { profile } = resolved;
   const page = getRenderablePage(profile, pageIdOrSlug, audience);
   if (!page) return <p role="status">This page is unavailable.</p>;
-  return <><MaterialSurface className={`upet-profile-renderer ${className}`.trim()} variant={profile.theme?.material?.id} quality={graphics.tier} reducedMotion={reducedMotion || graphics.reducedMotion}>
+  return <><MaterialSurface className={`upet-profile-renderer ${className}`.trim()} config={profile.theme?.material} reducedMotion={reducedMotion || graphics.reducedMotion}>
     <ProfileIdentity identity={profile.identity} headingLevel={audience === 'owner' ? 2 : 1} />
     <ProfilePageContent page={page} audience={audience} viewport={viewport} renderBlock={renderBlock} blocksRef={blocksRef} blocksClassName={blocksClassName} emptyContent={emptyContent} />
   </MaterialSurface>{audience === 'public' && <GraphicsPreferences />}</>;

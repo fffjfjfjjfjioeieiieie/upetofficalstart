@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { prepareProfilePublishV2 } from './profilePublish.js';
 import { projectPublicLyricsV2 } from './publicLyricsService.js';
 import { assertProfileDocumentV2Writable } from '../../src/shared/contracts/legacyProfileAdapter.js';
+import { assertProfileMaterialConfigs } from '../../src/graphics/materials/materialRegistry.js';
 import { profileDraftV2Schema } from '../../src/shared/contracts/profileV2.js';
 import { assertProfileOwner } from './authClaims.js';
 import { ProfileRevisionConflictError } from './profilePublish.js';
@@ -42,7 +43,7 @@ export function createFirestoreProfileV2Repository({
     if (!normalizedUsername || !Number.isSafeInteger(basePublishedRevision) || !Number.isSafeInteger(expectedDraftRevision)) {
       throw new Error('Username and both expected revisions are required.');
     }
-    const incoming = assertProfileDocumentV2Writable(profile);
+    const incoming = assertProfileMaterialConfigs(assertProfileDocumentV2Writable(profile));
     assertProfileOwner(actor, incoming);
     if (incoming.username !== normalizedUsername) throw new Error('The draft username does not match the account.');
     const savedAtMs = now();

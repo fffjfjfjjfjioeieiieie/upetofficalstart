@@ -143,6 +143,30 @@ test('draft saves are owner-verified, conflict-safe and do not publish or repeat
   assert.equal(db.documents.get('profileV2Drafts/owner-a').draftRevision, 1);
 });
 
+test('material writes are validated before draft I/O and preserve public controls through publish', async () => {
+  const { profile, track, asset } = fixture();
+  const db = new FakeFirestore({
+    ...ownership,
+    [path(PROFILE_V2_COLLECTIONS.tracks, track.id)]: track,
+    [path(PROFILE_V2_COLLECTIONS.assets, asset.id)]: asset,
+  });
+  const repository = createFirestoreProfileV2Repository({ db, now: () => 2_000 });
+  const request = { actor: { uid: 'owner-a' }, username: 'safe-user', basePublishedRevision: 0, expectedDraftRevision: 0 };
+  profile.theme.material = { id: 'chrome', roughness: 99 };
+  await assert.rejects(repository.saveDraft({ ...request, profile }));
+  assert.equal(db.writeBatches.length, 0, 'invalid material cannot start a transaction');
+  profile.theme.material = { id: 'chrome', roughness: .4, shader: 'unsupported-code' };
+  await assert.rejects(repository.saveDraft({ ...request, profile }), /Executable/);
+  assert.equal(db.writeBatches.length, 0);
+  profile.theme.material = { id: 'chrome', roughness: .4, privateExtension: 'keep private' };
+  await repository.saveDraft({ ...request, profile });
+  assert.equal(db.documents.get('profileV2Drafts/owner-a').profile.theme.material.roughness, .4);
+  await repository.publish({ actor: request.actor, username: request.username });
+  const projected = db.documents.get('profileV2Public/safe-user');
+  assert.equal(projected.theme.material.roughness, .4);
+  assert.equal(Object.hasOwn(projected.theme.material, 'privateExtension'), false);
+});
+
 test('trusted repository skips every write and invalidation for unchanged content', async () => {
   const { profile, track, asset } = fixture();
   const dependenciesSignature = createHash('sha256')

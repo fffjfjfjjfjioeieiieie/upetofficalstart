@@ -39,6 +39,9 @@ export function createGraphicsResourceScope(cache) {
       resources.add(resource);
       return resource;
     },
+    release(resource) {
+      if (resources.delete(resource)) resource.dispose?.();
+    },
     shared(key, create) {
       if (disposed) throw new Error('Graphics resource scope is disposed.');
       const lease = cache.acquire(key, create);
