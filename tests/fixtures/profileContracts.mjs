@@ -1,3 +1,5 @@
+import { createProfileDocument } from '../../src/shared/profileSchema.js';
+
 export const flatLegacyProfile = {
   uid: 'legacy-owner',
   username: 'night-sky',
@@ -145,8 +147,25 @@ export const redesignPublicEnvelope = {
   unknownEnvelopeField: ['keep', 'this'],
 };
 
+// Keep the sparse archival fixture above as a preservation test. This second
+// v1 record also exercises the full current schema and actual classic renderer.
+const defaultV1 = createProfileDocument({ username: 'complete-schema' });
+export const completeSchemaV1PublicEnvelope = {
+  ...schemaV1PublicEnvelope,
+  username: 'complete-schema',
+  published: {
+    ...defaultV1,
+    ...schemaV1PublicEnvelope.published,
+    identity: { ...defaultV1.identity, ...schemaV1PublicEnvelope.published.identity },
+    theme: { ...defaultV1.theme, ...schemaV1PublicEnvelope.published.theme },
+    audio: { ...defaultV1.audio, ...schemaV1PublicEnvelope.published.audio },
+    effects: { ...defaultV1.effects, ...schemaV1PublicEnvelope.published.effects },
+  },
+};
+
 export const profileContractFixtures = Object.freeze([
   ['flat legacy', flatLegacyProfile],
   ['schema-v1 envelope', schemaV1PublicEnvelope],
+  ['complete schema-v1 envelope', completeSchemaV1PublicEnvelope],
   ['redesign envelope', redesignPublicEnvelope],
 ]);

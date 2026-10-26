@@ -7,7 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../shared/ui/index.js';
 import { profileDocumentV2Schema } from '../../../shared/contracts/profileV2.js';
 import EditableCanvasItem from '../../../profiles/layouts/EditableCanvasItem.jsx';
-import MaterialSurface from '../../../graphics/materials/MaterialSurface.jsx';
+import ProfileRenderer from '../../profiles/renderer/ProfileRenderer.jsx';
 import { MATERIAL_VARIANTS } from '../../../graphics/materials/materialRegistry.js';
 import { useGraphicsQuality } from '../../../graphics/quality/useGraphicsQuality.js';
 import { createDraftSaveCoordinator } from './studioPreviewPolicy.js';
@@ -213,10 +213,6 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
   const orderedBlocks = selectedPage?.blocks.slice().sort((a, b) => a.order - b.order) || [];
   const selectedBlock = orderedBlocks.find((block) => block.id === selectedBlockId);
   const selectedLayout = selectedBlock?.layout[viewport] || selectedBlock?.layout.desktop;
-  const layoutHeight = Math.max(180, ...orderedBlocks.map((block) => {
-    const layout = block.layout[viewport] || block.layout.desktop;
-    return Math.min(1200, layout.y + Math.max(38, layout.height) + 15);
-  }));
   useEffect(() => {
     const node = canvasBlocksRef.current;
     if (!node || typeof ResizeObserver === 'undefined') return undefined;
@@ -240,23 +236,24 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
       </aside>
       <section className="upet-studio-v2__canvas-area" aria-label="Profile canvas">
         <div className="upet-studio-v2__canvas-meta"><span>Canvas · {pageLabel(selectedPage)}</span><div className="upet-studio-v2__viewport-switch" role="group" aria-label="Preview viewport"><button type="button" aria-pressed={viewport === 'desktop'} onClick={() => setViewport('desktop')}>Desktop</button><button type="button" aria-pressed={viewport === 'mobile'} onClick={() => setViewport('mobile')}>Mobile</button></div></div>
-        <div className={`upet-studio-v2__canvas ${viewport === 'mobile' ? 'is-mobile' : ''}`}><MaterialSurface className="upet-studio-v2__profile-card" variant={profile.theme?.material?.id} quality={graphics.tier} reducedMotion={!graphics.motionEnabled}>
-          <div className="upet-studio-v2__avatar">{profile.identity.avatarUrl ? <img src={profile.identity.avatarUrl} alt="" /> : profile.identity.displayName.slice(0, 1).toUpperCase()}</div>
-          <h2>{profile.identity.displayName}</h2><p className="upet-studio-v2__handle">@{profile.identity.handle}</p>
-          <p className="upet-studio-v2__bio">{profile.identity.bio || 'Your story starts here.'}</p>
-          {orderedBlocks.length ? <div ref={canvasBlocksRef} className="upet-studio-v2__canvas-blocks" style={{ height: layoutHeight }}>{orderedBlocks.filter((block) => block.visible).map((block) => {
-            const layout = block.layout[viewport] || block.layout.desktop;
-            const content = block.type === 'divider' ? <span className="upet-studio-v2__divider" /> : block.type === 'heading' ? <strong>{String(block.data.text || 'Heading')}</strong> : <span>{String(block.data.text || 'Text')}</span>;
-            if (selectedBlockId === block.id) return <EditableCanvasItem key={block.id} geometry={{ x: layout.x / 100 * canvasWidth, y: Math.min(1200, layout.y), w: Math.min(layout.width, 100 - layout.x) / 100 * canvasWidth, h: Math.max(38, layout.height) }} minWidth={40} minHeight={38} dragGrid={[1, 1]} resizeGrid={[1, 1]} showHandle onChange={(geometry) => commitGeometry(block.id, geometry)}><button type="button" className="upet-studio-v2__block-content is-selected" aria-label={`Select ${block.type} layer`} style={{ transform: `rotate(${layout.rotation}deg)` }}>{content}</button></EditableCanvasItem>;
-            return <button type="button" key={block.id} onClick={() => setSelectedBlockId(block.id)} aria-label={`Select ${block.type} layer`} style={{ left: `${layout.x}%`, top: Math.min(1200, layout.y), width: `${Math.min(layout.width, 100 - layout.x)}%`, minHeight: Math.max(38, layout.height), transform: `rotate(${layout.rotation}deg)` }}>{content}</button>;
-          })}</div> : <div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
-        </MaterialSurface></div>
+        <div className={`upet-studio-v2__canvas ${viewport === 'mobile' ? 'is-mobile' : ''}`}><ProfileRenderer
+          source={profile} audience="owner" pageIdOrSlug={selectedPage?.id} viewport={viewport}
+          className="upet-studio-v2__profile-card" quality={graphics.tier} reducedMotion={!graphics.motionEnabled}
+          blocksRef={canvasBlocksRef} blocksClassName="upet-studio-v2__canvas-blocks"
+          emptyContent={<div className="upet-studio-v2__empty-canvas">Add a heading, text or divider to begin shaping this page.</div>}
+          renderBlock={({ block, layout, content, style }) => {
+            const select = () => setSelectedBlockId(block.id);
+            const onKeyDown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } };
+            if (selectedBlockId === block.id) return <EditableCanvasItem geometry={{ x: layout.x / 100 * canvasWidth, y: layout.y, w: Math.min(layout.width, 100 - layout.x) / 100 * canvasWidth, h: Math.max(38, layout.height) }} minWidth={40} minHeight={38} dragGrid={[1, 1]} resizeGrid={[1, 1]} showHandle contentOverflow="visible" onChange={(geometry) => commitGeometry(block.id, geometry)}><div role="button" tabIndex={0} onKeyDown={onKeyDown} className="upet-studio-v2__block-content is-selected" aria-label={`Select ${block.type} layer`} style={{ transform: style.transform }}>{content}</div></EditableCanvasItem>;
+            return <div role="button" tabIndex={0} className="upet-studio-v2__block-select" onClick={select} onKeyDown={onKeyDown} aria-label={`Select ${block.type} layer`} style={style}>{content}</div>;
+          }}
+        /></div>
         <p className="upet-studio-v2__canvas-footnote"><Eye size={15} />Private draft preview · published revision {publishedRevision}</p>
       </section>
       <aside className="upet-studio-v2__panel upet-studio-v2__inspector" aria-label="Inspector">
         <div className="upet-studio-v2__panel-heading"><h2>Inspector</h2><span>{selectedBlock ? selectedBlock.type : 'Identity'}</span></div>
         {selectedBlock ? <>
-          {selectedBlock.type !== 'divider' && <label>{selectedBlock.type === 'heading' ? 'Heading' : 'Text'}<textarea maxLength={500} rows={4} value={String(selectedBlock.data.text || '')} onChange={(event) => updateBlock('text', event.target.value)} /></label>}
+          {selectedBlock.type !== 'divider' && <label>{selectedBlock.type === 'heading' ? 'Heading' : 'Text'}<textarea aria-label={selectedBlock.type === 'heading' ? 'Heading' : 'Text'} maxLength={500} rows={4} value={String(selectedBlock.data.text || '')} onChange={(event) => updateBlock('text', event.target.value)} /></label>}
           {selectedBlock.type === 'divider' && <label>Accessible label<input maxLength={80} value={String(selectedBlock.data.label || '')} onChange={(event) => updateBlock('label', event.target.value)} /></label>}
           <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>{viewport === 'mobile' ? 'Mobile layout' : 'Desktop layout'}</h2></div>
           <div className="upet-studio-v2__layout-fields">{[
@@ -265,7 +262,7 @@ export default function StudioV2({ user, firebaseUser, initialDraft }) {
           <Button variant="ghost" size="sm" onClick={() => setSelectedBlockId(null)}>Back to page settings</Button>
         </> : <>
           <label>Display name<input maxLength={80} value={profile.identity.displayName} onChange={(event) => updateIdentity('displayName', event.target.value)} /></label>
-          <label>Bio<textarea maxLength={2000} rows={5} value={profile.identity.bio} onChange={(event) => updateIdentity('bio', event.target.value)} /></label>
+          <label>Bio<textarea aria-label="Bio" maxLength={2000} rows={5} value={profile.identity.bio} onChange={(event) => updateIdentity('bio', event.target.value)} /></label>
           <div className="upet-studio-v2__panel-heading upet-studio-v2__section-heading"><h2>Selected page</h2></div>
           <label>Page title<input maxLength={80} value={selectedPage?.title || ''} onChange={(event) => updatePage('title', event.target.value)} /></label>
           <label className="upet-studio-v2__toggle"><input type="checkbox" checked={selectedPage?.visible !== false} onChange={(event) => updatePage('visible', event.target.checked)} />Visible on profile</label>

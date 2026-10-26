@@ -4,6 +4,8 @@ Date: 2026-10-25
 
 Status: Stage 2 contract foundation; no production writer is connected
 
+2026-10-26 renderer foundation: `src/features/profiles/renderer/ProfileRenderer.jsx` validates strict public projections or owner canonical documents and is also the actual Studio canvas renderer. Shared block content/layout preserves text semantics and mobile geometry; owner overlays add editing controls without a second preview implementation. Existing legacy routes continue through the current renderer; native v2 supports heading/text/divider with a safe owner placeholder for unsupported blocks. Full content parity belongs to later feature stages. Tests cover four fixtures across three legacy shapes, including complete schema-v1 and sparse archival records, and reject private canonical documents at the public renderer boundary.
+
 The v2 contracts live in `src/shared/contracts`. They establish bounded, versioned structures before the Studio or public renderer begins writing new data.
 
 ## Contract set

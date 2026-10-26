@@ -1,6 +1,6 @@
 # UPET Studio v2 progress
 
-Last updated: 2026-10-25 (Stage 6 graphics/material foundation checkpoint)
+Last updated: 2026-10-26 (sequential re-audit and Stage 2 renderer foundation)
 Working branch: `feature/upet-studio-v2`  
 Baseline commit: `3856dfc` plus the preserved pre-existing working tree  
 Public deployment: **not authorized while unfinished**
@@ -9,7 +9,9 @@ This is the continuation ledger for the final `UPET_MASTERPLAN.md`. Future sessi
 
 ## Current checkpoint
 
-Stages 0 through 2 are complete locally. Stage 3 has an isolated, founder-preview-only draft/publish route and local security gates. Stage 4 has a preview-gated Studio shell, and Stage 5 has a locally verified core block editor. Stage 6 now has its first quality/fallback material slice; GPU/Three.js work is still pending. None is a production migration: no live claims or ranking aggregates have been migrated, v1 autosave remains active, and the v2 API is disabled unless explicitly enabled. No remote deployment or production-data operation was performed. The latest verified build is served at `http://127.0.0.1:4173/` for local inspection.
+The user's 2026-10-25 correction requires sequential completion against **Section 23 of the final masterplan**. The previous ledger and migration map incorrectly renumbered the stages; their earlier “Stage 5 complete” claim described only core editor interactions, not the final masterplan's background catalogue. That claim is withdrawn. Existing verified work is retained as groundwork for its actual stage.
+
+Stages 0 and 1 have been rechecked. Stage 2 now includes shared renderer foundations as well as schemas/adapters; final browser/build verification is recorded below. Stage 3 is the first unfinished stage: quality policy exists, but shared GPU lifecycle/context recovery/resource disposal and its browser proof remain. Stage 4 has five CSS fallback materials only. Stage 6 has partial Studio/draft/publish work, not a completed Studio. Later feature stages remain unfinished. No production claims, data migration, public route cutover, merge or remote deployment has occurred. Local production preview is `http://127.0.0.1:4173/`; synthetic visual fixtures use the separate dev server on port 5174.
 
 The working tree was already dirty before this stage. At branch creation it contained 181 changed paths: 80 modified, 5 deleted, and 96 untracked. These files are preserved in place and are not part of the Stage 0 documentation commit unless explicitly listed by that commit.
 
@@ -17,26 +19,39 @@ The working tree was already dirty before this stage. At branch creation it cont
 
 | Stage | Status | Evidence / next gate |
 | --- | --- | --- |
-| 0. Audit and migration plan | Complete locally | Current-state audit, migration map, this ledger; tests/build below |
-| 1. Shared tokens and primitives | Complete locally | Shared semantic/compatibility tokens, Button, IconButton, VisuallyHidden, five tests, local visual comparison, production build |
-| 2. Versioned data contracts | Complete locally | V2 canonical contracts, three legacy fixture shapes, detached rollback, track-bound lyric adapter and hard legacy-write gate |
-| 3. Draft/publish/security foundation | Verified locally; rollout blocked | Emulator rules 6/6, v2 domain tests 32/32, build passed. Production claim migration, ranking backfill and v1 writer cutover are intentionally pending; see next gate. |
-| 4. Studio shell | Shell verified locally; live integration pending | `/dashboard/studio-v2` localhost/flag gate, refreshed founder claim, private draft load, serialized debounced save, explicit publish, current-editor escape; desktop/mobile harness pass. Live founder-token and migrated-draft browser check blocked by safe migration gate. |
-| 5. Core editor interactions | Complete locally; live persistence gated | Native v2 heading/text/divider blocks, selection/inspector, pointer/keyboard sortable layers, bounded/coalesced undo/redo, independent desktop/mobile layouts, direct canvas pointer/touch drag and resize, keyboard nudge; 39 tests/build and visual harness pass. Live Firebase save/reload waits for safe v2 migration. |
-| 6. Materials and backgrounds | In progress | Quality budgets/manager with p75 hysteresis, cooldown, DPR cap, visibility/reduced-motion/context state; five allowlisted DOM material variants in Studio. Three.js/PBR/shaders, background catalogue, measured performance budgets and public-renderer parity remain. |
-| 7. Existing profile-feature parity | Not started | Identity/links/entry/effects/widgets/badges parity matrix |
-| 8. Media and galleries | Not started | Asset library, provenance, collections and responsive media |
-| 9. Music system | Not started | Existing upload/embed parity before multi-track/playlists/global player |
-| 10. Advanced lyrics/waveform | Not started | Preserve LRC/tap sync/drag/nudge/export; add track-bound revisions |
-| 11. Multipage public profiles | Not started | Versioned renderer, `/:username/:page`, SEO/social/mobile/a11y proof |
-| 12. Community features | Not started | Moderation, privacy, abuse limits and deletion behavior |
-| 13. Discovery and analytics | Not started | Projection/caching design, no N+1, bounded queries, retention |
-| 14. Domains | Not started | Free-profile policy, ownership verification and collision tests |
-| 15. Preset library | Not started | 50+ functional, compatible presets and independent reset |
-| 16. Homepage | Not started | Real renderer-driven demonstration, performance and accessibility |
-| 17. Cross-product compatibility | Not started | Shop/help/business regression with commerce still protected |
-| 18. Hardening and release candidate | Not started | Browser/device/security/cost/a11y/performance/migration checklist |
-| 19. Approved cutover and cleanup | Not started | Explicit release approval, rollback rehearsal, removal inventory |
+| 0. Repo audit and import/dependency map | Verified locally | Current-state audit, import scanner/full graph, route/service map, rollback and external unknowns documented |
+| 1. Shared design tokens and compatible UI primitives | Verified locally | Shared tokens/Button/IconButton/VisuallyHidden; existing working Radix controls reused; five tests and recorded visual comparison. Inactive unresolved wrappers quarantined in import map |
+| 2. Profile schemas, legacy adapters and renderer foundations | Verified locally | Lossless rollback/write gate; shared versioned ProfileRenderer powers Studio; strict public/private boundary; four legacy fixtures across three formats; verification below |
+| 3. Graphics quality manager and shared renderer lifecycle | In progress — next sequential gate | Quality budgets/p75/cooldown policy exists. Shared context, scheduler, resource disposal, persistent visitor overrides and browser context-loss/fallback proof still required |
+| 4. Material/effect engine (Sections 5–7) | Partial groundwork | Five CSS fallback materials. Full named material catalogue, validated controls, GPU/PBR and border/text/card/transition effects remain |
+| 5. Background/effect catalogue (Sections 6–7) | Not started | Every named effect needs actual renderer, controls, fallbacks, tier and screenshot proof |
+| 6. Studio canvas/inspector/draft/publish | Partial groundwork | Founder shell, core blocks/layout/history, serialized private draft API, explicit publish, local rules tests. Full component/feature parity, real isolated save/reload and responsive UX remain |
+| 7. Multi-page layouts/navigation | Not started | Deep link/back/forward/mobile, layout catalogue and public versioned route integration |
+| 8. Music migration/playlists/skins/analysis | Not started | Preserve uploads/embeds/waveform/synced lyrics first; then complete library/queue/skins/analysis |
+| 9. Galleries/collections/content widgets | Not started | Real collection CRUD, provenance, mobile and keyboard operations |
+| 10. Authorized external social integrations | Not started | Actual scopes/privacy, rate limits, disconnect/unavailable states |
+| 11. Guestbook/polls/reactions/donor badges | Not started | Trusted access rules, moderation and real isolated data tests |
+| 12. Analytics/links/SEO/sharing | Partial security groundwork only | Ranking cache/backfill is not rollout; real bounded events, owner access, metadata/crawler proof remain |
+| 13. 50+ presets/theme scheduling/backups | Not started | Distinct functional templates, safe restore/import and schedule behavior |
+| 14. Homepage with actual demos | Not started | Shared renderer, working routes, mobile hero, lazy GPU/performance proof |
+| 15. Free vanity subdomain/optional BYOD | Not started | Ownership, DNS/HTTPS or explicit external blocker; no profile paywall |
+| 16. Safe legacy cleanup | Not started | Evidence per deletion and rollback; no legacy source removed |
+| 17. Comprehensive QA/security/performance | Not started | Full visual/device/cost/security/migration and shop/help/business regression gates |
+| 18. Protected founder preview release | Not started | Verified founder access and public-site isolation |
+| 19. Public launch | Awaiting future explicit approval | Complete readiness and rollout/rollback proof required |
+
+### Sequential recheck evidence (2026-10-26)
+
+- Stage 0: `node scripts/audit-source-imports.mjs` found 319 files, 672 local edges, zero unresolved local imports/parse errors. `--json` returns every module/edge. See `docs/audit/UPET_V2_IMPORT_MAP.md` for runtime chains, actual package gaps, classifications and rollback. No deletions or production operations.
+- Stage 1: existing shared token/control tests remain passing. Existing production pages keep their compatibility aliases; functional Radix slider/switch/dialog/input controls remain the reused implementations. The original before/after visual proof is in `docs/audit/UPET_V2_VISUAL_BASELINE.md`; unused wrappers with absent dependencies are explicitly quarantined.
+- Stage 2: `npm run test:v2` passed 43/43 and `node --test tests/profileRenderModelV2.test.mjs` passed 3/3. Existing round-trip fixtures now include a complete schema-v1 record in addition to sparse archival data. Public rendering rejects canonical/private fields, unknown future schema versions fail safely, hidden content stays hidden, unsupported blocks show an owner placeholder and are omitted for visitors, mobile layout falls back safely, long-page coordinates remain distinct.
+- `node scripts/check-profile-renderer.mjs` passed at 1440px/390px: all legacy fixture paths, safe escaped text, unknown-block handling, Studio shared-renderer edit/undo/redo/keyboard nudge, zero runtime errors or horizontal overflow. All API/external requests are intercepted. This machine uses `UPET_CHROMIUM_EXECUTABLE=/home/lamp/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell` because its cached browser revision differs from the installed Playwright default.
+- Screenshots `/tmp/upet-stage2-renderer-{1440,390}.png` and `/tmp/upet-stage2-shared-studio-{1440,390}.png` are synthetic local data. The native public and owner views share ProfileRenderer; Studio adds editing overlays via its render callback. Existing public v1 routes remain the compatibility default. Full feature parity and public route cutover are later stage gates, not claims of this foundation.
+- Final Stage 2 build passed (Vite 7.3.7, 6,452 modules). The desktop shared-Studio screenshot and mobile compatibility sheet were visually inspected; a leaked heading selector was corrected and the final browser pass repeated. Local production preview returned HTTP 200. Existing Zod annotation warnings remain non-fatal. `test:v2` now includes the three renderer tests (46 total).
+
+## Earlier verification records
+
+The records below preserve the previous session's evidence. Their old stage numbers were an internal subdivision and are superseded by the canonical table above: old 3/4/5 map to partial final Stage 6, and old 6 maps to partial final Stages 3/4. They must never be used to mark the final stages complete.
 
 ## Baseline verification
 
@@ -212,6 +227,6 @@ The pure quality manager exposes Lite/Balanced/High/Ultra resource budgets, boun
 
 ## Next exact task
 
-Continue Stage 6 locally: add a lazy Three.js scene only for GPU-worthy selected materials/backgrounds, with explicit context-loss/restoration and resource disposal, then implement real PBR glass/chrome with an attractive Lite fallback. Benchmark before assigning performance targets, test reduced-motion and low-capability rendering, and keep public content semantic HTML. Do not enable a GPU scene on ordinary page navigation. Then continue to Stage 7 parity. The Stage 4/5 live-auth browser save check remains pending until a safe migrated v2 draft and verified founder claim exist in an approved test environment.
+Complete final-masterplan Stage 3 next: shared graphics provider and one-context scene lifecycle, bounded scheduler/DPR, resource ownership/disposal, persisted Auto/Lite/Balanced/High/Ultra visitor choices, lazy capability detection, context lost/restored and WebGL-disabled fallbacks. Test hidden/offscreen/reduced-motion/unmount behavior and preserve native HTML content. Verify, commit and refresh localhost before advancing to Stage 4's complete material/effect engine. No stage may be declared complete merely because its first slice builds.
 
 Before any production cutover: safely stage the overlapping Stage 3 edits in `firestore.rules`, `firestore.indexes.json`, `server/topProfiles.js`, `src/data/analyticsStore.js`, `src/help/lib/helpStore.js`, `src/help/pages/{StaffPages,TicketPages}.jsx`, `src/redesign/lib/firebaseStore.js`, and `src/redesign/pages/Explore.jsx` without absorbing the user's unrelated dirty changes. Run the founder-claim and ranking-backfill scripts only under an explicit approved rollout with rollback evidence. `package.json`/lockfile also contain unrelated pre-existing dependency edits; keep those intact.
