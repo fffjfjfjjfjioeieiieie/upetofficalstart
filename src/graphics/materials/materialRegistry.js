@@ -6,6 +6,7 @@ export const MATERIAL_VARIANTS = Object.freeze([
   { id: 'frosted', label: 'Frosted glass' },
   { id: 'smoked-glass', label: 'Smoked glass' },
   { id: 'tinted-glass', label: 'Tinted glass' },
+  { id: 'liquid-glass', label: 'Liquid glass (3D lens)' },
   { id: 'chrome', label: 'Polished chrome' },
   { id: 'brushed-steel', label: 'Brushed steel' },
   { id: 'gold', label: 'Gold' },
@@ -18,6 +19,8 @@ export const MATERIAL_VARIANTS = Object.freeze([
 const validVariants = new Set(MATERIAL_VARIANTS.map((item) => item.id));
 const metalVariants = ['chrome', 'brushed-steel', 'gold', 'rose-gold', 'dark-metal', 'liquid-metal'];
 export const isMetalMaterial = (value) => metalVariants.includes(value);
+const physicalVariants = [...metalVariants, 'holographic', 'liquid-glass'];
+export const isGpuMaterial = (value) => physicalVariants.includes(value);
 const glassVariants = ['crystal', 'frosted', 'smoked-glass', 'tinted-glass'];
 export const isGlassMaterial = (value) => glassVariants.includes(value);
 
@@ -44,6 +47,16 @@ export const materialConfigSchema = z.object({
   waveAmplitude: z.number().finite().min(0).max(.12).default(.045),
   waveFrequency: z.number().finite().min(1).max(8).default(3),
   flowSpeed: z.number().finite().min(0).max(1).default(.2),
+  iridescence: z.number().finite().min(0).max(1).default(.8),
+  filmThickness: z.number().finite().min(100).max(1000).default(380),
+  filmIOR: z.number().finite().min(1).max(2.5).default(1.3),
+  shimmerSpeed: z.number().finite().min(0).max(.5).default(.08),
+  lensCurvature: z.number().finite().min(0).max(1).default(.65),
+  transmission: z.number().finite().min(.1).max(1).default(.95),
+  ior: z.number().finite().min(1).max(2).default(1.45),
+  thickness: z.number().finite().min(0).max(1).default(.45),
+  dispersion: z.number().finite().min(0).max(1).default(.15),
+  pointerIntensity: z.number().finite().min(0).max(1).default(.5),
 });
 
 export const MATERIAL_CONTROLS = Object.freeze([
@@ -55,15 +68,25 @@ export const MATERIAL_CONTROLS = Object.freeze([
   { key: 'blur', label: 'Backdrop blur', min: 0, max: 40, step: 1, unit: 'px', variants: glassVariants },
   { key: 'opacity', label: 'Surface tint strength', min: .35, max: .95, step: .05, variants: glassVariants },
   { key: 'grain', label: 'Surface grain', min: 0, max: 1, step: .05, variants: ['frosted', 'smoked-glass', 'tinted-glass'] },
-  { key: 'roughness', label: 'Roughness', min: .05, max: 1, step: .05, variants: metalVariants },
-  { key: 'reflection', label: 'Reflection brightness', min: .1, max: 2.5, step: .1, variants: metalVariants },
-  { key: 'lightAzimuth', label: 'Light direction', min: -180, max: 180, step: 5, unit: '°', variants: metalVariants },
-  { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: metalVariants },
+  { key: 'roughness', label: 'Roughness', min: .05, max: 1, step: .05, variants: physicalVariants },
+  { key: 'reflection', label: 'Reflection brightness', min: .1, max: 2.5, step: .1, variants: physicalVariants },
+  { key: 'lightAzimuth', label: 'Light direction', min: -180, max: 180, step: 5, unit: '°', variants: physicalVariants },
+  { key: 'lightElevation', label: 'Light elevation', min: 10, max: 80, step: 5, unit: '°', variants: physicalVariants },
   { key: 'brushStrength', label: 'Brush strength', min: 0, max: 1, step: .05, variants: ['brushed-steel'] },
   { key: 'brushDirection', label: 'Brush direction', min: -180, max: 180, step: 5, unit: '°', variants: ['brushed-steel'] },
   { key: 'waveAmplitude', label: 'Wave depth', min: 0, max: .12, step: .005, variants: ['liquid-metal'] },
   { key: 'waveFrequency', label: 'Wave frequency', min: 1, max: 8, step: .25, variants: ['liquid-metal'] },
   { key: 'flowSpeed', label: 'Flow speed', min: 0, max: 1, step: .05, variants: ['liquid-metal'] },
+  { key: 'iridescence', label: 'Iridescence intensity', min: 0, max: 1, step: .05, variants: ['holographic'] },
+  { key: 'filmThickness', label: 'Film thickness', min: 100, max: 1000, step: 10, unit: 'nm', variants: ['holographic'] },
+  { key: 'filmIOR', label: 'Film refractive index', min: 1, max: 2.5, step: .05, variants: ['holographic'] },
+  { key: 'shimmerSpeed', label: 'Shimmer speed', min: 0, max: .5, step: .01, variants: ['holographic'] },
+  { key: 'lensCurvature', label: 'Lens curvature', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'transmission', label: 'Light transmission', min: .1, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'ior', label: 'Refractive index', min: 1, max: 2, step: .05, variants: ['liquid-glass'] },
+  { key: 'thickness', label: 'Optical thickness', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'dispersion', label: 'Colour dispersion', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
+  { key: 'pointerIntensity', label: 'Pointer lens response', min: 0, max: 1, step: .05, variants: ['liquid-glass'] },
 ]);
 
 export function createMaterialConfig(id = 'matte') {
@@ -74,6 +97,8 @@ export function createMaterialConfig(id = 'matte') {
     'rose-gold': { tint: '#d4a092', roughness: .25 },
     'dark-metal': { tint: '#4b5360', roughness: .3, reflection: 1.5 },
     'liquid-metal': { tint: '#c5d4df', roughness: .1, reflection: 1.5, waveAmplitude: .045, waveFrequency: 3, flowSpeed: .2 },
+    holographic: { tint: '#66758a', roughness: .25, reflection: 1.1, iridescence: .9, filmThickness: 380, filmIOR: 1.4, shimmerSpeed: .08 },
+    'liquid-glass': { tint: '#c4e5ed', roughness: .08, reflection: 1.1, lensCurvature: .65, transmission: .95, ior: 1.45, thickness: .45, dispersion: .15, pointerIntensity: .5 },
     crystal: { blur: 12, opacity: .55, grain: 0, edgeIntensity: .65 },
     frosted: { blur: 28, opacity: .75, grain: .3 },
     'smoked-glass': { tint: '#59616c', blur: 10, opacity: .85, grain: .15, edgeIntensity: .35 },

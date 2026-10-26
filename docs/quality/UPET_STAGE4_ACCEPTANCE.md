@@ -22,12 +22,12 @@ Screenshots `/tmp/upet-stage4-chrome-card-{1440,390}.png`, `/tmp/upet-stage4-chr
 | --- | --- | --- |
 | Clear/crystal glass | DOM translucency, bounded blur/tint/radius/rim depth/width and spring pointer light | Remaining optical controls/optional GPU-composited cases and complete visual matrix; no arbitrary DOM-refraction claim |
 | Frosted/smoked/tinted glass | Distinct DOM diffusion/absorption recipes, independent grain, rim controls and spring pointer light | Animated-background and wider device/contrast matrix remains |
-| Liquid glass | Not implemented | Coherent bounded lens edge/normal displacement, controls, pointer behavior and Lite silhouette |
+| Liquid glass | Native Three.js physical transmission, analytic curved lens normals, bounded IOR/thickness/dispersion/curvature, original GPU backdrop and Lite silhouette | Remaining magnification/edge/blur controls, eased pointer behavior and full optical/device matrix; no arbitrary DOM sampling |
 | Polished chrome | First real PBR mesh/environment and controls | Finish visual calibration and full background/tier comparison |
 | Brushed steel/gold/rose gold/dark metal | Shared PBR variants and Lite recipes implemented locally | Final art-direction, animated-background and release/device matrix remain |
 | Liquid metal/mercury | Real PBR mesh, coherent animated displacement/analytic normals, bounded wave/flow controls | Lite currently has a static reflection poster; required inexpensive animated fallback and full optical/device matrix remain |
 | Water/fluid/ink | Not implemented | Continuous ripples/plumes, damping/pointer/normal behavior and bounded low-cost fallback |
-| Holographic/iridescent/thin film | CSS fallback only | Geometry/view-dependent lighting, bounded spectral parameters and motion policy |
+| Holographic/iridescent/thin film | Actual MeshPhysicalMaterial thin-film iridescence, bounded thickness/IOR/intensity, original thickness map, pointer tilt and coherent shimmer | Full optical/device matrix and remaining hue/saturation controls; CSS only for Lite/unavailable |
 | Silk/fabric | Not implemented | Fold/sheen/flow behavior with coherent lighting and useful Lite rendering |
 | Acrylic/ceramic/glossy plastic/matte paper/neon | Not implemented | Distinct actual recipes/physical properties, readable content and controls; midnight matte is not matte paper |
 
@@ -50,6 +50,14 @@ Clear, frosted, smoked and tinted glass now have distinct diffusion/absorption d
 `npm run test:v2` passed **57/57**; the production build passed (Vite 7.3.6, 6,436 modules). The registry has eleven working material choices. These are DOM glass implementations, not claims of physical mesh transmission or refraction of arbitrary HTML. Full Stage 4 optical/effect and animated-background gates remain open.
 
 ## Section 7 engine completion gates
+
+### Three.js conformance correction (2026-10-26)
+
+See `docs/audit/UPET_V2_GRAPHICS_CONFORMANCE.md` for the requested renderer-by-renderer audit. The selectable CSS-only holographic advanced path was a deviation and is corrected. The shared scene is now named `physicalSurfaceScene.js` (verified replacement of `metalScene.js`), not a duplicated engine. Actual thin-film iridescence uses a bounded original 64×64 thickness map and physical viewing/light angle. Ordinary DOM glass remains DOM glass as explicitly permitted by the masterplan.
+
+Separate liquid glass now uses native MeshPhysicalMaterial volume transmission, IOR/thickness/dispersion, analytic curved mesh normals and an original 128×128 opaque GPU-scene backdrop. It never captures or refracts arbitrary HTML. The transmission target is resolution-limited and adopted into the existing scope through Three.js Texture.renderTarget, so framebuffer and texture allocations are released on Lite/unmount/context loss.
+
+`npm run test:v2` passed **62/62**, including actual physical-scene optics/family switching and transmission-target ownership. Production build passed: Vite 7.3.6, **6,438 modules**; lazy Three.js remains 746.77 kB raw / 190.33 kB gzip with its size warning retained. `check-holographic-material.mjs` verifies real film-control pixels, pointer tilt, shimmer/stop and reduced-motion freeze. `check-liquid-glass.mjs` verifies real curvature/IOR/thickness/dispersion pixels and four framebuffer/texture cleanup cycles at 1440px/390px. Both check native text, bright/dark/Lite, errors and overflow with intercepted synthetic transport; not live Firebase save proof. Representative physical-lens GPU/Lite and holographic default screenshots were visually inspected. Evidence: `/tmp/upet-stage4-{holographic,liquid-glass}-{dark,bright,lite}-{1440,390}.png`. The registry now has thirteen working choices; full Stage 4 remains open.
 
 ### Liquid-metal follow-up (verified 2026-10-26)
 

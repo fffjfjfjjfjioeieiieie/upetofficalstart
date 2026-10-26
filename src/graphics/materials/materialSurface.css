@@ -19,6 +19,11 @@
 .upet-material--holographic { background: linear-gradient(130deg, #2d6e8966, #11162c 40%, #713a7d5e 67%, #1c627f6e), #121b30; border-color: #8ce7f0aa !important; box-shadow: inset 0 1px #ffffff8a, inset 0 0 30px #9c7aff24, 0 28px 60px #0009; }
 .upet-material--holographic::before { background: conic-gradient(from 210deg at 15% 10%, #70e9f142, #f3a5e128, #b7b0ff36, #80ece342, #70e9f142); mix-blend-mode: screen; opacity: .55; }
 .upet-material--holographic::after { background: linear-gradient(110deg, transparent 30%, #e6ffff17 45%, transparent 60%); }
+.upet-material--holographic[data-gpu-state="ready"]::before { background: none; }
+.upet-material--holographic[data-gpu-state="ready"]::after { background: linear-gradient(#0712228c, #071222b9); }
+.upet-material--liquid-glass { background: radial-gradient(ellipse at center, #18364a66 40%, #c4efff55 94%, #ffffffaa), linear-gradient(120deg, #071222ee, #213c51dd); box-shadow: inset 0 2px #ffffffe0, inset 0 -3px 9px #90d9ff88, inset 3px 0 10px #dbf8ff55, 0 25px 60px #0006; }
+.upet-material--liquid-glass::before { border-radius: inherit; box-shadow: inset 0 0 10px #d4faff66; }
+.upet-material--liquid-glass::after { background: radial-gradient(ellipse at center, #071222b8 0 40%, #07122270 75%, transparent); }
 .upet-material.upet-material[data-quality="lite"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .upet-material[data-reduced-motion="true"]::before, .upet-material[data-reduced-motion="true"]::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { .upet-material::before, .upet-material::after { animation: none !important; transition: none !important; } }

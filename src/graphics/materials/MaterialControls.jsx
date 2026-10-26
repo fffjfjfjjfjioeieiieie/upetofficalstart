@@ -11,6 +11,8 @@ export default function MaterialControls({ value, inheritedValue, allowInherit =
         ? <input type="color" aria-label={`Material ${control.label.toLowerCase()}`} value={settings[control.key]} onChange={(event) => onChange({ ...settings, [control.key]: event.target.value }, control.key)} />
         : <><input type="range" aria-label={`Material ${control.label.toLowerCase()}`} min={control.min} max={control.max} step={control.step} value={settings[control.key]} onChange={(event) => onChange({ ...settings, [control.key]: Number(event.target.value) }, control.key)} /><output>{settings[control.key]}{control.unit || ''}</output></>}</label>)}
       {settings.id === 'liquid-metal' && <p className="upet-studio-v2__quality-note">Flow follows your graphics and motion settings.</p>}
+      {settings.id === 'holographic' && <p className="upet-studio-v2__quality-note">Physical thin-film reflections on GPU tiers; a lightweight colour highlight in Lite. Shimmer respects reduced motion.</p>}
+      {settings.id === 'liquid-glass' && <p className="upet-studio-v2__quality-note">A physical lens refracts an original GPU-scene backdrop, not the HTML behind this canvas. Lite uses a static glass silhouette.</p>}
     </>}
   </div>;
 }
