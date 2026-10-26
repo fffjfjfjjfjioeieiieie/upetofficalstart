@@ -1,7 +1,5 @@
-# user.pet visitor bot
+# user.pet Discord bot (retired)
 
-This replaces the previous welcome/setup bot with private `/visitor` and `/analytics` slash commands. Site-wide traffic is aggregate; `/visitor recent`, `/visitor info` and `/visitor history` refer only to explicit diagnostic tests. Full IP and network details require a diagnostic test claimed with `/visitor claim <code>` from the signed-in dashboard. All bot replies are ephemeral, and the website also checks the Discord user ID against `DISCORD_ADMIN_IDS`.
+The former visitor and analytics commands have been removed. This bot no longer calls user.pet or receives visitor data. Deploy the updated bot process to stop handling the old commands, then run `npm run deploy-commands` once to remove the registered `/visitor` and `/analytics` commands from the configured server.
 
-Copy `.env.example` to ignored `.env`, then set the bot token, application ID, guild ID, administrator IDs, website URL and `VISITOR_BOT_SECRET`. The same shared secret and administrator IDs must be configured server-side on Vercel. Run `npm install`, `npm run deploy-commands`, then `npm start` on a persistent Node host. The Discord client secret is not needed. The bot must be installed in the guild with the `bot` and `applications.commands` scopes. Set `DISCORD_TOKEN` and `VISITOR_DISCORD_CHANNEL_ID` on Vercel for page notifications, or configure a webhook URL instead.
-
-For a diagnostic test, sign in at `/dashboard/visitors`, click **Start diagnostic test**, and run `/visitor claim <code>` within 10 minutes. Then use the full visitor ID shown on the dashboard with `/visitor info <id>` or `/visitor network <id>`. `/visitor myip` finds the latest claimed test for your Discord account. Diagnostic data expires after 24 hours and can be deleted early in the dashboard.
+Configure only `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`, and `DISCORD_GUILD_ID` in the bot host. The old visitor API secrets, administrator allowlist, and visitor notification settings are no longer used. Rotate the Discord bot token because an earlier token was shared in chat.

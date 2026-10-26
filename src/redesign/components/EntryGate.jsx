@@ -20,7 +20,8 @@ export default function EntryGate({ entry, accent, onEnter }) {
     finally { setChecking(false); }
   };
 
-  return <div data-testid="profile-entry-screen" className={`absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center ${mode === 'anywhere' ? 'cursor-pointer' : ''}`} onClick={mode === 'anywhere' ? onEnter : undefined} onKeyDown={mode === 'anywhere' ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onEnter(); } } : undefined} role={mode === 'anywhere' ? 'button' : undefined} tabIndex={mode === 'anywhere' ? 0 : undefined} aria-label={mode === 'anywhere' ? 'Click anywhere to enter profile' : undefined}>
+  const directEntry = mode !== 'password';
+  return <div data-testid="profile-entry-screen" className={`absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center ${directEntry ? 'cursor-pointer' : ''}`} onClick={directEntry ? onEnter : undefined} onKeyDown={directEntry ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onEnter(); } } : undefined} role={directEntry ? 'button' : undefined} tabIndex={directEntry ? 0 : undefined} aria-label={directEntry ? 'Enter profile' : undefined}>
     <div className="max-w-xl text-2xl font-black text-white sm:text-4xl" style={{ textShadow: `0 0 32px ${accent}99` }}><FxText fx={entry?.textEffect || 'none'} text={title} /></div>
     {entry?.subtitle && <p className="max-w-md text-sm text-white/75">{entry.subtitle}</p>}
     {mode === 'password' ? <form onSubmit={checkPassword} onClick={(event) => event.stopPropagation()} className="flex w-full max-w-xs flex-col gap-3">
@@ -28,6 +29,6 @@ export default function EntryGate({ entry, accent, onEnter }) {
       <input id={passwordId} data-testid="profile-entry-password" type="password" autoComplete="off" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} className="rounded-xl border border-white/25 bg-black/50 px-4 py-3 text-center text-white outline-none focus:border-white" />
       <button data-testid="profile-enter" disabled={checking} className="rounded-xl px-5 py-3 text-sm font-bold text-black disabled:opacity-50" style={{ background: accent }}>{checking ? 'Checking…' : 'Enter profile'}</button>
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-    </form> : mode === 'button' ? <button data-testid="profile-enter" onClick={onEnter} className="rounded-xl border border-white/30 bg-black/30 px-6 py-3 text-sm font-bold tracking-wider text-white transition-colors hover:bg-white/15">Enter profile</button> : null}
+    </form> : <span data-testid="profile-enter" className="sr-only">Enter profile</span>}
   </div>;
 }

@@ -6,13 +6,25 @@ export default async function handler(req, res) {
   try {
     const db = database();
     let deleted = 0;
-    for (const name of ['visitorDiagnostics', 'visitorSessions', 'visitorClaims', 'visitorDaily', 'visitorLive', 'visitorAudit', 'visitorRateLimits']) {
-      const expired = await db.collection(name).where('expiresAt', '<=', now()).limit(400).get();
-      if (expired.empty) continue;
+    // Remove legacy identity-bearing records left by the retired diagnostic
+    // tracker. New aggregates are retained only until their expiry.
+    for (const name of ['visitorDiagnostics', 'visitorSessions', 'visitorClaims', 'visitorAudit', 'visitorRateLimits', 'visitorLive']) {
+      let remaining = true;
+      while (remaining) {
+        const old = await db.collection(name).limit(400).get();
+        if (old.empty) { remaining = false; continue; }
+        const batch = db.batch();
+        old.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+        deleted += old.size;
+      }
+    }
+    const expiredDaily = await db.collection('visitorDaily').where('expiresAt', '<=', now()).limit(400).get();
+    if (!expiredDaily.empty) {
       const batch = db.batch();
-      expired.docs.forEach((doc) => batch.delete(doc.ref));
+      expiredDaily.docs.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();
-      deleted += expired.size;
+      deleted += expiredDaily.size;
     }
     return res.status(200).json({ deleted });
   } catch (error) {

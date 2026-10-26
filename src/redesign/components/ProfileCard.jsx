@@ -1,119 +1,198 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Play, Pause, Music2, ChevronDown, Globe, MapPin, X, Captions, Store, ShoppingBag, MessageCircle } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Play, Pause, Music2, ChevronDown, MapPin, X, Captions, SkipBack, SkipForward } from "lucide-react";
 import { Avatar, BadgeIcon, BackgroundFx, FxText, MediaLayer, OverlayFx, Tip } from "./ProfileBits";
 import { DiscordWidget, TikTokWidget, hexA } from "./Widgets";
-import { iconUrl, BRAND, BADGES } from "../lib/catalog";
-import { sendShopMessage } from "../lib/messageStore";
+import PlatformIcon from "./PlatformIcon";
+import { BRAND, BADGES } from "../lib/catalog";
+import { activeLyricIndex, waitingForLyric } from "../lib/lyrics";
+import StreamingPlayer from "./StreamingPlayer";
+import ProfileFloatingLayer from "./ProfileFloatingLayer";
 
 const formatTime = (seconds) => {
   const safe = Math.max(0, Number(seconds) || 0);
   return `${Math.floor(safe / 60)}:${String(Math.floor(safe % 60)).padStart(2, "0")}`;
 };
 
-const LyricsSheet = ({ audio, currentTime, accent, onClose }) => {
-  const lines = [...(audio.lyrics?.lines || [])].sort((a, b) => a.time - b.time);
-  const active = lines.reduce((found, line, index) => line.time <= currentTime ? index : found, -1);
+const AudioSeek = ({ audio, value, max, onChange, className = "" }) => {
+  const seekable = Number.isFinite(max) && max > 0;
+  const safeMax = seekable ? max : 1;
+  const progress = Math.max(0, Math.min(100, ((Number(value) || 0) / safeMax) * 100));
+  const height = audio.playerProgressHeight ?? 4;
+  const color = audio.playerProgressColor || "#6cc4ff";
+  const rounded = audio.playerProgressStyle !== "line";
+  const glow = audio.playerProgressStyle === "glow" || audio.playerProgressGlow;
+  return <label className={`relative block cursor-pointer py-2 ${className}`} style={{ minHeight: Math.max(16, height + 8) }}>
+    <span className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 bg-white/10" style={{ height, borderRadius: rounded ? 999 : 0 }}><span className="absolute inset-y-0 left-0" style={{ width: `${progress}%`, borderRadius: rounded ? 999 : 0, background: color, boxShadow: glow ? `0 0 10px ${color}` : undefined }} />{audio.playerProgressStyle === "rounded" && <span className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black/60" style={{ left: `${progress}%`, background: color }} />}</span>
+    <input aria-label="Seek song" disabled={!seekable} type="range" min="0" max={safeMax} step="0.1" value={Math.min(Number(value) || 0, safeMax)} onChange={(event) => onChange(Number(event.target.value))} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+  </label>;
+};
+
+const lyricStyle = (audio, index, active, accent) => ({
+  color: audio.lyrics?.textEffect === "gradient" && index === active ? "transparent" : index === active ? (audio.lyrics?.activeColor || "#ffffff") : (audio.lyrics?.textColor || "rgba(255,255,255,.38)"),
+  fontSize: `${(audio.lyrics?.textSize || 18) * (index === active ? 1.08 : 1) / 16}rem`,
+  fontWeight: index === active ? 700 : 500,
+  transform: index === active ? "scale(1.02)" : "scale(1)",
+  textShadow: audio.lyrics?.textEffect === "glow" && index === active ? `0 0 18px ${accent}` : undefined,
+  opacity: audio.lyrics?.textEffect === "fade" && index !== active ? .45 : 1,
+  background: audio.lyrics?.textEffect === "gradient" && index === active ? `linear-gradient(90deg, ${audio.lyrics?.activeColor || "#fff"}, ${accent})` : undefined,
+  backgroundClip: audio.lyrics?.textEffect === "gradient" && index === active ? "text" : undefined,
+});
+
+const LyricWaiting = ({ accent }) => <span data-testid="profile-lyrics-waiting" role="status" aria-label="Waiting for the next lyric" className="inline-flex items-center justify-center gap-2 py-4">
+  {[0, 1, 2].map((index) => <span key={index} className="upet-lyric-wait-dot h-2.5 w-2.5 rounded-full" style={{ background: accent, animationDelay: `${index * .18}s` }} />)}
+</span>;
+
+const LyricsSheet = ({ audio, currentTime, duration, playing, accent, audioRef, mobile = false, onToggle, onClose }) => {
+  const lines = audio.lyrics?.lines || [];
+  const active = activeLyricIndex(lines, currentTime);
+  const waiting = waitingForLyric(lines, currentTime);
+  const playerText = audio.expandedTextColor || "#ffffff";
+  const playerBg = audio.expandedBackground || "#111319";
+  const playerEffect = audio.expandedEffect || "none";
+  const artworkStyle = audio.expandedStyle || "vinyl";
+  const showLyrics = Boolean(audio.lyrics?.enabled);
+  const lyricsInsideDesktop = audio.expandedShowLyrics !== false && audio.lyrics?.display === "player";
   useEffect(() => {
     const close = (event) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-[70] grid place-items-end bg-black/70 p-3 backdrop-blur-md sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`${audio.title || "Track"} lyrics`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/15 bg-[#111319]/95 shadow-2xl">
-        <header className="flex items-center gap-3 border-b border-white/10 p-4">
-          {audio.cover ? <img src={audio.cover} alt="" className="h-12 w-12 rounded-xl object-cover" /> : <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/10"><Music2 className="h-5 w-5" /></div>}
-          <div className="min-w-0 flex-1"><h3 className="truncate font-display text-base font-bold text-white">{audio.title || "Untitled"}</h3><p className="truncate text-xs text-white/55">{audio.artist || "Unknown artist"} · {formatTime(currentTime)}</p></div>
-          <button type="button" onClick={onClose} aria-label="Close lyrics" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
-        </header>
-        <div className="max-h-[62svh] space-y-3 overflow-y-auto px-6 py-8 text-center">
-          {lines.map((line, index) => <p key={line.id} className="transition-all duration-300" style={{ color: index === active ? "#fff" : "rgba(255,255,255,.35)", fontSize: index === active ? "1.35rem" : "1.05rem", fontWeight: index === active ? 700 : 500, transform: index === active ? "scale(1.02)" : "scale(1)" }}>{line.text}</p>)}
-        </div>
-        <div className="h-1" style={{ background: accent }} />
-      </section>
-    </div>
-  );
-};
-
-const StorefrontSheet = ({ profile, onClose }) => {
-  const [message, setMessage] = useState("");
-  const [compose, setCompose] = useState(false);
-  const shop = profile.shop;
-  const money = (price) => price ? new Intl.NumberFormat(undefined, { style: "currency", currency: shop.currency || "GBP" }).format(Number(price)) : "Price on request";
   useEffect(() => {
-    const close = (event) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-[70] grid place-items-end bg-black/75 p-3 backdrop-blur-md sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`${shop.name || profile.username} shop`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/15 bg-[#111319]/95 shadow-2xl">
-        <header className="flex items-center gap-3 border-b border-white/10 p-5">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl" style={{ background: `${profile.card.accent}25`, color: profile.card.accent }}><Store className="h-6 w-6" /></div>
-          <div className="min-w-0 flex-1"><p className="text-xs font-medium uppercase tracking-[.2em] text-white/45">{profile.displayName}'s shop</p><h3 className="truncate font-display text-xl font-bold text-white">{shop.name || `${profile.username}'s shop`}</h3></div>
-          <button type="button" onClick={onClose} aria-label="Close shop" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
-        </header>
-        <div className="max-h-[68svh] overflow-y-auto p-5"><p className="mb-5 text-sm text-white/60">{shop.description || "A little collection from this profile."}</p>
-          {message && <div role="status" className="mb-4 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-primary">{message}</div>}
-          <div className="grid gap-4 sm:grid-cols-2">{shop.products.map((product) => <article key={product.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[.035]">
-            <div className="relative aspect-[16/9] bg-black/20">{product.image ? <img src={product.image} alt={product.name} className="h-full w-full object-cover" /> : <Store className="absolute inset-0 m-auto h-7 w-7 text-white/35" />}</div>
-            <div className="p-4"><div className="flex items-start justify-between gap-3"><div><h4 className="font-semibold text-white">{product.name}</h4><p className="mt-1 text-xs capitalize text-white/50">{product.type || "digital"}{product.stock ? ` · ${product.stock} left` : ""}</p></div><strong className="shrink-0 text-sm" style={{ color: profile.card.accent }}>{money(product.price)}</strong></div>
-            {product.description && <p className="mt-3 text-sm text-white/60">{product.description}</p>}
-            <button type="button" data-testid={`shop-buy-${product.id}`} onClick={() => setMessage(`Checkout for ${product.name} is coming soon.`)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-black" style={{ background: profile.card.accent }}><ShoppingBag className="h-4 w-4" />Buy {product.name}</button></div>
-          </article>)}</div>
-          {!shop.products.length && <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-white/50">This shop is being stocked.</div>}
-        </div>
-        <footer className="flex flex-wrap gap-2 border-t border-white/10 p-4"><button type="button" data-testid="shop-contact" onClick={() => setCompose(true)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/15"><MessageCircle className="h-4 w-4" />Message seller</button>{shop.contactUrl && <a href={shop.contactUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center rounded-xl border border-white/15 px-3 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10">Contact link</a>}</footer>
-      </section>
-      {compose && <MessageSellerSheet ownerUsername={profile.username} shopName={shop.name || `${profile.username}'s shop`} onClose={() => setCompose(false)} />}
-    </div>
-  );
-};
-
-const MessageSellerSheet = ({ ownerUsername, shopName, onClose }) => {
-  const [senderName, setSenderName] = useState("");
-  const [senderContact, setSenderContact] = useState("");
-  const [body, setBody] = useState("");
-  const [state, setState] = useState("idle");
-  const submit = async (event) => {
-    event.preventDefault();
-    setState("sending");
-    try { await sendShopMessage(ownerUsername, { senderName, senderContact, body }); setState("sent"); }
-    catch (error) { setState(error?.message || "Message could not be sent."); }
+    const previous = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = previous; };
+  }, []);
+  const panelStyle = {
+    maxWidth: mobile ? "100%" : `${audio.expandedWidth ?? 512}px`,
+    borderRadius: `${mobile ? Math.min(audio.expandedRadius ?? 30, 24) : (audio.expandedRadius ?? 30)}px`,
+    color: playerText,
+    backgroundColor: hexA(playerBg, audio.expandedOpacity ?? .98),
+    backgroundImage: playerEffect === "gradient" ? `radial-gradient(circle at 50% 0%, ${hexA(accent, .4)}, transparent 56%)` : undefined,
+    backdropFilter: `blur(${(audio.expandedBlur ?? 16) + (playerEffect === "glass" ? 10 : 0)}px)`,
+    WebkitBackdropFilter: `blur(${(audio.expandedBlur ?? 16) + (playerEffect === "glass" ? 10 : 0)}px)`,
+    boxShadow: playerEffect === "glow" ? `0 0 55px ${hexA(accent, .42)}, 0 28px 80px rgba(0,0,0,.5)` : "0 28px 80px rgba(0,0,0,.5)",
   };
-  return <div className="fixed inset-0 z-[80] grid place-items-end bg-black/70 p-3 backdrop-blur-md sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`Message ${shopName}`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><form onSubmit={submit} className="w-full max-w-md rounded-[28px] border border-white/15 bg-[#111319] p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-medium uppercase tracking-[.2em] text-primary">Shop messages</p><h3 className="mt-1 font-display text-xl font-bold text-white">Message {shopName}</h3></div><button type="button" onClick={onClose} aria-label="Close message form" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button></div>{state === "sent" ? <div className="mt-5 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-sm text-primary">Your message was sent. The seller can reply using the contact details you provided.</div> : <><div className="mt-5 grid gap-3"><input required value={senderName} onChange={(event) => setSenderName(event.target.value)} placeholder="Your name" className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /><input value={senderContact} onChange={(event) => setSenderContact(event.target.value)} placeholder="Email, Discord, or another way to reply (optional)" className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /><textarea required rows={5} value={body} onChange={(event) => setBody(event.target.value)} placeholder="Write your message…" className="resize-none rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" /></div>{state !== "idle" && state !== "sending" && <p className="mt-3 text-xs text-red-300">{state}</p>}<button disabled={state === "sending"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><MessageCircle className="h-4 w-4" />{state === "sending" ? "Sending…" : "Send message"}</button></>}</form></div>;
+  const artworkSize = mobile ? Math.min(audio.expandedArtworkSize ?? 250, 188) : Math.min(audio.expandedArtworkSize ?? 250, 330);
+  const artwork = artworkStyle === "minimal" ? null : <div className={`relative mx-auto mb-4 grid aspect-square max-w-full place-items-center overflow-hidden sm:mb-6 ${artworkStyle === "vinyl" ? "rounded-full border border-white/10 bg-[repeating-radial-gradient(circle,#181a20_0px,#181a20_2px,#0a0b0e_3px,#0a0b0e_6px)]" : "rounded-[20px] border border-white/10 bg-white/5 sm:rounded-[24px]"}`} style={{ width: artworkSize, animation: artworkStyle === "vinyl" && playing ? "upet-vinyl-spin 7s linear infinite" : "none" }}>
+    {artworkStyle === "vinyl" && <div className="absolute inset-[22%] rounded-full border border-white/10 bg-[repeating-radial-gradient(circle,#21242a_0px,#21242a_1px,#111319_2px,#111319_4px)]" />}
+    <div className={`${artworkStyle === "vinyl" ? "relative z-[1] h-[48%] w-[48%] rounded-full border-[5px] border-[#08090c]" : "h-full w-full"} overflow-hidden bg-white/10 shadow-lg`}>{audio.cover ? <img src={audio.cover} alt={`${audio.title || "Track"} cover art`} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center" style={{ background: `${accent}30` }}><Music2 className="h-9 w-9" style={{ color: accent }} /></div>}</div>
+    {artworkStyle === "vinyl" && <span className="absolute h-2 w-2 rounded-full bg-white/70" />}
+  </div>;
+  return (
+    <div className="fixed inset-0 z-[100] grid place-items-end bg-black/80 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-md sm:place-items-center sm:p-5" role="dialog" aria-modal="true" aria-label={`${audio.title || "Track"} player and lyrics`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="relative max-h-[calc(100svh-24px)] w-full overscroll-contain overflow-y-auto border border-white/15 sm:max-h-[90svh]" style={panelStyle}>
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 px-4 py-3 backdrop-blur sm:p-4" style={{ background: hexA(playerBg, .92) }}>
+          <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[.22em] opacity-40">Now playing</p><h3 className="truncate font-display text-base font-bold">{audio.title || "Untitled"}</h3><p className="truncate text-xs opacity-55">{audio.artist || "Unknown artist"}</p></div>
+          <button type="button" onClick={onClose} aria-label="Close player" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 opacity-70 hover:bg-white/20 hover:opacity-100"><X className="h-4 w-4" /></button>
+        </header>
+        {mobile && showLyrics && (active >= 0 || waiting) && <div data-testid="profile-mobile-current-lyric" className="sticky top-[65px] z-[9] border-b border-white/10 px-4 py-3 text-center backdrop-blur-xl" style={{ background: hexA(playerBg, .92) }}>
+          {waiting ? <LyricWaiting accent={accent} /> : <><p key={lines[active].id} className={`${audio.lyrics?.popout !== false ? 'animate-[upet-lyric-reveal_.48s_cubic-bezier(.2,.8,.2,1)_both]' : ''} break-words text-xl font-bold leading-tight transition-all duration-300`} style={{ ...lyricStyle(audio, active, active, accent), fontSize: `${Math.min(30, Math.max(20, (audio.lyrics?.textSize || 18) * .72))}px` }}>{lines[active].text}</p>
+          {lines[active + 1] && <p className="mt-2 truncate text-sm opacity-30">{lines[active + 1].text}</p>}</>}
+        </div>}
+        <div className="px-4 pb-4 pt-4 sm:px-6 sm:pb-7 sm:pt-6">
+          {artwork}
+          {artworkStyle === "minimal" && <div className="mx-auto mb-7 h-1 w-20 rounded-full" style={{ background: accent }} />}
+          <div className="flex items-center gap-3 text-[11px] opacity-50">{audio.expandedShowTimes !== false && <span>{formatTime(currentTime)}</span>}<AudioSeek audio={audio} value={currentTime} max={duration} onChange={(value) => { if (audioRef.current) audioRef.current.currentTime = value; }} className="min-w-0 flex-1" />{audio.expandedShowTimes !== false && <span>{formatTime(duration)}</span>}</div>
+          <div className="mt-2 flex items-center justify-center gap-7 sm:mt-3">{audio.expandedShowSkip !== false && <button type="button" aria-label="Back 10 seconds" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 10); }} className="grid h-10 w-10 place-items-center rounded-full bg-white/5 opacity-70 hover:opacity-100"><SkipBack className="h-5 w-5" /></button>}<button type="button" data-testid="profile-audio-toggle" onClick={onToggle} aria-label={playing ? "Pause" : "Play"} className="grid h-12 w-12 place-items-center rounded-full text-black" style={{ background: accent }}>{playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}</button>{audio.expandedShowSkip !== false && <button type="button" aria-label="Forward 10 seconds" onClick={() => { if (audioRef.current) audioRef.current.currentTime = Math.min(duration || currentTime + 10, currentTime + 10); }} className="grid h-10 w-10 place-items-center rounded-full bg-white/5 opacity-70 hover:opacity-100"><SkipForward className="h-5 w-5" /></button>}</div>
+          {!mobile && showLyrics && lyricsInsideDesktop && <div className="mt-7 border-t border-white/10 pt-5"><p className="mb-4 text-center text-[10px] font-semibold uppercase tracking-[.22em] opacity-40">Lyrics</p><div className="max-h-[30svh] space-y-3 overflow-y-auto px-2" style={{ textAlign: audio.lyrics.alignment || "center" }}>
+            {waiting ? <div className="text-center"><LyricWaiting accent={accent} /></div> : lines.map((line, index) => <p key={line.id} className="transition-all duration-300" style={lyricStyle(audio, index, active, accent)}>{line.text}</p>)}
+            {!lines.length && <p className="text-center text-sm opacity-45">Lyrics haven’t been added yet.</p>}
+          </div></div>}
+        </div>
+        <div style={{ height: audio.playerProgressHeight ?? 4, background: audio.playerProgressColor || accent, boxShadow: audio.playerProgressGlow ? `0 0 12px ${audio.playerProgressColor || accent}` : undefined }} />
+      </section>
+    </div>
+  );
 };
 
-const ShopButton = ({ p }) => {
-  if (!p.shop?.enabled) return null;
-  return <Link to={`/${p.username}/shop`} data-testid="profile-shop-open" className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15"><Store className="h-4 w-4" style={{ color: p.card.accent }} />Visit {p.shop.name || "shop"}</Link>;
+const SideLyrics = ({ audio, currentTime, accent, side, cardWidth = 440 }) => {
+  if (!audio.lyrics?.enabled || audio.lyrics.display !== side || !audio.lyrics.lines?.length) return null;
+  const lines = audio.lyrics.lines;
+  const active = activeLyricIndex(lines, currentTime);
+  const waiting = waitingForLyric(lines, currentTime);
+  const focus = active;
+  if (focus < 0 && !waiting) return null;
+  const visible = lines.slice(Math.max(0, focus - 1), Math.min(lines.length, focus + 2));
+  const vertical = audio.lyrics.sideVertical || "center";
+  const position = vertical === "top" ? "top-[13%]" : vertical === "bottom" ? "bottom-[13%]" : "top-1/2 -translate-y-1/2";
+  const activeSize = audio.lyrics.sideTextSize || 56;
+  return <aside data-testid="profile-side-lyrics" aria-label="Synced lyrics" className={`upet-side-lyrics pointer-events-none absolute ${side === "left" ? "left-[var(--lyric-inset)]" : "right-[var(--lyric-inset)]"} ${position} z-20`} style={{ "--lyric-width": `${audio.lyrics.sideWidth || 420}px`, "--lyric-inset": `${audio.lyrics.sideInset ?? 4}cqw`, "--profile-half": `${cardWidth / 2}px`, textAlign: audio.lyrics.alignment || (side === "left" ? "right" : "left") }}>
+      <div className="space-y-5">{waiting ? <LyricWaiting accent={accent} /> : visible.map((line) => {
+        const index = lines.indexOf(line);
+        const isFocus = index === focus;
+        const isActive = index === active;
+        return <p key={`${line.id}-${isActive ? "active" : "inactive"}`} className={`${isActive && audio.lyrics.popout !== false ? "animate-[upet-lyric-reveal_.48s_cubic-bezier(.2,.8,.2,1)_both]" : ""} break-words leading-[1.05] transition-all duration-500`} style={{ ...lyricStyle(audio, index, active, accent), fontSize: `${isFocus ? activeSize : Math.max(16, activeSize * .48)}px`, lineHeight: isFocus ? 1.03 : 1.18, opacity: isActive ? 1 : isFocus ? .5 : .28 }}>{line.text}</p>;
+      })}</div>
+  </aside>;
 };
 
-const AudioBar = ({ audio, accent }) => {
+const AudioBar = ({ audio, accent, cardWidth = 440 }) => {
   const ref = useRef(null);
+  const host = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [lyricsOpen, setLyricsOpen] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [overlayRoot, setOverlayRoot] = useState(null);
+  const [mobileViewport, setMobileViewport] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches);
+  useEffect(() => { setPopupVisible(Boolean(audio.popupOnLoad && audio.src)); }, [audio.popupOnLoad, audio.src]);
   useEffect(() => { if (ref.current) ref.current.volume = audio.volume ?? 0.6; }, [audio.volume]);
+  useLayoutEffect(() => { setOverlayRoot(host.current?.closest("[data-profile-scene]")?.querySelector("[data-profile-overlay-root]") || document.body); }, [audio.sourceType, audio.src]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const update = () => setMobileViewport(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+  if (audio.sourceType === "embed" && audio.embedUrl) return <StreamingPlayer audio={audio} accent={accent} />;
   if (!audio.src) return null;
   const toggle = () => {
     const a = ref.current;
     if (a.paused) a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     else { a.pause(); setPlaying(false); }
   };
-  return (
-    <div data-testid="profile-audio" className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-2.5 text-left">
-      <audio ref={ref} src={audio.src} loop={audio.loop} autoPlay={audio.autoplay} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onTimeUpdate={() => setCurrentTime(ref.current?.currentTime || 0)} />
-      {audio.cover ? <img src={audio.cover} alt="" className="h-9 w-9 rounded-full object-cover" /> : <div className="grid h-9 w-9 place-items-center rounded-full border border-white/20"><Music2 className="h-4 w-4 text-white/80" /></div>}
-      <div className="min-w-0 flex-1">
-        {audio.lyrics?.enabled && audio.lyrics.lines?.length ? <button type="button" data-testid="profile-lyrics-open" onClick={() => setLyricsOpen(true)} className="flex max-w-full items-center gap-1 truncate text-sm font-semibold text-white hover:text-primary"><span className="truncate">{audio.title || "Untitled"}</span><Captions className="h-3.5 w-3.5 shrink-0" /></button> : <div className="truncate text-sm font-semibold text-white">{audio.title || "Untitled"}</div>}
-        <div className="truncate text-[11px] text-white/55">{audio.artist}</div>
-      </div>
-      <button data-testid="profile-audio-toggle" onClick={toggle} className="grid h-8 w-8 place-items-center rounded-full text-black" style={{ background: accent }}>{playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
-      {lyricsOpen && <LyricsSheet audio={audio} currentTime={currentTime} accent={accent} onClose={() => setLyricsOpen(false)} />}
-    </div>
-  );
+  const placement = audio.playerPlacement || "card";
+  const floating = placement !== "card";
+  const positionClass = placement === "left" ? "left-4 sm:left-6" : "right-4 sm:right-6";
+  const compactButton = placement === "button";
+  const mobileSideLyrics = mobileViewport && audio.lyrics?.enabled && ["left", "right"].includes(audio.lyrics?.display);
+  const expandedAvailable = Boolean(audio.expandedEnabled) || mobileSideLyrics;
+  const openExpanded = () => { if (expandedAvailable) setPlayerOpen(true); };
+  const playerEffect = audio.playerEffect || "none";
+  const playerOpacity = audio.playerOpacity ?? 0.3;
+  const playerStyle = {
+    backgroundColor: hexA(audio.playerBackground || "#000000", playerOpacity),
+    backgroundImage: playerEffect === "gradient" ? `linear-gradient(135deg, ${hexA(audio.playerBackground || "#000000", playerOpacity)}, ${hexA(accent, playerOpacity)})` : playerEffect === "scanlines" ? `repeating-linear-gradient(0deg, transparent 0 3px, ${hexA("#ffffff", 0.08)} 4px, transparent 5px)` : undefined,
+    border: audio.playerBorder === false ? "none" : `1px solid ${hexA("#ffffff", 0.1)}`,
+    borderRadius: `${audio.playerRadius ?? 12}px`,
+    backdropFilter: `blur(${(audio.playerBlur || 0) + (playerEffect === "glass" ? 12 : 0)}px)`,
+    WebkitBackdropFilter: `blur(${(audio.playerBlur || 0) + (playerEffect === "glass" ? 12 : 0)}px)`,
+    boxShadow: playerEffect === "glow" ? `0 0 24px ${hexA(accent, 0.45)}` : "0 12px 32px rgba(0,0,0,.24)",
+    color: audio.playerTextColor || "#ffffff",
+    width: `${audio.playerScale ?? 100}%`,
+    maxWidth: "100%",
+    transformOrigin: compactButton ? "right center" : "center",
+  };
+  const coverSize = audio.playerCoverSize ?? 36;
+  const playerControls = ({ compact = false, isFloating = false } = {}) => <div className={`relative flex w-full items-center gap-3 overflow-hidden p-2.5 text-left ${audio.playerShowProgress && !compact ? "pb-6" : ""} ${isFloating && compact ? "w-auto rounded-full" : ""}`} style={{ ...playerStyle, width: compact ? "auto" : playerStyle.width }}>
+    <button type="button" onClick={openExpanded} disabled={!expandedAvailable} aria-label={expandedAvailable ? "Open music player" : "Expanded player disabled"} data-testid="profile-player-open" data-analytics-feature="Music player" className={`relative shrink-0 ${expandedAvailable ? "cursor-pointer" : "cursor-default"}`}>
+      {audio.playerShowCover !== false && audio.cover ? <img src={audio.cover} alt="" className="rounded-full object-cover" style={{ width: compact ? 48 : coverSize, height: compact ? 48 : coverSize }} /> : <span className="grid place-items-center rounded-full border border-white/20" style={{ width: compact ? 48 : coverSize, height: compact ? 48 : coverSize }}><Music2 className="h-4 w-4" style={{ color: audio.playerTextColor || "#ffffff" }} /></span>}
+    </button>
+    {!compact && <button type="button" onClick={openExpanded} disabled={!expandedAvailable} className={`min-w-0 flex-1 text-left ${expandedAvailable ? "cursor-pointer" : "cursor-default"}`} style={{ color: audio.playerTextColor || "#ffffff" }}><span className="flex items-center gap-1 truncate text-sm font-semibold"><span className="truncate">{audio.title || "Untitled"}</span>{audio.lyrics?.enabled && <Captions className="h-3.5 w-3.5 shrink-0" />}</span>{audio.playerShowArtist !== false && <span className="block truncate text-[11px] opacity-65">{audio.artist}</span>}</button>}
+    <button data-testid="profile-audio-toggle" onClick={toggle} aria-label={playing ? "Pause" : "Play"} className={`grid shrink-0 place-items-center rounded-full text-black ${isFloating ? "h-9 w-9" : "h-8 w-8"}`} style={{ background: accent }}>{playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
+    {audio.playerShowProgress && !compact && <div data-testid="profile-audio-progress" className="absolute inset-x-3 bottom-0"><AudioSeek audio={audio} value={currentTime} max={duration} onChange={(value) => { if (ref.current) ref.current.currentTime = value; }} className="w-full" /></div>}
+  </div>;
+  return <>
+    <span ref={host} className="hidden" />
+    <audio ref={ref} src={audio.src} preload="metadata" loop={audio.loop} autoPlay={audio.autoplay} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onLoadedMetadata={() => setDuration(ref.current?.duration || 0)} onDurationChange={() => setDuration(ref.current?.duration || 0)} onTimeUpdate={() => setCurrentTime(ref.current?.currentTime || 0)} />
+    {floating ? <ProfileFloatingLayer root={overlayRoot} side={placement === "left" ? "left" : "right"} compact={compactButton} data-testid="profile-audio"><div className={`flex w-full ${placement === "left" ? "justify-start" : "justify-end"}`}>{playerControls({ compact: compactButton, isFloating: true })}</div></ProfileFloatingLayer> : <div data-testid="profile-audio" className="flex w-full min-w-0 justify-center">{playerControls()}</div>}
+    {popupVisible && <ProfileFloatingLayer root={overlayRoot} side={audio.popupSide} top data-testid="profile-audio-popup" style={{ animation: `${audio.popupSide === "right" ? "upet-audio-in-right" : "upet-audio-in-left"} .4s cubic-bezier(.2,.8,.2,1) both` }}><div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111319]/95 p-3 shadow-2xl backdrop-blur-xl"><button type="button" onClick={() => { openExpanded(); setPopupVisible(false); }} disabled={!expandedAvailable} className={`min-w-0 flex-1 text-left ${expandedAvailable ? "cursor-pointer" : "cursor-default"}`}><span className="block truncate text-xs font-semibold text-white">{audio.title || "Untitled"}</span><span className="block truncate text-[11px] text-white/55">{audio.artist || "Now on this profile"}</span></button><button type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} className="grid h-9 w-9 place-items-center rounded-full text-black" style={{ background: accent }}>{playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button><button type="button" aria-label="Dismiss player popup" onClick={() => setPopupVisible(false)} className="text-white/55 hover:text-white"><X className="h-4 w-4" /></button></div></ProfileFloatingLayer>}
+    {playerOpen && expandedAvailable && typeof document !== "undefined" && createPortal(<LyricsSheet audio={audio} currentTime={currentTime} duration={duration} playing={playing} accent={accent} audioRef={ref} mobile={mobileViewport} onToggle={toggle} onClose={() => setPlayerOpen(false)} />, document.body)}
+    {overlayRoot && createPortal(<><SideLyrics audio={audio} currentTime={currentTime} accent={accent} side="left" cardWidth={cardWidth} /><SideLyrics audio={audio} currentTime={currentTime} accent={accent} side="right" cardWidth={cardWidth} /></>, overlayRoot)}
+  </>;
 };
 
 const LinkIcon = ({ l, ls, accent }) => {
@@ -121,7 +200,7 @@ const LinkIcon = ({ l, ls, accent }) => {
   const color = ls.iconColor === "brand" ? brand : ls.iconColor === "accent" ? accent : "#ffffff";
   const glow = ls.glowColor || brand;
   const style = { width: ls.size, height: ls.size, filter: ls.glow ? `drop-shadow(0 0 ${ls.glow * 10}px ${glow}) drop-shadow(0 0 ${ls.glow * 4}px ${glow})` : undefined };
-  return iconUrl(l.platform) ? <img src={iconUrl(l.platform, color)} alt="" style={style} /> : <Globe style={{ ...style, color }} />;
+  return <PlatformIcon platform={l.platform} color={color} size={ls.size} style={style} />;
 };
 
 const Links = ({ p, compact }) => {
@@ -131,7 +210,7 @@ const Links = ({ p, compact }) => {
     <div className="flex flex-wrap justify-center gap-2">
       {p.links.map((l) => (
         <Tip key={l.id} cfg={p.tooltips} label={l.label}>
-          <a href={l.url} target="_blank" rel="noreferrer" data-testid={`profile-link-${l.id}`} className="grid place-items-center bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20" style={{ width: ls.size + 20, height: ls.size + 20, borderRadius: ls.radius }}>
+          <a href={l.url} target="_blank" rel="noreferrer" data-testid={`profile-link-${l.id}`} data-analytics-feature="Profile links" className="grid place-items-center bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20" style={{ width: ls.size + 20, height: ls.size + 20, borderRadius: ls.radius }}>
             <LinkIcon l={l} ls={ls} accent={p.card.accent} />
           </a>
         </Tip>
@@ -141,7 +220,7 @@ const Links = ({ p, compact }) => {
   return (
     <div className="space-y-2">
       {p.links.map((l) => (
-        <a key={l.id} href={l.url} target="_blank" rel="noreferrer" data-testid={`profile-link-${l.id}`} className="flex items-center gap-3 border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white transition-colors hover:bg-white/10" style={{ borderRadius: ls.radius }}>
+        <a key={l.id} href={l.url} target="_blank" rel="noreferrer" data-testid={`profile-link-${l.id}`} data-analytics-feature="Profile links" className="flex items-center gap-3 border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white transition-colors hover:bg-white/10" style={{ borderRadius: ls.radius }}>
           <LinkIcon l={l} ls={ls} accent={p.card.accent} />
           <span className="flex-1 truncate text-left">{l.label || l.url}</span>
         </a>
@@ -162,10 +241,10 @@ const Identity = ({ p, align = "center", avatarSize = 104 }) => {
   return (
     <div className={`flex flex-col gap-1 ${align === "center" ? "items-center text-center" : "items-start text-left"}`}>
       <Avatar media={p.media.avatar} name={p.username} size={avatarSize} decoration={p.effects.decoration} hue={p.effects.decoHue} decoSize={p.effects.decoSize} className="mb-2" />
-      <h2 className="font-display text-2xl font-extrabold" style={{ color: p.card.textColor }}><FxText fx={p.effects.text} text={p.displayName || p.username} /></h2>
+      <h2 className="font-display text-2xl font-extrabold" style={{ color: p.effects.textColor || p.card.textColor }}><FxText fx={p.effects.text} text={p.displayName || p.username} style={{ color: p.effects.textColor || p.card.textColor, '--fx-color': p.effects.textColor || p.card.textColor }} /></h2>
       <div className="text-sm opacity-60" style={{ color: p.card.textColor }}>@{p.username}</div>
       {shown.length > 0 && (
-        <div className="mt-1 flex gap-1" data-testid="profile-badges">
+        <div className={`mt-1 flex max-w-full flex-wrap gap-1 ${align === "center" ? "justify-center" : "justify-start"}`} data-testid="profile-badges">
           {shown.map((b) => <Tip key={b} cfg={p.tooltips} label={(BADGES.find((x) => x.id === b) || {}).label}><BadgeIcon id={b} cfg={p.badgeStyle} /></Tip>)}
         </div>
       )}
@@ -175,7 +254,15 @@ const Identity = ({ p, align = "center", avatarSize = 104 }) => {
   );
 };
 
-const shellStyle = (c, scale = 1) => ({ maxWidth: c.width * scale, borderRadius: c.radius, background: hexA(c.cardColor, c.alpha), backdropFilter: `blur(${c.blur}px)`, WebkitBackdropFilter: `blur(${c.blur}px)`, border: `1px solid ${hexA(c.accent, c.borderAlpha)}`, boxShadow: `0 30px 80px -30px ${hexA(c.accent, 0.5)}` });
+const shellStyle = (c, scale = 1) => ({
+  maxWidth: c.width * scale,
+  borderRadius: c.radius,
+  background: hexA(c.cardColor, c.alpha),
+  backdropFilter: `blur(${c.blur}px)`,
+  WebkitBackdropFilter: `blur(${c.blur}px)`,
+  border: `1px solid ${hexA(c.accent, c.borderAlpha)}`,
+  boxShadow: `0 30px 80px -30px ${hexA(c.accent, 0.5)}`,
+});
 
 const Shell = ({ p, children, testid = "profile-card" }) => (
   <div data-testid={testid} className="relative mx-auto w-full p-6" style={shellStyle(p.card)}>
@@ -191,22 +278,20 @@ const Body = ({ p }) => {
       <Identity p={{ ...p, bio: "" }} align="left" avatarSize={72} />
       {p.bio && <p className="text-left text-sm" style={{ color: hexA(p.card.textColor, 0.8) }}>{p.bio}</p>}
       <Links p={p} compact />
-      <ShopButton p={p} />
-      <AudioBar audio={p.audio} accent={accent} />
+      <AudioBar audio={p.audio} accent={accent} cardWidth={p.card.width} />
       <Widgets widgets={p.widgets} />
     </div>
   );
   return (
     <div className="space-y-4">
       {layout === "banner" && (
-        <div className="-mx-6 -mt-6 mb-[-52px] h-36 overflow-hidden" style={{ borderTopLeftRadius: p.card.radius, borderTopRightRadius: p.card.radius }}>
+        <div className="-mx-6 -mt-6 mb-[-52px] h-36 isolate overflow-hidden" style={{ borderTopLeftRadius: p.card.radius, borderTopRightRadius: p.card.radius, contain: "paint", clipPath: `inset(0 round ${p.card.radius}px ${p.card.radius}px 0 0)` }}>
           {p.media.banner.src ? <MediaLayer media={p.media.banner} className="h-full w-full" /> : <div className="h-full w-full bg-gradient-to-br from-sky-400/60 to-indigo-500/40" />}
         </div>
       )}
       <Identity p={p} />
       <Links p={p} compact={layout === "minimal" && p.linkStyle.mode !== "list"} />
-      <ShopButton p={p} />
-      <AudioBar audio={p.audio} accent={accent} />
+      <AudioBar audio={p.audio} accent={accent} cardWidth={p.card.width} />
       <Widgets widgets={p.widgets} />
     </div>
   );
@@ -214,23 +299,53 @@ const Body = ({ p }) => {
 
 export const ProfileCard = ({ p }) => <Shell p={p}><Body p={p} /></Shell>;
 
+const DesktopFit = ({ children, enabled = false, allViewports = false, inset = 96 }) => {
+  const holder = useRef(null);
+  const inner = useRef(null);
+  const [fit, setFit] = useState(null);
+  useLayoutEffect(() => {
+    if (!enabled) { setFit(null); return undefined; }
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const scene = holder.current?.closest('[data-profile-scene]');
+        const content = inner.current;
+        if (!scene || !content || (!allViewports && !window.matchMedia('(min-width: 768px)').matches)) return setFit(null);
+        const naturalHeight = content.offsetHeight;
+        const availableHeight = Math.max(240, scene.clientHeight - inset);
+        const scale = naturalHeight > 0 ? Math.min(1, availableHeight / naturalHeight) : 1;
+        setFit((current) => current && Math.abs(current.scale - scale) < .002 && current.height === naturalHeight ? current : { scale, height: naturalHeight });
+      });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (inner.current) observer.observe(inner.current);
+    const scene = holder.current?.closest('[data-profile-scene]');
+    if (scene) observer.observe(scene);
+    window.addEventListener('resize', measure);
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('resize', measure); };
+  }, [allViewports, enabled, inset]);
+  const fitted = Boolean(fit && fit.scale < .999);
+  return <div ref={holder} data-profile-fit={fitted ? 'scaled' : 'natural'} className="relative my-auto w-full shrink-0" style={fit ? { height: `${fit.height * fit.scale}px` } : undefined}><div ref={inner} className={fit ? 'absolute left-1/2 top-0 w-full' : 'w-full'} style={fit ? { transform: `translateX(-50%) scale(${fit.scale})`, transformOrigin: 'top center' } : undefined}>{children}</div></div>;
+};
+
 export const SlideshowPage = ({ p }) => {
   const ref = useRef(null);
   const slides = [
     ["Profile", <Identity p={p} />],
     ["Links", <Links p={p} />],
-    ["Shop", <ShopButton p={p} />],
-    ["Now", <div className="space-y-3"><AudioBar audio={p.audio} accent={p.card.accent} /><Widgets widgets={p.widgets} /></div>],
-  ].filter(([k], i) => i === 0 || (k === "Links" ? p.links.length : k === "Shop" ? p.shop?.enabled : p.audio.src || p.widgets.discord.enabled || p.widgets.tiktok.enabled));
-  const go = (i) => ref.current.scrollTo({ top: i * ref.current.clientHeight, behavior: "smooth" });
+    ["Now", <div className="space-y-3"><AudioBar audio={p.audio} accent={p.card.accent} cardWidth={p.card.width} /><Widgets widgets={p.widgets} /></div>],
+  ].filter(([k], i) => i === 0 || (k === "Links" ? p.links.length : p.audio.src || p.audio.embedUrl || p.widgets.discord.enabled || p.widgets.tiktok.enabled));
+  const go = (i) => ref.current?.children[i]?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
-    <div ref={ref} data-testid="slideshow-page" className="snap-slides scroll-thin absolute inset-0 overflow-y-auto">
+    <div ref={ref} data-testid="slideshow-page" className="snap-slides scroll-thin absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-y-contain" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
       {slides.map(([label, content], i) => (
-        <section key={label} className="relative flex h-full min-h-full items-center justify-center p-6">
-          <div className="w-full">
+        <section key={label} className="relative flex min-h-full snap-start items-center justify-center px-4 py-[max(4.5rem,env(safe-area-inset-top))] sm:px-6">
+          <DesktopFit enabled><div className="w-full">
             <div className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">{String(i + 1).padStart(2, "0")} / {label}</div>
             <Shell p={p} testid={`slide-${i}`}>{content}</Shell>
-          </div>
+          </div></DesktopFit>
           {i < slides.length - 1 && <button data-testid={`slideshow-next-${i}`} onClick={() => go(i + 1)} className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce text-white/70"><ChevronDown className="h-6 w-6" /></button>}
         </section>
       ))}
@@ -238,16 +353,17 @@ export const SlideshowPage = ({ p }) => {
   );
 };
 
-export const ProfileScene = ({ p, className = "", children, scrollable = false }) => {
+export const ProfileScene = ({ p, className = "", children, scrollable = false, fitDesktop = false, fitPreview = false }) => {
   const slideshow = p.card.layout === "slideshow";
   const content = children || (slideshow ? <SlideshowPage p={p} /> : <ProfileCard p={p} />);
   const bg = p.media.background;
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: p.card.bgColor }}>
+    <div data-profile-scene className={`relative overflow-hidden ${className}`} style={{ background: p.card.bgColor }}>
       {bg.src && <MediaLayer media={bg} className="absolute inset-[-20px] h-[calc(100%+40px)] w-[calc(100%+40px)]" style={{ backgroundSize: "cover" }} />}
       {!bg.src && <div className="absolute inset-0" style={{ background: `radial-gradient(60% 50% at 50% 10%, ${hexA(p.card.accent, 0.35)}, transparent 70%)` }} />}
-      <BackgroundFx kind={p.effects.background} />
-      {slideshow && !children ? <div className="absolute inset-0 z-10">{content}</div> : scrollable ? <div className="scroll-thin relative z-10 h-full w-full overflow-y-auto"><div className="flex min-h-full w-full items-center justify-center p-6">{content}</div></div> : <div className="relative z-10 flex h-full w-full items-center justify-center p-6">{content}</div>}
+      <BackgroundFx kind={p.effects.background} amount={p.effects.backgroundAmount} color={p.effects.backgroundColor} />
+      {slideshow && !children ? <div className="absolute inset-0 z-10">{content}</div> : scrollable ? <div data-testid="profile-scroll-region" className={`scroll-thin relative z-10 h-full w-full overflow-x-hidden overscroll-y-contain ${fitPreview ? 'overflow-y-hidden' : `overflow-y-auto ${fitDesktop ? 'md:overflow-y-hidden' : ''}`}`} style={{ WebkitOverflowScrolling: "touch", touchAction: fitPreview ? "none" : "pan-y" }}><div className={`flex min-h-full w-full items-start justify-center ${fitPreview ? 'p-3' : 'px-4 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-6 sm:py-8'}`}><DesktopFit enabled={fitDesktop || fitPreview} allViewports={fitPreview} inset={fitPreview ? 24 : 96}>{content}</DesktopFit></div></div> : <div className="relative z-10 flex h-full w-full items-center justify-center p-6">{content}</div>}
+      <div data-profile-overlay-root className="pointer-events-none absolute inset-0 z-20 overflow-hidden" />
     </div>
   );
 };

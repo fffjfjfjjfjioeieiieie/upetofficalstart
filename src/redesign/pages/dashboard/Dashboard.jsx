@@ -1,29 +1,28 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { lazy, Suspense } from 'react';
-import { motion } from "framer-motion";
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, Store, LogOut, ExternalLink, Bell, ChartNoAxesCombined, BriefcaseBusiness, Layers3 } from "lucide-react";
+import { Suspense, useState } from 'react';
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, LogOut, ExternalLink, ChartNoAxesCombined, Menu, ShieldCheck, X, GalleryVerticalEnd } from "lucide-react";
 import { useStore } from "../../lib/store";
+import { useHelpAuth } from '../../../help/context/HelpAuth.jsx';
 import { Logo } from "../../components/Logo";
 import { Avatar } from "../../components/ProfileBits";
-import { studioPreviewEnabled } from '../../../features/studio/v2/studioPreviewPolicy.js';
-const Overview = lazy(() => import('./Overview'));
-const Editor = lazy(() => import('./Editor'));
-const Badges = lazy(() => import('./Badges'));
-const Leaderboard = lazy(() => import('./Leaderboard'));
-const Settings = lazy(() => import('./Settings'));
-const Shop = lazy(() => import('../../shop/ShopEditor'));
-const Notifications = lazy(() => import('./Notifications'));
-const Conversation = lazy(() => import('./Conversation'));
-const VisitorAnalytics = lazy(() => import('./VisitorAnalytics'));
-const StudioPreview = lazy(() => import('../../../features/studio/v2/StudioV2Route'));
-const studioPreview = studioPreviewEnabled(window.location.hostname, import.meta.env.VITE_UPET_V2_STUDIO_PREVIEW);
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
+import { RouteLoading } from '../../components/RouteState';
+const Overview = lazyWithRetry(() => import('./Overview'), 'dashboard-overview');
+const Editor = lazyWithRetry(() => import('./Editor'), 'dashboard-editor');
+const Badges = lazyWithRetry(() => import('./Badges'), 'dashboard-badges');
+const Leaderboard = lazyWithRetry(() => import('./Leaderboard'), 'dashboard-leaderboard');
+const Settings = lazyWithRetry(() => import('./Settings'), 'dashboard-settings');
+const VisitorAnalytics = lazyWithRetry(() => import('./VisitorAnalytics'), 'dashboard-visitors');
+const Modview = lazyWithRetry(() => import('./Modview'), 'dashboard-modview');
+const Presets = lazyWithRetry(() => import('./Presets'), 'dashboard-profiles');
+
+const DASHBOARD_PAGES = { overview: Overview, editor: Editor, profiles: Presets, badges: Badges, leaderboard: Leaderboard, settings: Settings, visitors: VisitorAnalytics, modview: Modview };
+const warm = (path) => DASHBOARD_PAGES[path]?.preload?.().catch(() => {});
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
   ["editor", "Editor", PenTool],
-  ...(studioPreview ? [["studio-v2", "Studio 2.0 preview", Layers3]] : []),
-  ["shop", "Shop", Store],
-  ["notifications", "Notifications", Bell],
+  ["profiles", "Profiles", GalleryVerticalEnd],
   ["badges", "Badges", Award],
   ["leaderboard", "Leaderboard", Trophy],
   ["settings", "Settings", Cog],
@@ -32,23 +31,24 @@ const NAV = [
 
 const Sidebar = () => {
   const { user, logout } = useStore();
+  const { staff } = useHelpAuth();
   const nav = useNavigate();
   const out = () => { logout(); nav("/"); };
   return (
     <aside data-testid="dashboard-sidebar" className="glass fixed bottom-4 left-4 top-4 z-40 hidden w-64 flex-col rounded-[1.5rem] p-4 md:flex">
       <NavLink to="/" className="px-2 py-1" data-testid="sidebar-logo"><Logo /></NavLink>
       <nav className="mt-8 flex-1 space-y-1">
-        {NAV.filter((n) => !n[3] || user.role === "admin").map(([path, label, Icon]) => (
-          <NavLink key={path} to={`/dashboard/${path}`} data-testid={`sidebar-${path}`} className={({ isActive }) => `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"}`}>
+        {NAV.filter(([path]) => path !== 'visitors' || user.role === 'founder').map(([path, label, Icon]) => (
+          <NavLink key={path} to={`/dashboard/${path}`} onMouseEnter={() => warm(path)} onFocus={() => warm(path)} data-testid={`sidebar-${path}`} className={({ isActive }) => `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"}`}>
             {({ isActive }) => (
               <>
-                {isActive && <motion.span layoutId="sidebar-active" className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-primary" />}
+                {isActive && <span className="absolute bottom-2 left-0 top-2 w-1 rounded-full bg-primary" />}
                 <Icon className="h-4 w-4" />{label}
               </>
             )}
           </NavLink>
         ))}
-        <NavLink to="/business" className="mt-5 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10"><BriefcaseBusiness className="h-4 w-4" />Business mode</NavLink>
+        {staff?.active && <NavLink to="/dashboard/modview" onMouseEnter={() => warm('modview')} onFocus={() => warm('modview')} data-testid="sidebar-modview" className={({ isActive }) => `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"}`}><ShieldCheck className="h-4 w-4" />Modview</NavLink>}
       </nav>
       <button data-testid="sidebar-view-page" onClick={() => nav(`/${user.username}`)} className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"><ExternalLink className="h-4 w-4" />View my page</button>
       <button data-testid="sidebar-logout" onClick={out} className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-500 transition-colors hover:bg-red-500/10"><LogOut className="h-4 w-4" />Logout</button>
@@ -65,16 +65,29 @@ const Sidebar = () => {
 };
 
 const MobileNav = () => {
-  const { user, saveState } = useStore();
+  const { user, saveState, logout } = useStore();
+  const { staff } = useHelpAuth();
+  const [open, setOpen] = useState(false);
+  const nav = useNavigate();
+  const close = () => setOpen(false);
+  const out = () => { close(); logout(); nav('/'); };
+  const links = NAV.filter(([path]) => path !== 'visitors' || user.role === 'founder');
   return (
     <>
-      <header className="glass fixed inset-x-3 top-3 z-40 flex h-14 items-center justify-between rounded-2xl px-4 md:hidden">
+      <header className="glass fixed inset-x-3 top-[max(.75rem,env(safe-area-inset-top))] z-40 flex h-14 items-center justify-between rounded-2xl px-4 md:hidden">
         <NavLink to="/"><Logo /></NavLink>
-        <div className="flex items-center gap-3"><NavLink to="/business" className="text-xs font-semibold text-primary">Business</NavLink><span className="text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span></div>
+        <div className="flex min-w-0 items-center gap-2"><span className="max-w-28 truncate text-xs text-muted-foreground">{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed' : `@${user.username}`}</span><button type="button" onClick={() => setOpen((value) => !value)} aria-label="Open dashboard menu" aria-expanded={open} className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">{open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}</button></div>
       </header>
-      <nav className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl p-1.5 md:hidden">
-        {NAV.filter(([path]) => ['overview', 'editor', 'shop', 'notifications', 'visitors'].includes(path)).map(([path, label, Icon]) => (
-          <NavLink key={path} to={`/dashboard/${path}`} className={({ isActive }) => `flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}>
+      {open && <div className="fixed inset-0 z-[39] bg-black/60 px-3 pb-24 pt-20 backdrop-blur-sm md:hidden" onClick={close}><nav className="glass max-h-full overflow-y-auto rounded-2xl p-2" onClick={(event) => event.stopPropagation()}>
+        {links.map(([path, label, Icon]) => <NavLink key={path} to={`/dashboard/${path}`} onPointerDown={() => warm(path)} onClick={close} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}><Icon className="h-4 w-4" />{label}</NavLink>)}
+        {staff?.active && <NavLink to="/dashboard/modview" onClick={close} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}><ShieldCheck className="h-4 w-4" />Modview</NavLink>}
+        <div className="my-2 border-t" />
+        <button type="button" onClick={() => { close(); nav(`/${user.username}`); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted-foreground"><ExternalLink className="h-4 w-4" />View my page</button>
+        <button type="button" onClick={out} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-red-400"><LogOut className="h-4 w-4" />Logout</button>
+      </nav></div>}
+      <nav className="glass fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 grid grid-cols-4 rounded-2xl p-1.5 md:hidden">
+        {NAV.filter(([path]) => ['overview', 'editor'].includes(path)).map(([path, label, Icon]) => (
+          <NavLink key={path} to={`/dashboard/${path}`} onPointerDown={() => warm(path)} className={({ isActive }) => `flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] ${isActive ? 'bg-primary/20 text-foreground' : 'text-muted-foreground'}`}>
             <Icon className="h-4 w-4" />{label}
           </NavLink>
         ))}
@@ -89,19 +102,20 @@ export default function Dashboard() {
     <div className="dash-bg min-h-screen">
       <Sidebar />
       <MobileNav />
-      <main className="min-h-screen px-4 pb-24 pt-24 md:py-8 md:pl-[19rem] md:pr-8">
-        <Suspense fallback={<div className="grid min-h-[50vh] place-items-center text-sm text-muted-foreground">Loading…</div>}><Routes>
+      <main className="min-h-screen overflow-x-hidden px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-[calc(6rem+env(safe-area-inset-top))] sm:px-4 md:py-8 md:pl-[19rem] md:pr-8">
+        <Suspense fallback={<RouteLoading label="Opening this section…" />}><Routes>
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<Overview />} />
           <Route path="editor" element={<Editor />} />
-          <Route path="studio-v2" element={studioPreview ? <StudioPreview /> : <Navigate to="/dashboard/editor" replace />} />
-          <Route path="shop" element={<Shop />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="notifications/:threadId" element={<Conversation />} />
+          <Route path="shop" element={<Navigate to="/dashboard/editor" replace />} />
+          <Route path="premium" element={<Navigate to="/dashboard/editor" replace />} />
+          <Route path="notifications/*" element={<Navigate to="/dashboard/overview" replace />} />
+          <Route path="profiles" element={<Presets />} />
           <Route path="badges" element={<Badges />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="settings" element={<Settings />} />
           <Route path="visitors" element={<VisitorAnalytics />} />
+          <Route path="modview/*" element={<Modview />} />
         </Routes></Suspense>
       </main>
     </div>

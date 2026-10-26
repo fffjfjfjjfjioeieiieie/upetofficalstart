@@ -10,8 +10,6 @@ import ProfilePreview from '../profiles/lamp/ProfilePreview.jsx';
 import DomeShowcase from '../profiles/dome/DomeShowcase.jsx';
 import SadlizzeProfile from '../profiles/sadlizze/SadlizzeProfile.jsx';
 import ProfileBackground from '../shared/ProfileBackground.jsx';
-import LampShop from '../shop/LampShop.jsx';
-import SadlizzeShop from '../shop/SadlizzeShop.jsx';
 import AuthGate from './AuthGate.jsx';
 import FounderGate, { isApprovedFounder } from './FounderGate.jsx';
 import { resolveAppRoute } from './AppRouter.jsx';
@@ -76,7 +74,6 @@ function App() {
   }, [loginPauseUntil]);
   const [authReady, setAuthReady] = useState(false);
   const [lampMusicPlaying, setLampMusicPlaying] = useState(false);
-  const [shopMusicAvailable, setShopMusicAvailable] = useState(false);
   const [claimUsername, setClaimUsername] = useState('');
   const [pendingClaimUsername, setPendingClaimUsername] = useState(() => (
     new URLSearchParams(window.location.search).get('username')?.toLowerCase() ?? ''
@@ -101,15 +98,7 @@ function App() {
     return () => { active = false; clearTimeout(timer); };
   }, [claimUsername, currentUser, pathname]);
 
-  useEffect(() => {
-    setShopMusicAvailable(pathname === '/lamp/shop' && lampMusicPlayingRef.current);
-  }, [pathname]);
 
-  useEffect(() => {
-    if (pathname === '/sadlizze/shop' && lampMusicPlayingRef.current) {
-      lampMusicControlRef.current?.();
-    }
-  }, [pathname]);
 
   useLayoutEffect(() => {
     const handleKeyDown = (event) => {
@@ -218,9 +207,6 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  const isLampShopPage = false;
-  const isSadlizzeShopPage = false;
-  const isShopPage = isLampShopPage || isSadlizzeShopPage;
   const accountName = getHeaderAccountName(currentUser, claimedUsername);
   const accountLabel = claimedUsername ? `@${claimedUsername}` : accountName;
 
@@ -589,26 +575,17 @@ function App() {
   }
 
   return (
-    <div className={`page-shell${!currentUser ? ' public-preview-shell' : ''}${isShopPage ? ' shop-page-shell' : ' home-page-shell'}${isSadlizzeShopPage ? ' sadlizze-shop-shell' : ''}`} data-theme={theme}>
-      {isLampShopPage && (
-        <div className="shop-page-background" aria-hidden="true">
-          <ProfileBackground src="/ok.mp4" />
-        </div>
-      )}
+    <div className={`page-shell${!currentUser ? ' public-preview-shell' : ''} home-page-shell`} data-theme={theme}>
       <header className="topbar">
         <a
           className="brand"
-          href={isShopPage ? '/' : '#home'}
-          onClick={isShopPage ? (event) => {
-            event.preventDefault();
-            navigateTo('/');
-          } : undefined}
+          href="#home"
           aria-label="user.pet home"
         >
           <span className="brand-logo"><img src={theme === 'light' ? '/upetlogoleftlightmode.png' : '/upetlogoleft.png'} alt="user.pet" /></span>
         </a>
         {currentUser && <nav className="main-nav" aria-label="Main navigation">
-          {['Explore', 'Marketplace', 'How it works'].map((label) => (
+          {['Explore', 'How it works'].map((label) => (
             <button key={label} type="button" className="header-placeholder nav-placeholder" disabled title="Coming soon">
               {label}
             </button>
@@ -648,21 +625,7 @@ function App() {
       </header>
 
       <>
-          {isShopPage && (
-            <main className="shop-stage" key="shop-page">
-              {isSadlizzeShopPage ? (
-                <SadlizzeShop onBack={() => navigateTo('/')} />
-              ) : (
-                <LampShop
-                  onBack={() => navigateTo('/')}
-                  musicAvailable={shopMusicAvailable}
-                  musicPlaying={lampMusicPlaying}
-                  onMusicToggle={() => lampMusicControlRef.current?.()}
-                />
-              )}
-            </main>
-          )}
-          <main key="home-persistent" className={`hero-stage${isShopPage ? ' hero-stage-persisted-hidden' : ''}`} id="home">
+          <main key="home-persistent" className="hero-stage" id="home">
             <section className="hero-content" aria-labelledby="page-title">
               <h1 id="page-title">
                 Buy Sell Flex with your <span className="headline-user">user</span><span className="headline-pet">.pet</span>
@@ -684,7 +647,7 @@ function App() {
                       musicControlRef={lampMusicControlRef}
                       onMusicStateChange={setLampMusicPlaying}
                     />
-                    <DomeShowcase active={!isShopPage} />
+                    <DomeShowcase active />
                     <SadlizzeProfile />
                   </div>
                 </div>

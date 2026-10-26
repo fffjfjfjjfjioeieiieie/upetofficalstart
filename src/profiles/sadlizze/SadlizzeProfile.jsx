@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { ArrowRight, Music2, Pause, Play, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Music2, Pause, Play } from 'lucide-react';
 import ProfileBackground from '../../shared/ProfileBackground.jsx';
 import { pauseOtherProfileAudio } from '../../shared/profileAudio.js';
 
 const MUSIC_SRC = '/me-again-lil-tjay.mp3';
 
-export default function SadlizzeProfile({ onShopClick }) {
+export default function SadlizzeProfile({}) {
   const [backgroundReady, setBackgroundReady] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const musicRef = useRef(null);
@@ -93,12 +93,6 @@ export default function SadlizzeProfile({ onShopClick }) {
             <span>Total sales</span>
             <strong>84</strong>
           </div>
-
-          <button className="sadlizze-shop-button" type="button" disabled aria-label="Shop unavailable for now">
-            <ShoppingBag size={14} aria-hidden="true" />
-            <span>Shop</span>
-            <ArrowRight size={14} aria-hidden="true" />
-          </button>
         </article>
       </div>
     </aside>

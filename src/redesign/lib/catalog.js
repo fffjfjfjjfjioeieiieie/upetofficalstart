@@ -1,31 +1,16 @@
 import { useEffect, useState } from "react";
+import { normalizeDecorations } from "../../shared/decorations";
 
 const REMOTE = "https://raw.githubusercontent.com/wickstudio/Discord-Avatar-Decoration-Bot/main/effects.json";
 let cache = null;
 
-const normalize = (list) =>
-  list
-    .filter((d) => d && d.url)
-    .map((d) => {
-      const hash = (d.url.match(/avatar-decoration-presets\/([^.?]+)/) || [])[1] || d.id;
-      return {
-        id: d.id,
-        label: d.label || "Decoration",
-        category: d.category || "decorations",
-        hash,
-        animated: hash.startsWith("a_"),
-        url: `https://cdn.discordapp.com/avatar-decoration-presets/${hash}.png?size=240&passthrough=true`,
-        still: `https://cdn.discordapp.com/avatar-decoration-presets/${hash}.png?size=240&passthrough=false`,
-      };
-    });
-
 export const loadDecorations = async () => {
   if (cache) return cache;
-  for (const src of [REMOTE, "/decorations.json"]) {
+  for (const src of ["/decorations.json", REMOTE]) {
     try {
       const res = await fetch(src);
       if (res.ok) {
-        cache = normalize(await res.json());
+        cache = normalizeDecorations(await res.json());
         return cache;
       }
     } catch (e) {
@@ -46,7 +31,7 @@ export const useDecorations = () => {
 };
 
 export const BADGES = [
-  { id: "owner", label: "Owner", color: "#38bdf8", desc: "Owner of user.pet", lockedVisible: true },
+  { id: "founder", label: "Founder", color: "#fbbf24", desc: "Founder of user.pet", lockedVisible: true },
   { id: "staff", label: "Staff", color: "#6cc4ff", desc: "user.pet team member" },
   { id: "verified", label: "Verified", color: "#3ba7ff", desc: "Verified identity" },
   { id: "premium", label: "Premium", color: "#ffd166", desc: "Supports user.pet" },
@@ -59,7 +44,7 @@ export const BADGES = [
 
 export const PLATFORMS = [
   "discord", "spotify", "tiktok", "youtube", "x", "instagram", "github", "twitch", "steam", "roblox",
-  "soundcloud", "telegram", "snapchat", "reddit", "pinterest", "kick", "cashapp", "paypal", "linktree", "website",
+  "namemc", "soundcloud", "telegram", "snapchat", "reddit", "pinterest", "kick", "cashapp", "paypal", "linktree", "website",
 ];
 
 export const detectPlatform = (url = "") => {
@@ -68,14 +53,17 @@ export const detectPlatform = (url = "") => {
   return PLATFORMS.find((p) => p !== "website" && u.includes(p)) || "website";
 };
 
-export const iconUrl = (platform, color = "ffffff") =>
-  platform === "website" ? null : `https://cdn.simpleicons.org/${platform}/${color.replace("#", "")}`;
+export const iconUrl = (platform, color = "ffffff") => {
+  if (platform === "website") return null;
+  if (platform === "namemc") return "/icons/namemc.png";
+  return `https://cdn.simpleicons.org/${platform}/${color.replace("#", "")}`;
+};
 
 export const BRAND = {
   discord: ["5865F2", "https://discord.gg/"], spotify: ["1DB954", "https://open.spotify.com/user/"], tiktok: ["25F4EE", "https://tiktok.com/@"],
   youtube: ["FF0000", "https://youtube.com/@"], x: ["FFFFFF", "https://x.com/"], instagram: ["E4405F", "https://instagram.com/"],
   github: ["FFFFFF", "https://github.com/"], twitch: ["9146FF", "https://twitch.tv/"], steam: ["66C0F4", "https://steamcommunity.com/id/"],
-  roblox: ["FFFFFF", "https://roblox.com/users/"], soundcloud: ["FF5500", "https://soundcloud.com/"], telegram: ["26A5E4", "https://t.me/"],
+  roblox: ["FFFFFF", "https://roblox.com/users/"], namemc: ["39A9DB", "https://namemc.com/profile/"], soundcloud: ["FF5500", "https://soundcloud.com/"], telegram: ["26A5E4", "https://t.me/"],
   snapchat: ["FFFC00", "https://snapchat.com/add/"], reddit: ["FF4500", "https://reddit.com/u/"], pinterest: ["E60023", "https://pinterest.com/"],
   kick: ["53FC18", "https://kick.com/"], cashapp: ["00D632", "https://cash.app/$"], paypal: ["009CDE", "https://paypal.me/"],
   linktree: ["43E55E", "https://linktr.ee/"], website: ["6CC4FF", "https://"],

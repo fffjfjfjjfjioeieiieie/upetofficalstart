@@ -1,7 +1,7 @@
 module.exports = {
   blocklist: ['overline'],
   darkMode: ['class'],
-  content: ['./index.html', './src/redesign/**/*.{js,jsx,ts,tsx}', './src/shared/**/*.{js,jsx,ts,tsx}'],
+  content: ['./index.html', './src/redesign/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       borderRadius: {

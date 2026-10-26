@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Music2, Pause, Play, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Music2, Pause, Play } from 'lucide-react';
 import { FFTVisualizer } from '@fft-visualizer/react';
 import { gsap } from 'gsap';
 import '@fft-visualizer/react/style.css';
@@ -19,7 +19,7 @@ const VISUALIZER_GRADIENT = [
   { stop: 1, color: '#c6e8ff' },
 ];
 
-export default function ProfilePreview({ onShopClick, musicControlRef, onMusicStateChange }) {
+export default function ProfilePreview({ musicControlRef, onMusicStateChange }) {
   const audioRef = useRef(null);
   const visualizerRef = useRef(null);
   const dividerRef = useRef(null);
@@ -308,12 +308,6 @@ export default function ProfilePreview({ onShopClick, musicControlRef, onMusicSt
               <strong>{profileData.totalSales}</strong>
             </div>
           </div>
-
-          <button className={styles.shopButton} type="button" aria-label="Shop unavailable for now" disabled>
-            <ShoppingBag size={14} />
-            Shop
-            <ArrowRight size={14} />
-          </button>
           <audio
             ref={audioRef}
             data-profile-audio=""

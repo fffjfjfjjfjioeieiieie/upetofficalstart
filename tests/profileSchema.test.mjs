@@ -5,6 +5,30 @@ import { redesignFromDocument, documentFromRedesign, sanitizeRedesignProfile } f
 import { profileName } from '../src/shared/profileIdentity.js';
 import { createEntryPassword, verifyEntryPassword } from '../src/redesign/lib/entryPassword.js';
 
+test('connected shop and its profile visibility survive profile publication',()=>{
+  for(const enabled of [true,false]){
+    const profile=sanitizeRedesignProfile({shop:{connected:true,enabled,name:'My store'}},'shop-owner');
+    const restored=redesignFromDocument(documentFromRedesign(profile,'owner','shop-owner'),'shop-owner');
+    assert.equal(restored.shop.connected,true);
+    assert.equal(restored.shop.enabled,enabled);
+    assert.equal(restored.shop.name,'My store');
+  }
+});
+
+test('small profile cards and minimal styling save and round-trip across all editor widths', () => {
+  for (const width of [280, 300, 319, 320, 440, 620, 900]) {
+    const profile = sanitizeRedesignProfile({ card: { width, layout: 'minimal', alpha: 0, radius: 0, blur: 0, borderAlpha: 0, tilt: false } }, 'mobile-user');
+    const saved = documentFromRedesign(profile, 'owner', 'mobile-user');
+    assert.equal(saved.theme.width, width);
+    const restored = redesignFromDocument(saved, 'mobile-user');
+    assert.equal(restored.card.width, width);
+    assert.equal(restored.card.alpha, 0);
+    assert.equal(restored.card.radius, 0);
+    assert.equal(restored.card.blur, 0);
+    assert.equal(restored.card.borderAlpha, 0);
+  }
+});
+
 test('entry settings survive publication and entry passwords verify', async () => {
   const password = await createEntryPassword('secret phrase');
   const profile = sanitizeRedesignProfile({ entry: { mode: 'password', title: 'Welcome', subtitle: 'Come in', textEffect: 'glitch', ...password } }, 'lamp');
@@ -23,6 +47,93 @@ test('new and existing placeholder profiles use their claimed username', () => {
   assert.equal(redesignFromDocument(null, 'kid').alias, 'kid');
   assert.equal(redesignFromDocument({ redesign: { displayName: 'your name', alias: 'Your Name' } }, 'kid').displayName, 'kid');
   assert.equal(profileName('A chosen name', 'kid'), 'A chosen name');
+});
+
+test('background effect amount and color survive publication', () => {
+  const profile = sanitizeRedesignProfile({ effects: { background: 'stars', backgroundAmount: 73, backgroundColor: '#f5c8ff' } }, 'stars');
+  const restored = redesignFromDocument(documentFromRedesign(profile, 'owner', 'stars'), 'stars');
+
+  assert.equal(restored.effects.background, 'stars');
+  assert.equal(restored.effects.backgroundAmount, 73);
+  assert.equal(restored.effects.backgroundColor, '#f5c8ff');
+  assert.equal(sanitizeRedesignProfile({ effects: { backgroundAmount: 999, backgroundColor: 'bad' } }, 'stars').effects.backgroundAmount, 100);
+});
+
+test('music player and lyric preferences sanitize safely and survive publication', () => {
+  const profile = sanitizeRedesignProfile({ audio: { src: 'https://cdn.example/song.mp3', playerPlacement: 'right', popupOnLoad: true, popupSide: 'right', playerBackground: '#222222', playerTextColor: '#abcdef', playerOpacity: .6, playerScale: 120, playerRadius: 20, playerBlur: 8, playerCoverSize: 55, playerEffect: 'glow', playerShowProgress: true, playerProgressStyle: 'glow', playerProgressHeight: 7, playerProgressColor: '#fedcba', playerProgressGlow: true, playerShowCover: false, playerShowArtist: false, playerBorder: false, expandedEnabled: true, expandedStyle: 'artwork', expandedBackground: '#121212', expandedTextColor: '#ededed', expandedOpacity: .8, expandedRadius: 18, expandedBlur: 12, expandedWidth: 600, expandedArtworkSize: 300, expandedEffect: 'gradient', expandedShowTimes: false, expandedShowSkip: false, expandedShowLyrics: false, lyrics: { enabled: true, textEffect: 'glow', alignment: 'left', display: 'right', textColor: '#aabbcc', activeColor: '#123456', textSize: 28, panelStyle: 'clear', sideVertical: 'bottom', sideWidth: 500, sideInset: 7, sideTextSize: 72, popout: true, lines: [{ id: 'l1', time: 12, endTime: 16, text: 'First line' }] } } }, 'music');
+  const published = documentFromRedesign(profile, 'owner', 'music');
+  const restored = redesignFromDocument(published, 'music');
+  assert.equal(restored.audio.playerPlacement, 'right');
+  assert.equal(restored.audio.popupOnLoad, true);
+  assert.equal(restored.audio.popupSide, 'right');
+  assert.equal(restored.audio.playerBackground, '#222222');
+  assert.equal(restored.audio.playerOpacity, .6);
+  assert.equal(restored.audio.playerScale, 120);
+  assert.equal(restored.audio.playerRadius, 20);
+  assert.equal(restored.audio.playerBlur, 8);
+  assert.equal(restored.audio.playerCoverSize, 55);
+  assert.equal(restored.audio.playerEffect, 'glow');
+  assert.equal(restored.audio.playerShowProgress, true);
+  assert.equal(restored.audio.playerProgressStyle, 'glow');
+  assert.equal(restored.audio.playerProgressHeight, 7);
+  assert.equal(restored.audio.playerProgressColor, '#fedcba');
+  assert.equal(restored.audio.playerProgressGlow, true);
+  assert.equal(restored.audio.playerShowCover, false);
+  assert.equal(restored.audio.playerShowArtist, false);
+  assert.equal(restored.audio.playerBorder, false);
+  assert.equal(restored.audio.expandedEnabled, true);
+  assert.equal(restored.audio.expandedStyle, 'artwork');
+  assert.equal(restored.audio.expandedBackground, '#121212');
+  assert.equal(restored.audio.expandedTextColor, '#ededed');
+  assert.equal(restored.audio.expandedOpacity, .8);
+  assert.equal(restored.audio.expandedRadius, 18);
+  assert.equal(restored.audio.expandedBlur, 12);
+  assert.equal(restored.audio.expandedWidth, 600);
+  assert.equal(restored.audio.expandedArtworkSize, 300);
+  assert.equal(restored.audio.expandedEffect, 'gradient');
+  assert.equal(restored.audio.expandedShowTimes, false);
+  assert.equal(restored.audio.expandedShowSkip, false);
+  assert.equal(restored.audio.expandedShowLyrics, false);
+  assert.equal(restored.audio.lyrics.textEffect, 'glow');
+  assert.equal(restored.audio.lyrics.alignment, 'left');
+  assert.equal(restored.audio.lyrics.display, 'right');
+  assert.equal(restored.audio.lyrics.textColor, '#aabbcc');
+  assert.equal(restored.audio.lyrics.activeColor, '#123456');
+  assert.equal(restored.audio.lyrics.textSize, 28);
+  assert.equal(restored.audio.lyrics.panelStyle, 'clear');
+  assert.equal(restored.audio.lyrics.sideVertical, 'bottom');
+  assert.equal(restored.audio.lyrics.sideWidth, 500);
+  assert.equal(restored.audio.lyrics.sideInset, 7);
+  assert.equal(restored.audio.lyrics.sideTextSize, 72);
+  assert.equal(restored.audio.lyrics.popout, true);
+  assert.equal(restored.audio.lyrics.lines[0].time, 12);
+  assert.equal(restored.audio.lyrics.lines[0].endTime, 16);
+  assert.equal(restored.audio.lyrics.lines[0].synced, true);
+  const untimed = sanitizeRedesignProfile({ audio: { lyrics: { lines: [{ id: 'draft', text: 'Waiting', time: 0, synced: false }] } } }, 'music');
+  assert.equal(untimed.audio.lyrics.lines[0].synced, false);
+  assert.equal(sanitizeRedesignProfile({}, 'music').audio.expandedEnabled, false);
+  assert.equal(sanitizeRedesignProfile({ audio: { playerPlacement: 'unsupported', popupSide: 'up', lyrics: { textEffect: 'flash', alignment: 'diagonal' } } }, 'music').audio.playerPlacement, 'card');
+});
+
+test('founder profiles receive every official badge once', () => {
+  const dome = sanitizeRedesignProfile({}, 'dome');
+  assert.equal(dome.badges.includes('founder'), true);
+  assert.equal(dome.badges.includes('owner'), false);
+  assert.equal(dome.shownBadges.includes('founder'), true);
+  assert.equal(dome.badges.length, 9);
+  assert.equal(new Set(dome.badges).size, 9);
+  const lamp = sanitizeRedesignProfile({}, 'lamp');
+  assert.deepEqual(lamp.badges, dome.badges);
+});
+
+test('founder badge visibility and custom order survive publication', () => {
+  const profile = sanitizeRedesignProfile({ badgeOrder: ['og', 'founder'], hiddenBadges: ['premium'] }, 'lamp');
+  assert.deepEqual(profile.badges.slice(0, 2), ['og', 'founder']);
+  assert.equal(profile.shownBadges.includes('premium'), false);
+  const restored = redesignFromDocument(documentFromRedesign(profile, 'owner', 'lamp'), 'lamp');
+  assert.deepEqual(restored.badges.slice(0, 2), ['og', 'founder']);
+  assert.equal(restored.shownBadges.includes('premium'), false);
+  assert.equal(restored.badges.includes('owner'), false);
 });
 
 test('legacy Dome fields migrate to a versioned document without losing music or links', () => {

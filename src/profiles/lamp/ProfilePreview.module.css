@@ -320,33 +320,6 @@
   font-size: 9px;
 }
 
-.shopButton {
-  position: absolute;
-  z-index: 4;
-  bottom: 90px;
-  left: 24px;
-  display: flex;
-  width: 472px;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  border: 1px solid color-mix(in srgb, var(--highlight) 30%, transparent);
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--highlight) 18%, transparent);
-  color: #f3f1f6;
-  font-size: 12px;
-  opacity: 0.58;
-  box-shadow: 0 0 12px rgba(145, 83, 195, 0.1);
-  cursor: pointer;
-  transition: opacity 140ms ease, background 140ms ease;
-}
-
-.shopButton:hover {
-  opacity: 0.82;
-  background: color-mix(in srgb, var(--highlight) 28%, transparent);
-}
-
 @media (max-width: 1200px) {
   .preview {
     position: relative;
@@ -369,13 +342,6 @@
     width: 100%;
     height: 650px;
     transform: rotate(-2deg);
-  }
-
-  .shopButton {
-    right: 22px;
-    bottom: 65px;
-    left: 22px;
-    width: auto;
   }
 }
 
@@ -423,13 +389,6 @@
     left: calc(50% + 15px);
     width: 24px;
     height: 24px;
-  }
-
-  .shopButton {
-    right: 12px;
-    bottom: 40px;
-    left: 12px;
-    min-height: 36px;
   }
 
   .music {

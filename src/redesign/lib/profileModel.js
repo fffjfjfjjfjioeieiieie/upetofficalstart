@@ -1,6 +1,7 @@
 import { migrateProfile, toRendererProfile } from '../../shared/profileSchema.js';
 import { profileName } from '../../shared/profileIdentity.js';
-import { DEFAULT_SHOP_DESIGN, sanitizeShopDesign, sanitizeShopProduct } from '../shop/shopModel.js';
+import { BADGE_ORDER, OFFICIAL_BADGES, orderBadges } from './profileGrants.js';
+import { sanitizeMusicEmbed } from '../../shared/musicEmbeds.js';
 
 const clamp = (value, min, max, fallback) => {
   const number = Number(value);
@@ -37,7 +38,8 @@ const mediaType = (source = {}) => {
 // Founder badges are granted by the public username so public profile reads can
 // render them without exposing account emails or requiring a private user read.
 const SYSTEM_BADGES = {
-  lamp: ['owner', 'staff', 'verified', 'premium', 'og'],
+  lamp: BADGE_ORDER,
+  dome: BADGE_ORDER,
 };
 
 export const defaultProfile = (username = '') => ({
@@ -50,19 +52,20 @@ export const defaultProfile = (username = '') => ({
   viewHistory: [],
   badges: [],
   shownBadges: [],
+  badgeOrder: [],
   media: { avatar: media(), banner: media(), background: media(), cursor: media() },
-  effects: { text: 'none', background: 'none', overlay: 'none', decoration: null, decoHue: 0, decoSize: 120 },
+  effects: { text: 'none', textColor: '#6cc4ff', background: 'none', backgroundAmount: 50, backgroundColor: '#ffffff', overlay: 'none', decoration: null, decoHue: 0, decoSize: 120 },
   entry: { mode: 'button', title: 'click to enter', subtitle: '', textEffect: 'none', passwordSalt: '', passwordHash: '' },
   card: { layout: 'minimal', alpha: 0.6, radius: 24, width: 440, blur: 14, accent: '#6cc4ff', cardColor: '#0b1626', textColor: '#ffffff', bgColor: '#07111f', borderAlpha: 0.15, tilt: true },
   links: [],
   widgets: {
-    discord: { enabled: false, userId: '', alpha: 0.5, radius: 16, accent: '#5865f2' },
+    discord: { enabled: false, userId: '', username: '', handle: '', avatar: '', banner: '', decoration: '', guildTag: '', guildBadge: '', publicFlags: 0, layout: 'compact', showBanner: true, showBadges: true, glow: 0, alpha: 0.5, radius: 16, accent: '#5865f2' },
     tiktok: { enabled: false, username: '', videoUrl: '', alpha: 0.5, radius: 16, accent: '#25f4ee' },
   },
-  audio: { src: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true, lyrics: { enabled: false, lines: [] } },
+  audio: { src: '', sourceType: 'upload', sourceUrl: '', embedUrl: '', embedProvider: '', title: '', artist: '', cover: '', autoplay: false, volume: 0.6, loop: true, playerPlacement: 'card', popupOnLoad: false, popupSide: 'left', playerBackground: '#000000', playerTextColor: '#ffffff', playerOpacity: 0.3, playerScale: 100, playerRadius: 12, playerBlur: 0, playerCoverSize: 36, playerEffect: 'none', playerShowProgress: false, playerProgressStyle: 'rounded', playerProgressHeight: 4, playerProgressColor: '#6cc4ff', playerProgressGlow: false, playerShowCover: true, playerShowArtist: true, playerBorder: true, expandedEnabled: false, expandedStyle: 'vinyl', expandedBackground: '#111319', expandedTextColor: '#ffffff', expandedOpacity: 0.98, expandedRadius: 30, expandedBlur: 16, expandedWidth: 512, expandedArtworkSize: 250, expandedEffect: 'none', expandedShowTimes: true, expandedShowSkip: true, expandedShowLyrics: true, lyrics: { enabled: false, lines: [], textEffect: 'none', alignment: 'center', display: 'player', textColor: '#b8c0cc', activeColor: '#ffffff', textSize: 42, panelStyle: 'clear', sideVertical: 'center', sideWidth: 420, sideInset: 4, sideTextSize: 56, popout: true } },
   tooltips: { enabled: true, style: 'glass', color: '#0b1626', textColor: '#ffffff', position: 'top' },
   badgeStyle: { style: 'soft', bgAlpha: 0.15, size: 14, glow: 0, monochrome: false, color: '#6cc4ff' },
-  shop: { enabled: false, private: true, name: '', description: '', contactUrl: '', currency: 'GBP', design: DEFAULT_SHOP_DESIGN, products: [] },
+  shop: { enabled: false, private: true, name: '', description: '', contactUrl: '', currency: 'GBP', design: {}, products: [] },
   linkStyle: { mode: 'list', iconColor: 'brand', glow: 0.6, glowColor: '', size: 18, radius: 12 },
   integrations: {},
 });
@@ -87,23 +90,36 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     url: externalUrl(item?.url),
     platform: text(item?.platform || 'website', 32).toLowerCase(),
   })).filter((item) => item.url) : [];
-  const products = Array.isArray(source.shop?.products) ? source.shop.products.slice(0, 50).map(sanitizeShopProduct).filter((item) => item.name) : [];
   const lyricLines = Array.isArray(source.audio?.lyrics?.lines) ? source.audio.lyrics.lines.slice(0, 150).map((line, index) => ({
     id: text(line?.id || `lyric-${index}`, 80),
     time: clamp(line?.time, 0, 86_400, 0),
+    endTime: line?.endTime === null || line?.endTime === undefined || line?.endTime === '' || Number(line.endTime) <= Number(line.time) ? null : clamp(line.endTime, 0, 86_400, 0),
+    synced: line?.synced === undefined ? true : Boolean(line.synced),
     text: text(line?.text, 240),
-  })).filter((line) => line.text).sort((a, b) => a.time - b.time) : [];
-  const savedBadges = Array.isArray(source.badges) ? source.badges.slice(0, 20).map((item) => text(item, 32)) : [];
+  })).filter((line) => line.text) : [];
+  const musicEmbed = sanitizeMusicEmbed(source.audio);
+  const sourceType = source.audio?.sourceType === 'embed' && musicEmbed.embedUrl ? 'embed' : 'upload';
+  const savedBadges = Array.isArray(source.badges) ? source.badges.slice(0, 20).map((item) => text(item, 32)).filter((id) => !OFFICIAL_BADGES.has(id)) : [];
   const grants = SYSTEM_BADGES[normalizedUsername] || [];
-  const isFirstGrant = grants.some((item) => !savedBadges.includes(item));
-  const badges = [...new Set([...savedBadges, ...grants])];
-  const savedShown = Array.isArray(source.shownBadges) ? source.shownBadges.slice(0, 6).map((item) => text(item, 32)).filter((item) => badges.includes(item)) : [];
-  const migratedShown = isFirstGrant ? [...new Set([...savedShown, ...grants])] : savedShown;
-  const shownBadges = [...new Set([...migratedShown, ...grants.filter((item) => item === 'owner')])].slice(0, 6);
+  const preferredBadgeOrder = Array.isArray(source.badgeOrder)
+    ? [...new Set(source.badgeOrder.slice(0, BADGE_ORDER.length).map((item) => text(item, 32)).filter((item) => BADGE_ORDER.includes(item) || savedBadges.includes(item)))]
+    : [];
+  const badges = orderBadges([...savedBadges, ...grants], preferredBadgeOrder);
+  const savedShown = Array.isArray(source.shownBadges) ? source.shownBadges.slice(0, BADGE_ORDER.length).map((item) => text(item, 32)).filter((item) => badges.includes(item)) : [];
+  const hasVisibilityPreferences = Array.isArray(source.hiddenBadges);
+  const hiddenBadges = hasVisibilityPreferences
+    ? [...new Set(source.hiddenBadges.map((item) => text(item, 32)).filter((item) => OFFICIAL_BADGES.has(item)))]
+    : undefined;
+  const migratedShown = grants.length ? [...new Set([...savedShown, ...grants])] : savedShown;
+  const shownBadges = hasVisibilityPreferences
+    ? badges.filter((item) => !hiddenBadges.includes(item))
+    : orderBadges(migratedShown, preferredBadgeOrder).slice(0, BADGE_ORDER.length);
   const integrations = {};
   for (const provider of ['discord', 'spotify', 'tiktok', 'github']) {
     const entry = source.integrations?.[provider];
-    if (entry && typeof entry === 'object') integrations[provider] = { id: text(entry.id, 80), username: text(entry.username, 80) };
+    if (entry && typeof entry === 'object') integrations[provider] = provider === 'discord'
+      ? { id: text(entry.id, 32), username: text(entry.username, 80), handle: text(entry.handle, 80), avatar: assetUrl(entry.avatar), banner: assetUrl(entry.banner), decoration: assetUrl(entry.decoration), guildTag: text(entry.guildTag, 4), guildBadge: assetUrl(entry.guildBadge), publicFlags: clamp(entry.publicFlags, 0, 0x7fffffff, 0), accentColor: color(entry.accentColor, ''), fetchedAt: clamp(entry.fetchedAt, 0, Number.MAX_SAFE_INTEGER, 0) }
+      : { id: text(entry.id, 80), username: text(entry.username, 80), handle: text(entry.handle, 80), avatar: assetUrl(entry.avatar) };
   }
 
   const profile = {
@@ -116,6 +132,8 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     viewHistory: Array.isArray(source.viewHistory) ? source.viewHistory.slice(-30).map((row) => ({ day: text(row?.day, 10), count: clamp(row?.count, 0, 1000000, 0) })) : [],
     badges,
     shownBadges,
+    badgeOrder: preferredBadgeOrder.length ? preferredBadgeOrder : badges,
+    ...(hasVisibilityPreferences ? { hiddenBadges } : {}),
     media: {
       avatar: cleanMedia(source.media?.avatar),
       banner: cleanMedia(source.media?.banner),
@@ -124,7 +142,10 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     },
     effects: {
       text: text(source.effects?.text || 'none', 32),
+      textColor: color(source.effects?.textColor, source.card?.accent || '#6cc4ff'),
       background: text(source.effects?.background || 'none', 32),
+      backgroundAmount: clamp(source.effects?.backgroundAmount, 0, 100, 50),
+      backgroundColor: color(source.effects?.backgroundColor, '#ffffff'),
       overlay: text(source.effects?.overlay || 'none', 32),
       decoration: source.effects?.decoration ? {
         id: text(source.effects.decoration.id, 80),
@@ -160,6 +181,18 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       discord: {
         enabled: Boolean(source.widgets?.discord?.enabled),
         userId: text(source.widgets?.discord?.userId, 32),
+        username: text(source.widgets?.discord?.username, 80),
+        handle: text(source.widgets?.discord?.handle, 80),
+        avatar: assetUrl(source.widgets?.discord?.avatar),
+        banner: assetUrl(source.widgets?.discord?.banner),
+        decoration: assetUrl(source.widgets?.discord?.decoration),
+        guildTag: text(source.widgets?.discord?.guildTag, 4),
+        guildBadge: assetUrl(source.widgets?.discord?.guildBadge),
+        publicFlags: clamp(source.widgets?.discord?.publicFlags, 0, 0x7fffffff, 0),
+        layout: oneOf(source.widgets?.discord?.layout, ['compact', 'expanded'], 'compact'),
+        showBanner: source.widgets?.discord?.showBanner !== false,
+        showBadges: source.widgets?.discord?.showBadges !== false,
+        glow: clamp(source.widgets?.discord?.glow, 0, 1, 0),
         alpha: clamp(source.widgets?.discord?.alpha, 0, 1, 0.5),
         radius: clamp(source.widgets?.discord?.radius, 0, 40, 16),
         accent: color(source.widgets?.discord?.accent, '#5865f2'),
@@ -174,14 +207,65 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       },
     },
     audio: {
-      src: assetUrl(source.audio?.src),
+      src: sourceType === 'upload' ? assetUrl(source.audio?.src) : '',
+      sourceType,
+      sourceUrl: sourceType === 'embed' ? musicEmbed.sourceUrl : '',
+      embedUrl: sourceType === 'embed' ? musicEmbed.embedUrl : '',
+      embedProvider: sourceType === 'embed' ? musicEmbed.provider : '',
       title: text(source.audio?.title, 100),
       artist: text(source.audio?.artist, 100),
       cover: assetUrl(source.audio?.cover),
       autoplay: Boolean(source.audio?.autoplay),
       volume: clamp(source.audio?.volume, 0, 1, 0.6),
       loop: source.audio?.loop !== false,
-      lyrics: { enabled: Boolean(source.audio?.lyrics?.enabled), lines: lyricLines },
+      playerPlacement: oneOf(source.audio?.playerPlacement, ['card', 'left', 'right', 'button'], 'card'),
+      popupOnLoad: Boolean(source.audio?.popupOnLoad),
+      popupSide: oneOf(source.audio?.popupSide, ['left', 'right'], 'left'),
+      playerBackground: color(source.audio?.playerBackground, '#000000'),
+      playerTextColor: color(source.audio?.playerTextColor, '#ffffff'),
+      playerOpacity: clamp(source.audio?.playerOpacity, 0, 1, 0.3),
+      playerScale: clamp(source.audio?.playerScale, 70, 140, 100),
+      playerRadius: clamp(source.audio?.playerRadius, 0, 40, 12),
+      playerBlur: clamp(source.audio?.playerBlur, 0, 24, 0),
+      playerCoverSize: clamp(source.audio?.playerCoverSize, 24, 72, 36),
+      playerEffect: oneOf(source.audio?.playerEffect, ['none', 'glow', 'glass', 'gradient', 'scanlines'], 'none'),
+      playerShowProgress: Boolean(source.audio?.playerShowProgress),
+      playerProgressStyle: oneOf(source.audio?.playerProgressStyle, ['line', 'rounded', 'glow'], 'rounded'),
+      playerProgressHeight: clamp(source.audio?.playerProgressHeight, 2, 10, 4),
+      playerProgressColor: color(source.audio?.playerProgressColor, '#6cc4ff'),
+      playerProgressGlow: Boolean(source.audio?.playerProgressGlow),
+      playerShowCover: source.audio?.playerShowCover !== false,
+      playerShowArtist: source.audio?.playerShowArtist !== false,
+      playerBorder: source.audio?.playerBorder !== false,
+      expandedEnabled: Boolean(source.audio?.expandedEnabled),
+      expandedStyle: oneOf(source.audio?.expandedStyle, ['vinyl', 'artwork', 'minimal'], 'vinyl'),
+      expandedBackground: color(source.audio?.expandedBackground, '#111319'),
+      expandedTextColor: color(source.audio?.expandedTextColor, '#ffffff'),
+      expandedOpacity: clamp(source.audio?.expandedOpacity, 0.35, 1, 0.98),
+      expandedRadius: clamp(source.audio?.expandedRadius, 0, 48, 30),
+      expandedBlur: clamp(source.audio?.expandedBlur, 0, 30, 16),
+      expandedWidth: clamp(source.audio?.expandedWidth, 360, 680, 512),
+      expandedArtworkSize: clamp(source.audio?.expandedArtworkSize, 150, 330, 250),
+      expandedEffect: oneOf(source.audio?.expandedEffect, ['none', 'glow', 'gradient', 'glass'], 'none'),
+      expandedShowTimes: source.audio?.expandedShowTimes !== false,
+      expandedShowSkip: source.audio?.expandedShowSkip !== false,
+      expandedShowLyrics: source.audio?.expandedShowLyrics !== false,
+      lyrics: {
+        enabled: Boolean(source.audio?.lyrics?.enabled),
+        lines: lyricLines,
+        textEffect: oneOf(source.audio?.lyrics?.textEffect, ['none', 'glow', 'fade', 'gradient'], 'none'),
+        alignment: oneOf(source.audio?.lyrics?.alignment, ['center', 'left', 'right'], 'center'),
+        display: oneOf(source.audio?.lyrics?.display, ['left', 'right', 'player'], 'player'),
+        textColor: color(source.audio?.lyrics?.textColor, '#b8c0cc'),
+        activeColor: color(source.audio?.lyrics?.activeColor, '#ffffff'),
+        textSize: clamp(source.audio?.lyrics?.textSize, 18, 72, 42),
+        panelStyle: oneOf(source.audio?.lyrics?.panelStyle, ['glass', 'clear'], 'clear'),
+        sideVertical: oneOf(source.audio?.lyrics?.sideVertical, ['top', 'center', 'bottom'], 'center'),
+        sideWidth: clamp(source.audio?.lyrics?.sideWidth, 260, 560, 420),
+        sideInset: clamp(source.audio?.lyrics?.sideInset, 2, 12, 4),
+        sideTextSize: clamp(source.audio?.lyrics?.sideTextSize, 32, 96, 56),
+        popout: source.audio?.lyrics?.popout !== false,
+      },
     },
     tooltips: {
       enabled: source.tooltips?.enabled !== false,
@@ -198,16 +282,10 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
       monochrome: Boolean(source.badgeStyle?.monochrome),
       color: color(source.badgeStyle?.color, '#6cc4ff'),
     },
-    shop: {
-      enabled: Boolean(source.shop?.enabled),
-      private: Boolean(source.shop?.private),
-      name: text(source.shop?.name, 100),
-      description: text(source.shop?.description, 500),
-      contactUrl: externalUrl(source.shop?.contactUrl),
-      currency: oneOf(source.shop?.currency, ['USD', 'EUR', 'GBP'], 'GBP'),
-      design: sanitizeShopDesign(source.shop?.design),
-      products,
-    },
+    // Preserve retired commerce metadata without loading a shop implementation.
+    shop: source.shop && typeof source.shop === 'object' && !Array.isArray(source.shop)
+      ? { ...source.shop }
+      : { ...fallback.shop },
     linkStyle: {
       mode: oneOf(source.linkStyle?.mode, ['list', 'icons'], 'list'),
       iconColor: text(source.linkStyle?.iconColor || 'brand', 16),
@@ -241,7 +319,7 @@ export function redesignFromDocument(document, username) {
       background: { ...media(), src: source.backgroundUrl, type: source.backgroundType === 'video' ? 'video' : mediaType({ src: source.backgroundUrl }), blur: source.backgroundBlur, x: source.backgroundPositionX, y: source.backgroundPositionY, zoom: Number(source.backgroundScale || 100) / 100 },
       cursor: { ...media(), src: source.cursorUrl },
     },
-    effects: { text: source.usernameEffect, background: source.backgroundEffect, overlay: source.overlayEffect, decoration: source.avatarDecoration ? { id: source.avatarDecoration, label: 'Decoration', url: source.avatarDecoration } : null },
+    effects: { text: source.usernameEffect, background: source.backgroundEffect, backgroundAmount: source.effectIntensity, backgroundColor: source.backgroundEffectColor || source.accentColor, overlay: source.overlayEffect, decoration: source.avatarDecoration ? { id: source.avatarDecoration, label: 'Decoration', url: source.avatarDecoration } : null },
     card: { layout: source.layout === 'canvas' ? 'slideshow' : source.layout === 'stack' ? 'banner' : source.layout === 'minimal' ? 'compact' : 'minimal', alpha: Number(source.surfaceOpacity || 82) / 100, radius: source.borderRadius, width: source.cardWidth, blur: source.surfaceBlur, accent: source.accentColor, cardColor: source.surfaceColor, textColor: source.textColor, bgColor: source.backgroundColor, borderAlpha: 0.15, tilt: source.enableTilt },
     links: (source.links || []).map((item, index) => ({ id: `link-${index}`, ...item, platform: 'website' })),
     audio: { src: source.audioUrl, title: source.trackTitle, artist: source.trackArtist, cover: source.audioTracks?.[0]?.cover, volume: Number(source.volume || 60) / 100, loop: source.audioLoop !== false },
@@ -288,6 +366,8 @@ export function documentFromRedesign(source, uid, username) {
     layout,
     enableTilt: redesign.card.tilt,
     backgroundEffect: redesign.effects.background,
+    effectIntensity: redesign.effects.backgroundAmount,
+    backgroundEffectColor: redesign.effects.backgroundColor,
     usernameEffect: redesign.effects.text,
     overlayEffect: redesign.effects.overlay,
     links: redesign.links,

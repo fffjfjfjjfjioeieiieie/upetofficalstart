@@ -1,13 +1,11 @@
-import { CreditCard, Link2, Palette, Shield, ShoppingBag, UserRound } from 'lucide-react';
+import { Link2, Palette, Shield, UserRound } from 'lucide-react';
 import { moreArticles } from './moreArticles';
 
 export const categories = [
   { slug: 'account-login', name: 'Account & Login', description: 'Signing in, passwords and account access.', icon: UserRound, available: true },
   { slug: 'profiles-customization', name: 'Profiles & Customization', description: 'Build, style and publish your user.pet page.', icon: Palette, available: true },
   { slug: 'links-widgets', name: 'Links & Widgets', description: 'Add useful links and connected content.', icon: Link2, available: true },
-  { slug: 'marketplace', name: 'Marketplace', description: 'Shops, listings and safer transactions.', icon: ShoppingBag, available: true },
   { slug: 'safety-reports', name: 'Safety & Reports', description: 'Protect yourself and report a concern.', icon: Shield, available: true },
-  { slug: 'billing-payments', name: 'Billing & Payments', description: 'Payment guidance as commerce develops.', icon: CreditCard, available: false },
 ];
 
 const reviewedAt = '17 October 2026';
@@ -22,9 +20,9 @@ export const articles = [
     ['Reset a forgotten password', ['Open the Upet login page and enter your account email.', 'Choose Forgot password.', 'Open the message from Firebase and follow its secure reset link.']],
     ['Stay safe', ['Upet staff should never ask you to send your password in a ticket or chat.', 'Check the destination before entering credentials.']],
   ], ['password', 'security'], true),
-  article('claim-a-username', 'Claim a username', 'Choose the permanent handle used in your public user.pet URL.', 'profiles-customization', [
+  article('claim-a-username', 'Claim a username', 'Choose the handle used in your public user.pet URL.', 'profiles-customization', [
     ['Before claiming', ['Usernames become part of your public URL and are currently permanent.', 'Choose carefully and avoid including private information.']],
-    ['Claim it', ['Sign in to an approved account.', 'Enter an available username on the claim screen.', 'Confirm it to create your profile.']],
+    ['Claim it', ['Sign in to an approved account.', 'Enter an available username on the claim screen.', 'Confirm it to create your profile.', 'You can later change the username in Dashboard → Settings once every two hours.']],
   ], ['username', 'profile'], true),
   article('customize-your-profile', 'Customize your profile', 'Change profile media, card styling, effects, links and audio.', 'profiles-customization', [
     ['Open the editor', ['Sign in and open Dashboard.', 'Choose Editor from the navigation.', 'Use Media, Effects, Card, Links and Audio to make changes.']],
@@ -38,10 +36,6 @@ export const articles = [
     ['Add a link', ['Open Dashboard and then Editor.', 'Choose Links and enter a clear label and complete https URL.', 'Review the destination before sharing your profile.']],
     ['Link safety', ['Do not link to phishing, malware, credential theft or unlawful content.', 'You are responsible for destinations you add.']],
   ], ['links', 'widgets']),
-  article('buy-and-sell-safely', 'Buying and selling safely', 'Practical precautions while Upet marketplace checkout is still developing.', 'marketplace', [
-    ['Current availability', ['Marketplace listings and seller chat are available.', 'Integrated Upet checkout, escrow and buyer protection are not currently offered.', 'Treat external payment requests carefully.']],
-    ['Safer transactions', ['Confirm what is being sold and keep a record of the conversation.', 'Never share account passwords or authentication codes.', 'Report suspicious listings through a support ticket.']],
-  ], ['marketplace', 'safety'], true),
   article('report-a-safety-concern', 'Report an account or safety concern', 'Send enough information for an Upet owner to review a concern.', 'safety-reports', [
     ['Submit a report', ['Open a new support ticket and choose Safety/Abuse.', 'Include the profile URL and a factual description of what happened.', 'Do not repost harmful material when a URL or description is sufficient.']],
     ['Immediate danger', ['Upet tickets are not an emergency service.', 'Contact local emergency services when someone faces immediate danger.']],

@@ -5,7 +5,6 @@ import {
   setPersistence,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,7 +24,6 @@ const firebaseApp = firebaseConfigured
 
 export const auth = firebaseApp ? getAuth(firebaseApp) : null;
 export const firestore = firebaseApp ? getFirestore(firebaseApp) : null;
-export const storage = firebaseApp && firebaseConfig.storageBucket ? getStorage(firebaseApp) : null;
 export const persistAuthLocally = () => {
   if (!auth) return Promise.reject(new Error('Firebase Authentication is not configured.'));
   return setPersistence(auth, browserLocalPersistence);

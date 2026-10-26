@@ -1,4 +1,3 @@
-export const SID_PATTERN = /^[a-f0-9]{24}$/;
 export function routeOf(value) {
   if (typeof value !== 'string' || value.length > 500) return '/';
   try {
@@ -6,23 +5,44 @@ export function routeOf(value) {
     return path.startsWith('/') ? path.slice(0, 160) : '/';
   } catch { return '/'; }
 }
-export function clean(value, max = 80) {
-  return typeof value === 'string' ? value.replace(/[<>\r\n]/g, '').slice(0, max) : '';
+
+export function countryOf(headers = {}) {
+  const value = String(headers['x-vercel-ip-country'] || '').trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(value) ? value : 'Unknown';
 }
-export function userAgent(value = '') {
-  const ua = String(value).slice(0, 400);
-  const device = /bot|crawler|spider/i.test(ua) ? 'Bot' : /ipad|tablet/i.test(ua) ? 'Tablet' : /mobile|iphone|android/i.test(ua) ? 'Mobile' : 'Desktop';
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Other';
-  const os = /Windows/i.test(ua) ? 'Windows' : /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Mac OS/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Other';
-  return { device, browser, os };
+
+export function deviceOf(headers = {}) {
+  const agent = String(headers['user-agent'] || '').toLowerCase();
+  if (/ipad|tablet|kindle|silk/.test(agent)) return 'Tablet';
+  if (/mobi|iphone|android/.test(agent)) return 'Mobile';
+  return agent ? 'Desktop' : 'Unknown';
 }
-export function sourceOf(value) {
-  try { const host = new URL(String(value)).hostname.toLowerCase(); return host && host !== 'user.pet' && !host.endsWith('.user.pet') ? host.slice(0, 100) : 'Direct'; }
-  catch { return 'Direct'; }
+
+export function browserOf(headers = {}) {
+  const agent = String(headers['user-agent'] || '').toLowerCase();
+  if (/edg\//.test(agent)) return 'Edge';
+  if (/firefox\//.test(agent)) return 'Firefox';
+  if (/opr\//.test(agent)) return 'Opera';
+  if (/chrome\//.test(agent)) return 'Chrome';
+  if (/safari\//.test(agent)) return 'Safari';
+  return agent ? 'Other' : 'Unknown';
 }
-export function eventOf(body) {
-  const type = ['page', 'navigation', 'conversion', 'error', 'heartbeat'].includes(body?.type) ? body.type : null;
-  if (!type) return null;
-  const route = routeOf(body.route);
-  return { type, route, url: `https://user.pet${route}`, at: new Date().toISOString(), detail: type === 'error' ? clean(body.detail, 120) : '' };
+
+export function referrerOf(value) {
+  if (!value) return 'Direct';
+  try {
+    const hostname = new URL(String(value)).hostname.toLowerCase().replace(/^www\./, '');
+    return hostname && !['user.pet', 'www.user.pet'].includes(hostname) ? hostname.slice(0, 80) : 'Direct';
+  } catch { return 'Direct'; }
+}
+
+const FEATURES = new Set([
+  'Explore profiles', 'Open profile', 'Profile links',
+  'Music player', 'Dashboard', 'Profile editor', 'Profiles', 'Badges', 'Leaderboard',
+  'Statistics', 'Settings', 'Log in', 'Connect Discord', 'Copy profile link', 'Theme',
+]);
+
+export function featureOf(value) {
+  const feature = String(value || '').trim().slice(0, 60);
+  return FEATURES.has(feature) ? feature : '';
 }

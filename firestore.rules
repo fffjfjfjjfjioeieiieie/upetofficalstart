@@ -8,7 +8,24 @@ service cloud.firestore {
     match /visitorRateLimits/{id} { allow read, write: if false; }
     match /visitorClaims/{id} { allow read, write: if false; }
     match /visitorDaily/{id} { allow read, write: if false; }
+    match /uploadQuotas/{id} { allow read, write: if false; }
     match /visitorLive/{id} { allow read, write: if false; }
+    // Retired commerce data remains private. No records are deleted.
+    match /shopAdminProducts/{id} { allow read, write: if false; }
+    match /shopAdminSettings/{id} { allow read, write: if false; }
+    match /shopAdminAudit/{id} { allow read, write: if false; }
+    match /shopAdminSlugs/{id} { allow read, write: if false; }
+    match /shopAuthCodes/{id} { allow read, write: if false; }
+    match /shopOrders/{id} { allow read, write: if false; }
+    match /shopEvents/{id} { allow read, write: if false; }
+    match /shopAdminMessages/{id} { allow read, write: if false; }
+    match /shopDiscounts/{id} { allow read, write: if false; }
+    match /shopReviews/{id} { allow read, write: if false; }
+    match /shopNotifications/{id} { allow read, write: if false; }
+    match /shopStripeEvents/{id} { allow read, write: if false; }
+    match /shopSubscriptions/{id} { allow read, write: if false; }
+    match /shopProductFiles/{id} { allow read, write: if false; }
+    match /shopBuyerStates/{id} { allow read, write: if false; }
     function signedIn() {
       return request.auth != null;
     }
@@ -27,6 +44,13 @@ service cloud.firestore {
       return hasTrustedRole('founder');
     }
 
+    function siteMember() {
+      return founder() || (signedIn()
+        && request.auth.token.email is string
+        && exists(/databases/$(database)/documents/accessInvites/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/accessInvites/$(request.auth.token.email)).data.active == true
+        && get(/databases/$(database)/documents/accessInvites/$(request.auth.token.email)).data.role == 'member');
+    }
 
     function supportMembership() {
       return get(/databases/$(database)/documents/supportStaff/$(request.auth.uid)).data;
@@ -47,81 +71,16 @@ service cloud.firestore {
       return supportStaff() && supportMembership().role == 'owner';
     }
 
+    function profileVisible(username) {
+      return !exists(/databases/$(database)/documents/moderationProfiles/$(username))
+        || get(/databases/$(database)/documents/moderationProfiles/$(username)).data.status != 'restricted';
+    }
+
     function validUsername(username) {
       return username is string
         && username.matches('^[a-z0-9][a-z0-9._-]{2,19}$')
         && !(username in ['dashboard', 'business', 'business-verification', 'biz', 'customize', 'analytics', 'settings', 'claim', 'welcome', 'create-account', 'login', 'admin', 'api', 'assets'])
         && (username != 'dome' || founder());
-    }
-
-    // V2 is server-published. Browsers can read only the explicit public
-    // projections; canonical documents, drafts, revision snapshots and asset
-    // metadata remain owner-private and cannot be mutated through client SDKs.
-    match /profileV2Canonical/{username} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list, create, update, delete: if false;
-    }
-
-    match /profileV2Drafts/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid && resource.data.ownerUid == uid;
-      allow list, create, update, delete: if false;
-    }
-
-    match /profileV2Public/{username} {
-      allow get: if true;
-      allow list, create, update, delete: if false;
-    }
-
-    match /profileV2Directory/{username} {
-      allow get: if true;
-      allow list: if request.query.limit != null && request.query.limit <= 60;
-      allow create, update, delete: if false;
-    }
-
-    match /profileV2Revisions/{revisionId} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list: if signedIn()
-        && resource.data.ownerUid == request.auth.uid
-        && request.query.limit != null
-        && request.query.limit <= 50;
-      allow create, update, delete: if false;
-    }
-
-    match /profileV2Tracks/{trackId} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list: if signedIn()
-        && resource.data.ownerUid == request.auth.uid
-        && request.query.limit != null
-        && request.query.limit <= 100;
-      allow create, update, delete: if false;
-    }
-
-    match /profileV2Assets/{assetId} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list: if signedIn()
-        && resource.data.ownerUid == request.auth.uid
-        && request.query.limit != null
-        && request.query.limit <= 100;
-      allow create, update, delete: if false;
-    }
-
-    match /profileV2Lyrics/{lyricsId} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list, create, update, delete: if false;
-    }
-
-    match /profileV2PublicLyrics/{lyricsId} {
-      allow get: if false;
-      allow list, create, update, delete: if false;
-    }
-
-    match /profileV2Playlists/{playlistId} {
-      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow list: if signedIn()
-        && resource.data.ownerUid == request.auth.uid
-        && request.query.limit != null
-        && request.query.limit <= 100;
-      allow create, update, delete: if false;
     }
 
     match /profileRankingStats/{username} {
@@ -130,11 +89,11 @@ service cloud.firestore {
 
     match /usernames/{username} {
       // Public availability checks are allowed; enumerating all handles is not.
-      allow get: if founder();
+      allow get: if siteMember();
       allow list: if false;
 
       // A claim and its account profile must be created together in one transaction.
-      allow create: if founder()
+      allow create: if siteMember()
         && validUsername(username)
         && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt'])
         && request.resource.data.keys().hasAll(['uid', 'username', 'createdAt'])
@@ -148,30 +107,30 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow get: if founder() && request.auth.uid == uid;
+      allow get: if siteMember() && request.auth.uid == uid;
       allow list: if false;
 
-      allow create: if founder()
+      allow create: if siteMember()
         && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt', 'usernameChangedAt'])
         && request.resource.data.keys().hasAll(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == uid
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.role == 'founder'
+        && request.resource.data.role == (founder() ? 'founder' : 'member')
         && validUsername(request.resource.data.username)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
 
       // Owners may repair legacy account metadata, but cannot transfer a handle.
-      allow update: if founder()
+      allow update: if siteMember()
         && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'username', 'createdAt', 'updatedAt', 'usernameChangedAt'])
         && request.resource.data.uid == uid
         && request.resource.data.username == resource.data.username
         && request.resource.data.createdAt == resource.data.get('createdAt', request.time)
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.role == 'founder'
+        && request.resource.data.role == resource.data.role
         && request.resource.data.updatedAt == request.time
         && get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid;
       allow delete: if false;
@@ -180,12 +139,13 @@ service cloud.firestore {
     match /profiles/{username} {
       // Drafts now live in owner-only profileDrafts. Legacy documents that still
       // contain a draft stay private until their owner republishes them.
-      allow get: if !exists(/databases/$(database)/documents/profiles/$(username))
-        || !('draft' in resource.data)
+      allow get: if (profileVisible(username)
+          && (!exists(/databases/$(database)/documents/profiles/$(username)) || !('draft' in resource.data)))
         || (founder() && (resource.data.get('ownerUid', '') == request.auth.uid || resource.data.get('uid', '') == request.auth.uid));
       allow list: if false;
 
-      allow create: if founder()
+      allow create: if siteMember()
+        && profileVisible(username)
         && validUsername(username)
         && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'status', 'published', 'publishedAt', 'updatedAt', 'createdAt'])
         && request.resource.data.ownerUid == request.auth.uid
@@ -193,9 +153,11 @@ service cloud.firestore {
         && request.resource.data.status == 'published'
         && request.resource.data.schemaVersion == 1
         && request.resource.data.published.schemaVersion == 1
+        && request.resource.data.updatedAt == request.time
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
 
-      allow update: if founder()
+      allow update: if siteMember()
+        && profileVisible(username)
         && (resource.data.get('ownerUid', '') == request.auth.uid || resource.data.get('uid', '') == request.auth.uid)
         && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'status', 'published', 'publishedAt', 'updatedAt', 'createdAt'])
         && request.resource.data.ownerUid == request.auth.uid
@@ -203,45 +165,47 @@ service cloud.firestore {
         && request.resource.data.status == 'published'
         && request.resource.data.schemaVersion == 1
         && request.resource.data.published.schemaVersion == 1
+        && request.resource.data.updatedAt == request.time
+        && (!('updatedAt' in resource.data) || request.time >= resource.data.updatedAt + duration.value(1, 's'))
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
 
       allow delete: if false;
     }
 
     match /profileDrafts/{uid} {
-      allow get: if founder() && request.auth.uid == uid;
+      allow get: if siteMember() && request.auth.uid == uid;
       allow list: if false;
-      allow create, update: if founder()
+      allow create, update: if siteMember()
         && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'document', 'updatedAt'])
         && request.resource.data.ownerUid == uid
         && request.resource.data.username == get(/databases/$(database)/documents/users/$(uid)).data.username
         && request.resource.data.schemaVersion == 1
         && request.resource.data.document.schemaVersion == 1;
-      allow delete: if founder() && request.auth.uid == uid;
+      allow delete: if siteMember() && request.auth.uid == uid;
     }
 
     match /profileEvents/{username}/events/{eventId} {
-      allow get, list: if founder()
+      allow get: if siteMember()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
-      allow create: if exists(/databases/$(database)/documents/profiles/$(username))
-        && request.resource.data.keys().hasOnly(['kind', 'linkId', 'day', 'device', 'referrer', 'createdAt'])
-        && request.resource.data.kind in ['view', 'click']
-        && request.resource.data.linkId is string
-        && request.resource.data.linkId.size() <= 80
-        && request.resource.data.day is string
-        && request.resource.data.day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.device in ['mobile', 'desktop']
-        && request.resource.data.referrer is string
-        && request.resource.data.referrer.size() <= 100
-        && request.resource.data.createdAt == request.time;
+      allow list: if siteMember()
+        && request.query.limit != null
+        && request.query.limit <= 101
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+      // Profile events now enter through the trusted, rate-limited API so
+      // ranking aggregates and deduplication stay in the same transaction.
+      allow create: if false;
       allow update, delete: if false;
     }
 
     match /profileRevisions/{username}/revisions/{revisionId} {
-      allow get, list: if founder()
+      allow get: if siteMember()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
-      allow create: if founder()
+      allow list: if siteMember()
+        && request.query.limit != null
+        && request.query.limit <= 51
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+      allow create: if siteMember()
         && request.resource.data.keys().hasOnly(['schemaVersion', 'ownerUid', 'username', 'document', 'publishedAt'])
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.username == username
@@ -251,90 +215,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    match /shopMessages/{messageId} {
-      allow get, list: if founder()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername;
-      allow create: if exists(/databases/$(database)/documents/profiles/$(request.resource.data.ownerUsername))
-        && request.resource.data.keys().hasOnly(['ownerUsername', 'senderName', 'senderContact', 'body', 'read', 'createdAt'])
-        && request.resource.data.ownerUsername is string
-        && request.resource.data.ownerUsername.size() >= 3
-        && request.resource.data.ownerUsername.size() <= 20
-        && request.resource.data.senderName is string
-        && request.resource.data.senderName.size() >= 1
-        && request.resource.data.senderName.size() <= 80
-        && request.resource.data.senderContact is string
-        && request.resource.data.senderContact.size() <= 240
-        && request.resource.data.body is string
-        && request.resource.data.body.size() >= 1
-        && request.resource.data.body.size() <= 2000
-        && request.resource.data.read == false
-        && request.resource.data.createdAt == request.time;
-      allow update: if founder()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
-        && request.resource.data.read is bool;
-      allow delete: if false;
-    }
-
-    match /shopConversations/{conversationId} {
-      allow get: if founder()
-        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername
-          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.guestUsername);
-      allow list: if founder()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername;
-      allow create: if founder()
-        && exists(/databases/$(database)/documents/profiles/$(request.resource.data.ownerUsername))
-        && request.resource.data.keys().hasOnly(['ownerUsername', 'guestUsername', 'guestName', 'guestContact', 'lastMessage', 'lastSender', 'unreadForOwner', 'unreadForGuest', 'createdAt', 'updatedAt'])
-        && request.resource.data.ownerUsername is string
-        && validUsername(request.resource.data.guestUsername)
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == request.resource.data.guestUsername
-        && request.resource.data.guestName is string
-        && request.resource.data.guestName.size() >= 1
-        && request.resource.data.guestName.size() <= 80
-        && request.resource.data.guestContact is string
-        && request.resource.data.guestContact.size() <= 240
-        && request.resource.data.lastMessage is string
-        && request.resource.data.lastMessage.size() >= 1
-        && request.resource.data.lastMessage.size() <= 2000
-        && request.resource.data.lastSender == 'guest'
-        && request.resource.data.unreadForOwner == true
-        && request.resource.data.unreadForGuest == false
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastSender', 'unreadForOwner', 'unreadForGuest', 'updatedAt'])
-        && request.resource.data.lastMessage is string
-        && request.resource.data.lastMessage.size() >= 1
-        && request.resource.data.lastMessage.size() <= 2000
-        && request.resource.data.lastSender in ['guest', 'owner']
-        && request.resource.data.updatedAt == request.time
-        && founder()
-        && (request.resource.data.lastSender == 'guest'
-          ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.guestUsername
-          : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == resource.data.ownerUsername);
-      allow delete: if false;
-
-      match /messages/{messageId} {
-        allow get, list: if founder()
-          && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == get(/databases/$(database)/documents/shopConversations/$(conversationId)).data.ownerUsername
-            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == get(/databases/$(database)/documents/shopConversations/$(conversationId)).data.guestUsername);
-        allow create: if request.resource.data.keys().hasOnly(['sender', 'body', 'createdAt'])
-          && request.resource.data.sender in ['guest', 'owner']
-          && request.resource.data.body is string
-          && request.resource.data.body.size() >= 1
-          && request.resource.data.body.size() <= 2000
-          && request.resource.data.createdAt == request.time
-          && founder()
-          && (request.resource.data.sender == 'guest'
-            ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == get(/databases/$(database)/documents/shopConversations/$(conversationId)).data.guestUsername
-            : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == get(/databases/$(database)/documents/shopConversations/$(conversationId)).data.ownerUsername);
-        allow update, delete: if false;
-      }
-    }
+    // Retired commerce records are retained, not exposed to browser clients.
+    match /shopMessages/{id} { allow read, write: if false; }
+    match /shopConversations/{id}/{document=**} { allow read, write: if false; }
 
     match /directoryProfiles/{username} {
-      // Public discovery contains only fields already displayed on published pages.
-      allow get, list: if true;
-      allow create, update: if founder()
+      // Restricted profiles are removed from this collection by modview.
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 60;
+      allow create, update: if siteMember()
+        && profileVisible(username)
         && validUsername(username)
         && request.resource.data.keys().hasOnly(['ownerUid', 'username', 'displayName', 'alias', 'avatar', 'badges', 'shop', 'updatedAt'])
         && request.resource.data.ownerUid == request.auth.uid
@@ -363,9 +253,9 @@ service cloud.firestore {
     }
 
     match /businessApplications/{uid} {
-      allow get: if founder() && request.auth.uid == uid;
+      allow get: if siteMember() && request.auth.uid == uid;
       allow list: if false;
-      allow create: if founder()
+      allow create: if siteMember()
         && request.auth.uid == uid
         && validBusinessApplication(request.resource.data)
         && request.resource.data.ownerUid == uid
@@ -374,7 +264,7 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow update: if founder()
+      allow update: if siteMember()
         && request.auth.uid == uid
         && resource.data.status in ['pending', 'rejected']
         && validBusinessApplication(request.resource.data)
@@ -406,7 +296,7 @@ service cloud.firestore {
     match /businesses/{id} {
       allow get: if signedIn() && request.auth.uid in resource.data.memberUids;
       allow list: if signedIn() && request.auth.uid in resource.data.memberUids;
-      allow create: if founder()
+      allow create: if siteMember()
         && request.resource.data.keys().hasOnly(['ownerUid', 'ownerUsername', 'name', 'description', 'category', 'website', 'status', 'memberUids', 'members', 'createdAt', 'updatedAt'])
         && request.resource.data.keys().hasAll(['ownerUid', 'ownerUsername', 'name', 'description', 'category', 'website', 'status', 'memberUids', 'members', 'createdAt', 'updatedAt'])
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == id
@@ -427,7 +317,7 @@ service cloud.firestore {
         && request.resource.data.members[request.auth.uid].email == request.auth.token.email
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow update: if founder()
+      allow update: if siteMember()
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'category', 'website', 'updatedAt'])
         && request.resource.data.name is string
@@ -442,32 +332,55 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /businessShops/{id} {
-      allow get: if resource.data.enabled == true || businessMember(id);
-      allow list: if resource.data.enabled == true && resource.data.private == false;
-      allow create: if founder()
-        && getAfter(/databases/$(database)/documents/businesses/$(id)).data.ownerUid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['businessId', 'ownerUid', 'enabled', 'private', 'name', 'description', 'currency', 'design', 'products', 'createdAt', 'updatedAt'])
-        && request.resource.data.businessId == id
-        && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.enabled == false
-        && request.resource.data.private == true
-        && request.resource.data.products.size() == 0
+    match /businessShops/{id} { allow read, write: if false; }
+
+    match /staffApplications/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || supportStaff());
+      allow list: if supportStaff();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'area', 'motivation', 'experience', 'availability', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.area in ['support', 'trust_safety', 'marketplace', 'community', 'operations']
+        && request.resource.data.motivation is string && request.resource.data.motivation.size() >= 30 && request.resource.data.motivation.size() <= 1000
+        && request.resource.data.experience is string && request.resource.data.experience.size() >= 20 && request.resource.data.experience.size() <= 1000
+        && request.resource.data.availability is string && request.resource.data.availability.size() >= 4 && request.resource.data.availability.size() <= 160
+        && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow update: if businessEditor(id)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['enabled', 'private', 'name', 'description', 'currency', 'design', 'products', 'updatedAt'])
-        && request.resource.data.enabled is bool
-        && request.resource.data.private is bool
-        && request.resource.data.name is string
-        && request.resource.data.name.size() <= 100
-        && request.resource.data.description is string
-        && request.resource.data.description.size() <= 500
-        && request.resource.data.currency in ['GBP', 'USD', 'EUR']
-        && request.resource.data.products is list
-        && request.resource.data.products.size() <= 80
+      allow update: if signedIn() && request.auth.uid == uid && resource.data.status in ['pending', 'rejected']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['area', 'motivation', 'experience', 'availability', 'status', 'updatedAt'])
+        && request.resource.data.uid == uid && request.resource.data.email == resource.data.email
+        && request.resource.data.area in ['support', 'trust_safety', 'marketplace', 'community', 'operations']
+        && request.resource.data.motivation is string && request.resource.data.motivation.size() >= 30 && request.resource.data.motivation.size() <= 1000
+        && request.resource.data.experience is string && request.resource.data.experience.size() >= 20 && request.resource.data.experience.size() <= 1000
+        && request.resource.data.availability is string && request.resource.data.availability.size() >= 4 && request.resource.data.availability.size() <= 160
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
+    }
+
+    match /profileBadgeGrants/{username} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+    match /accessInvites/{email} {
+      allow get: if (signedIn() && request.auth.token.email == email) || supportOwner();
+      allow list: if supportOwner();
+      allow create, update, delete: if false;
+    }
+    match /moderationProfiles/{username} {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+    match /moderationCases/{username} {
+      allow get, list: if supportStaff();
+      allow create, update, delete: if false;
+    }
+    match /moderationAudit/{id} {
+      allow get, list: if supportOwner();
+      allow create, update, delete: if false;
     }
 
     match /supportStaff/{uid} {
@@ -492,7 +405,11 @@ service cloud.firestore {
     }
 
     match /supportTickets/{ticketId} {
-      allow get, list: if signedIn() && (resource.data.requesterUid == request.auth.uid || supportStaff());
+      allow get: if signedIn() && (resource.data.requesterUid == request.auth.uid || supportStaff());
+      allow list: if signedIn()
+        && request.query.limit != null
+        && request.query.limit <= 51
+        && (resource.data.requesterUid == request.auth.uid || supportStaff());
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['reference', 'requesterUid', 'requesterEmail', 'subject', 'category', 'status', 'priority', 'assignedToUid', 'tags', 'resolutionSummary', 'createdAt', 'updatedAt', 'lastPublicMessageAt'])
         && request.resource.data.requesterUid == request.auth.uid
@@ -531,7 +448,11 @@ service cloud.firestore {
         function ticketAfter() {
           return getAfter(/databases/$(database)/documents/supportTickets/$(ticketId)).data;
         }
-        allow get, list: if signedIn()
+        allow get: if signedIn()
+          && (supportStaff() || (ticketAfter().requesterUid == request.auth.uid && resource.data.visibility == 'public'));
+        allow list: if signedIn()
+          && request.query.limit != null
+          && request.query.limit <= 101
           && (supportStaff() || (ticketAfter().requesterUid == request.auth.uid && resource.data.visibility == 'public'));
         allow create: if signedIn()
           && request.resource.data.keys().hasOnly(['authorUid', 'authorRole', 'visibility', 'body', 'attachments', 'createdAt', 'editedAt'])
@@ -545,7 +466,7 @@ service cloud.firestore {
             && request.resource.data.authorRole == 'user'
             && request.resource.data.visibility == 'public')
             || (supportStaff()
-              && request.resource.data.authorRole in ['owner', 'support_admin', 'support_agent', 'moderator']
+              && request.resource.data.authorRole == supportMembership().role
               && request.resource.data.visibility in ['public', 'internal']));
         allow update, delete: if false;
       }

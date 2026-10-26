@@ -4,36 +4,65 @@
       "collectionGroup": "supportTickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "requesterUid", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "requesterUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "visibility", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "visibility",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
-      "collectionGroup": "shopMessages",
+      "collectionGroup": "messages",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "ownerUsername", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "visibility",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "businessShops",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "enabled", "order": "ASCENDING" },
-        { "fieldPath": "private", "order": "ASCENDING" }
+        {
+          "fieldPath": "enabled",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "private",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "siteCache",
+      "fieldPath": "rows",
+      "indexes": []
+    },
     {
       "collectionGroup": "incoming",
       "fieldPath": "fromUid",

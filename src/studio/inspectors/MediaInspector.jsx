@@ -2,6 +2,7 @@ import React from 'react';
 import { Choice, Field, Range, Toggle } from '../StudioField.jsx';
 import MediaLibrary from '../MediaLibrary.jsx';
 import MediaDropzone from '../MediaDropzone.jsx';
+import { AUDIO_DROPZONE_ACCEPT } from '../../shared/mediaTypes.js';
 
 export default function MediaInspector({ document, set, upload, uploads, user }) {
   const { background, audio } = document;
@@ -26,7 +27,7 @@ export default function MediaInspector({ document, set, upload, uploads, user })
     <div className="studio-row"><Range label="Focus X" value={background.positionX} min={0} max={100} suffix="%" onChange={(next) => set('background.positionX', next)} /><Range label="Focus Y" value={background.positionY} min={0} max={100} suffix="%" onChange={(next) => set('background.positionY', next)} /></div>
     <div className="studio-divider" /><h3>Music player</h3>
     <Toggle label="Enable music" checked={audio.enabled} onChange={(next) => set('audio.enabled', next)} />
-    <MediaDropzone label="Add audio track" hint="Drop an MP3, WAV, OGG, M4A, or AAC track." accept={{ 'audio/mpeg': ['.mp3'], 'audio/wav': ['.wav'], 'audio/ogg': ['.ogg'], 'audio/mp4': ['.m4a', '.mp4'], 'audio/aac': ['.aac'] }} onFile={(file) => upload('audio', file, 'audio.track')} progress={uploads.audio} />
+    <MediaDropzone label="Add audio track" hint="Choose MP3, M4A, WAV, OGG, Opus, AAC, FLAC, MP4, or WebM audio." accept={AUDIO_DROPZONE_ACCEPT} onFile={(file) => upload('audio', file, 'audio.track')} progress={uploads.audio} />
     {audio.tracks.length > 0 && <div className="studio-track-list" aria-label="Audio playlist">{audio.tracks.map((item, index) => <div key={item.id}><button type="button" onClick={() => set('audio.activeTrackId', item.id)} aria-pressed={audio.activeTrackId === item.id}>{item.title || 'Untitled track'}{audio.activeTrackId === item.id ? ' · active' : ''}</button><button type="button" disabled={index === 0} aria-label={`Move ${item.title} up`} onClick={() => { const tracks = [...audio.tracks]; [tracks[index - 1], tracks[index]] = [tracks[index], tracks[index - 1]]; set('audio.tracks', tracks); }}>↑</button><button type="button" disabled={index === audio.tracks.length - 1} aria-label={`Move ${item.title} down`} onClick={() => { const tracks = [...audio.tracks]; [tracks[index], tracks[index + 1]] = [tracks[index + 1], tracks[index]]; set('audio.tracks', tracks); }}>↓</button><button type="button" aria-label={`Remove ${item.title}`} onClick={() => { const tracks = audio.tracks.filter((trackItem) => trackItem.id !== item.id); set('audio', { ...audio, tracks, activeTrackId: item.id === audio.activeTrackId ? tracks[0]?.id || '' : audio.activeTrackId, enabled: tracks.length > 0 }); }}>×</button></div>)}</div>}
     {audio.tracks.length > 1 && <Choice label="Active track" value={audio.activeTrackId} options={audio.tracks.map((item) => [item.id, item.title || 'Untitled'])} onChange={(next) => set('audio.activeTrackId', next)} />}
     <div className="studio-row"><Field label="Title" value={track?.title || ''} maxLength={100} onChange={(next) => updateTrack({ title: next })} /><Field label="Artist" value={track?.artist || ''} maxLength={100} onChange={(next) => updateTrack({ artist: next })} /></div>

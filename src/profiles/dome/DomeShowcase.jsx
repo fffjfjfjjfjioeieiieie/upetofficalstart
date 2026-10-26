@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Check, Copy, Music2, Pause, Play, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
+import { ArrowUpRight, Check, Copy, Music2, Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { FFTVisualizer } from '@fft-visualizer/react';
 import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 import * as Slider from '@radix-ui/react-slider';
@@ -305,17 +305,6 @@ export default function DomeShowcase({ active = true, standalone = false, isOwne
           <span className={styles.playbackStatus} role="status" aria-live="polite">
             {playbackError}
           </span>
-
-          <button
-            className={styles.shopButton}
-            type="button"
-            disabled
-            aria-label="Shop unavailable for this profile"
-          >
-            <ShoppingBag size={14} aria-hidden="true" />
-            <span>Shop</span>
-            {standalone && <span className={styles.comingSoon}>coming soon</span>}
-          </button>
 
           <audio
             ref={audioRef}

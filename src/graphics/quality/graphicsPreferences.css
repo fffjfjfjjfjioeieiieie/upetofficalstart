@@ -1,7 +1,0 @@
-.upet-graphics-preferences { width: min(100%, 320px); margin: 12px auto; padding: 0 12px; border: 1px solid #b1c8db; border-radius: 12px; background: #f5faff; color: #172b40; font: 12px/1.5 var(--upet-font-body, sans-serif); }
-.upet-graphics-preferences summary { min-height: 44px; padding: 12px 0; cursor: pointer; text-transform: capitalize; }
-.upet-graphics-preferences summary:focus-visible, .upet-graphics-preferences select:focus-visible { outline: 2px solid #137dce; outline-offset: 3px; }
-.upet-graphics-preferences__panel { display: grid; gap: 12px; padding-bottom: 14px; }
-.upet-graphics-preferences__panel p { margin: 0; }
-.upet-graphics-preferences__panel label { display: grid; gap: 5px; font-weight: 700; }
-.upet-graphics-preferences__panel select { width: 100%; min-height: 44px; padding: 8px; border: 1px solid #b1c8db; border-radius: 8px; background: white; color: #172b40; }

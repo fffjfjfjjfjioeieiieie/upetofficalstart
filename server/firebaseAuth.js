@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { hasTrustedRole } from './v2/authClaims.js';
+import { hasTrustedRole } from './authClaims.js';
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || 'upet-c480b';
 const FIREBASE_ISSUER = `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`;

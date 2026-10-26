@@ -12,7 +12,7 @@ export default function IdentityInspector({ document, set, upload, uploads, user
     <Field label="Bio" value={value.bio} multiline maxLength={500} onChange={(next) => set('identity.bio', next)} />
     <div className="studio-row"><Field label="Location" value={value.location} maxLength={64} onChange={(next) => set('identity.location', next)} /><Field label="Timezone" value={value.timezone} maxLength={64} onChange={(next) => set('identity.timezone', next)} /></div>
     <Field label="Status" value={value.statusText} maxLength={48} onChange={(next) => set('identity.statusText', next)} />
-    <Field label="Badges" value={value.badges.join(', ')} maxLength={198} help="Up to six, separated by commas" onChange={(next) => set('identity.badges', next.split(',').map((item) => item.trim().slice(0, 32)).filter(Boolean).slice(0, 6))} />
+    <Field label="Badges" value={value.badges.join(', ')} maxLength={329} help="Up to ten, separated by commas" onChange={(next) => set('identity.badges', next.split(',').map((item) => item.trim().slice(0, 32)).filter(Boolean).slice(0, 10))} />
     <label className="studio-upload"><span>Avatar image</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => { setAvatarFile(event.target.files?.[0] || null); event.target.value = ''; }} />{uploads.avatar && <small>Uploading {uploads.avatar}%</small>}</label>
     {avatarFile && <AvatarCropper file={avatarFile} onCancel={() => setAvatarFile(null)} onSave={(cropped) => { setAvatarFile(null); upload('avatar', cropped, 'identity.avatar'); }} />}
     <MediaLibrary user={user} kinds={['avatar']} onSelect={(url) => set('identity.avatar', url)} />

@@ -1379,6 +1379,7 @@
     },
     {
       "id": "Libya",
+      "animated": true,
       "name": "Libya",
       "category": "flags",
       "url": "https://i.ibb.co/VJ7q2FV/ezgif-7-a2ecd1b7f9.png",
@@ -1386,6 +1387,7 @@
     },
     {
       "id": "Algeria",
+      "animated": true,
       "name": "Algeria",
       "category": "flags",
       "url": "https://i.ibb.co/C7Zdqnp/ezgif-1-148d3d8ea9.png",
@@ -1393,6 +1395,7 @@
     },
     {
       "id": "Bahrain",
+      "animated": true,
       "name": "Bahrain",
       "category": "flags",
       "url": "https://i.ibb.co/Dr5gMvn/ezgif-1-bf03b81f9d.png",
@@ -1400,6 +1403,7 @@
     },
     {
       "id": "Comoros",
+      "animated": true,
       "name": "Comoros",
       "category": "flags",
       "url": "https://i.ibb.co/9nqKx3b/ezgif-1-f0b73c7a9f.png",
@@ -1407,6 +1411,7 @@
     },
     {
       "id": "Tunisia",
+      "animated": true,
       "name": "Tunisia",
       "category": "flags",
       "url": "https://i.ibb.co/Ksqq6d7/ezgif-7-727033509f.png",
@@ -1414,6 +1419,7 @@
     },
     {
       "id": "UAE",
+      "animated": true,
       "name": "UAE",
       "category": "flags",
       "url": "https://i.ibb.co/mSRswm8/ezgif-7-637d28d3db.png",
@@ -1421,6 +1427,7 @@
     },
     {
       "id": "Somalia",
+      "animated": true,
       "name": "Somalia",
       "category": "flags",
       "url": "https://i.ibb.co/Sn84j7t/ezgif-7-0f127c7b46.png",
@@ -1428,6 +1435,7 @@
     },
     {
       "id": "Sudan",
+      "animated": true,
       "name": "Sudan",
       "category": "flags",
       "url": "https://i.ibb.co/TLTD2Jk/ezgif-7-b07f2e63fe.png",
@@ -1435,6 +1443,7 @@
     },
     {
       "id": "Syria",
+      "animated": true,
       "name": "Syria",
       "category": "flags",
       "url": "https://i.ibb.co/dQvcZQp/ezgif-7-369d86d58c.png",
@@ -1442,6 +1451,7 @@
     },
     {
       "id": "Yemen",
+      "animated": true,
       "name": "Yemen",
       "category": "flags",
       "url": "https://i.ibb.co/kDF5G5v/ezgif-7-ea2030a439.png",
@@ -1449,6 +1459,7 @@
     },
     {
       "id": "Overlay",
+      "animated": true,
       "name": "Overlay",
       "category": "flags",
       "url": "https://i.ibb.co/hZD0mmM/ezgif-7-699c07f6f4.png",
@@ -1456,6 +1467,7 @@
     },
     {
       "id": "Palestine",
+      "animated": true,
       "name": "Palestine",
       "category": "flags",
       "url": "https://i.ibb.co/w6b12fc/ezgif-7-5217c6ff98.png",
@@ -1463,6 +1475,7 @@
     },
     {
       "id": "Qatar",
+      "animated": true,
       "name": "Qatar",
       "category": "flags",
       "url": "https://i.ibb.co/xs2Lktj/ezgif-7-44263314da.png",
@@ -1470,6 +1483,7 @@
     },
     {
       "id": "Saudi",
+      "animated": true,
       "name": "Saudi",
       "category": "flags",
       "url": "https://i.ibb.co/rGYFpWw/ezgif-7-8da0a9f5eb.png",
@@ -1477,6 +1491,7 @@
     },
     {
       "id": "Jordan",
+      "animated": true,
       "name": "Jordan",
       "category": "flags",
       "url": "https://i.ibb.co/hyBBCB7/ezgif-7-df80ea6e6e.png",
@@ -1484,6 +1499,7 @@
     },
     {
       "id": "Kuwait",
+      "animated": true,
       "name": "Kuwait",
       "category": "flags",
       "url": "https://i.ibb.co/y58DkH5/ezgif-7-af7e8c28ab.png",
@@ -1491,6 +1507,7 @@
     },
     {
       "id": "Lebanon",
+      "animated": true,
       "name": "Lebanon",
       "category": "flags",
       "url": "https://i.ibb.co/LPYNzGG/ezgif-7-d9dc5b4cc6.png",
@@ -1498,6 +1515,7 @@
     },
     {
       "id": "Mauritania",
+      "animated": true,
       "name": "Mauritania",
       "category": "flags",
       "url": "https://i.ibb.co/8mZKC19/ezgif-7-f78d395b85.png",
@@ -1505,6 +1523,7 @@
     },
     {
       "id": "Morocco",
+      "animated": true,
       "name": "Morocco",
       "category": "flags",
       "url": "https://i.ibb.co/kSdbdCn/ezgif-7-f3b2fab832.png",
@@ -1512,6 +1531,7 @@
     },
     {
       "id": "Djibouti",
+      "animated": true,
       "name": "Djibouti",
       "category": "flags",
       "url": "https://i.ibb.co/cQFNw8G/ezgif-1-92158fd061.png",
@@ -1519,6 +1539,7 @@
     },
     {
       "id": "Egypt",
+      "animated": true,
       "name": "Egypt",
       "category": "flags",
       "url": "https://i.ibb.co/hs9GjBp/ezgif-7-f21e193074.png",
@@ -1526,6 +1547,7 @@
     },
     {
       "id": "iraq",
+      "animated": true,
       "name": "iraq",
       "category": "flags",
       "url": "https://i.ibb.co/Q6CLZyM/ezgif-7-126237475a.png",

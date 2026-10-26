@@ -1,1 +1,0 @@
-import{c as s,j as r}from"./index-DXsDOMgd.js";import{s as t}from"./Button-DsGGrZc1.js";const n=s("Search",[["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}],["path",{d:"m21 21-4.3-4.3",key:"1qie3q"}]]);function i({tone:e="neutral",children:a}){return r.jsx("span",{className:t.badge,"data-tone":e,children:a})}export{i as B,n as S};

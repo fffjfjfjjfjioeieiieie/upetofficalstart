@@ -1,37 +1,55 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { auth } from '../../app/firebase';
-
+import { RATE_LIMITS } from '../../shared/rateLimits.js';
 const optedOut = () => localStorage.getItem('upet-analytics-optout') === 'yes';
+const recentEvents = new Map();
+const referringOrigin = () => {
+  try { return document.referrer ? new URL(document.referrer).origin : ''; }
+  catch { return ''; }
+};
 
-export async function visitorEvent(type, route = window.location.pathname) {
+export async function visitorEvent(type, route = window.location.pathname, feature = '') {
   if (optedOut()) return;
-  const params = new URLSearchParams(window.location.search);
-  const body = { mode: 'aggregate', type, route, referrer: document.referrer, utm: { source: params.get('utm_source'), medium: params.get('utm_medium'), campaign: params.get('utm_campaign') } };
+  const eventKey = `${type}:${route}:${feature}`;
+  const now = Date.now();
+  const minimumGap = type === 'page' ? RATE_LIMITS.pageEventDedupMs : RATE_LIMITS.featureEventDedupMs;
+  if (now - (recentEvents.get(eventKey) || 0) < minimumGap) return;
+  recentEvents.set(eventKey, now);
+  if (recentEvents.size > 200) {
+    for (const [key, time] of recentEvents) if (now - time > 60_000) recentEvents.delete(key);
+  }
+  const body = { mode: 'aggregate', type, route, referrer: referringOrigin(), ...(feature ? { feature } : {}) };
   try {
-    if (type === 'page' && auth?.authStateReady) await auth.authStateReady();
-    const token = auth?.currentUser && (type === 'page' || sessionStorage.getItem('upet-diagnostic-test') === 'yes') ? await auth.currentUser.getIdToken() : '';
-    await fetch('/api/visitor', { method: 'POST', headers: { 'content-type': 'application/json', ...(type === 'page' && token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
-    if (sessionStorage.getItem('upet-diagnostic-test') === 'yes' && auth?.currentUser) {
-      await fetch('/api/visitor', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ ...body, mode: 'diagnostic' }) });
-    }
+    await fetch('/api/visitor', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: true });
   } catch { /* Analytics must not interrupt the website. */ }
 }
 
 export default function VisitorTracking() {
   const { pathname } = useLocation();
-  const previous = useRef(null);
   useEffect(() => {
-    if (previous.current && previous.current !== pathname) visitorEvent('navigation', pathname);
-    previous.current = pathname;
     visitorEvent('page', pathname);
   }, [pathname]);
   useEffect(() => {
-    const timer = window.setInterval(() => visitorEvent('heartbeat'), 120000);
-    const error = () => visitorEvent('error');
-    window.addEventListener('error', error);
-    window.addEventListener('unhandledrejection', error);
-    return () => { clearInterval(timer); window.removeEventListener('error', error); window.removeEventListener('unhandledrejection', error); };
-  }, []);
+    const clicked = (event) => {
+      const element = event.target instanceof Element ? event.target.closest('a,button,[role="menuitem"]') : null;
+      if (!element || element.closest('[data-testid*="entry"]')) return;
+      const explicit = element.getAttribute('data-analytics-feature');
+      const testId = element.getAttribute('data-testid') || '';
+      const href = element.getAttribute('href') || '';
+      let feature = explicit || '';
+      if (!feature && testId.startsWith('profile-link-')) feature = 'Profile links';
+      else if (!feature && ['profile-player-open', 'profile-streaming-player'].includes(testId)) feature = 'Music player';
+      else if (!feature && (testId.startsWith('explore-user-') || testId.startsWith('top-profile-') || testId === 'menu-go-to-page')) feature = 'Open profile';
+      else if (!feature && testId === 'menu-dashboard') feature = 'Dashboard';
+      else if (!feature && testId === 'header-login-button') feature = 'Log in';
+      else if (!feature && testId === 'theme-toggle') feature = 'Theme';
+      else if (!feature && href === '/explore') feature = 'Explore profiles';
+      else if (!feature && href === '/dashboard/editor') feature = 'Profile editor';
+      else if (!feature && href === '/dashboard') feature = 'Dashboard';
+      if (feature) visitorEvent('feature', pathname, feature);
+    };
+    document.addEventListener('click', clicked, true);
+    return () => document.removeEventListener('click', clicked, true);
+  }, [pathname]);
   return null;
 }

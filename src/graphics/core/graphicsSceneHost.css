@@ -1,3 +1,0 @@
-.upet-graphics-host { position: relative; isolation: isolate; min-width: 0; }
-.upet-graphics-host__canvas { position: absolute; z-index: 0; top: 0; left: 0; width: 0; height: 0; visibility: hidden; pointer-events: none; }
-.upet-graphics-host__content { position: relative; z-index: 1; min-width: 0; }

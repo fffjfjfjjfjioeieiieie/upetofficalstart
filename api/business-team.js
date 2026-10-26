@@ -1,5 +1,6 @@
 import { database } from '../server/visitorStore.js';
 import { bearerToken, verifyFirebaseToken } from '../server/firebaseAuth.js';
+import { BUSINESS_PROGRAM_ENABLED } from '../src/shared/featureFlags.js';
 
 const fail = (res, status, error) => res.status(status).json({ error });
 const validId = (value) => /^[a-z0-9][a-z0-9._-]{2,19}$/.test(String(value || ''));
@@ -10,6 +11,7 @@ export default async function handler(req, res) {
   let actor;
   try { actor = await verifyFirebaseToken(bearerToken(req)); }
   catch { return fail(res, 401, 'Sign in with your personal account.'); }
+  if (!BUSINESS_PROGRAM_ENABLED) return fail(res, 410, 'The business programme is currently unavailable.');
   try {
     const body = typeof req.body === 'object' && req.body ? req.body : JSON.parse(req.body || '{}');
     const id = String(body.businessId || '');

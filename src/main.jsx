@@ -2,9 +2,9 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Analytics } from '@vercel/analytics/react';
 import App from './redesign/App.jsx';
-import { GraphicsProvider } from './graphics/core/GraphicsProvider.jsx';
-import HelpApp from './help/HelpApp.jsx';
 import './redesign/index.css';
+
+const HelpApp = React.lazy(() => import('./help/HelpApp.jsx'));
 
 const helpHost = window.location.hostname === 'help.user.pet';
 const helpPreview = window.location.pathname === '/help-preview' || window.location.pathname.startsWith('/help-preview/');
@@ -21,9 +21,9 @@ function VisitorStatistics() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <GraphicsProvider>
-    {helpHost || helpPreview ? <HelpApp basename={helpPreview ? '/help-preview' : undefined} /> : <App />}
+  <>
+    {helpHost || helpPreview ? <React.Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Opening Help Centre…</div>}><HelpApp basename={helpPreview ? '/help-preview' : undefined} /></React.Suspense> : <App />}
     <VisitorStatistics />
-  </GraphicsProvider>,
+  </>,
 );
 

@@ -6,6 +6,8 @@ dist/
 .vercel/
 .help-test-dist-2/
 .help-visual-check/
-.shop-test-dist/
-.v2-final-dist/
 research/
+tests/
+test-results/
+playwright-report/
+*-debug.log

@@ -57,13 +57,15 @@ const MediaBox = ({ slot, label, max, shape, video }) => {
 };
 
 export default function MediaTab() {
-  const { storageError } = useStore();
+  const { storageError, user } = useStore();
+  const visibleSlots = SLOTS.filter(([slot]) => slot !== 'banner' || user.profile.card.layout === 'banner');
   return (
-    <Panel title="Media" desc="Upload images, then fine-tune zoom, blur, rotation, size and position.">
+    <Panel title="Media" desc="Upload images, then fine-tune zoom, blur, rotation, size and position. Background images retain up to 4K resolution.">
       {storageError && <div className="mb-3 rounded-xl bg-red-500/10 p-2 text-xs text-red-500">{storageError}</div>}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {SLOTS.map(([slot, label, max, shape, video]) => <MediaBox key={slot} slot={slot} label={label} max={max} shape={shape} video={video} />)}
+        {visibleSlots.map(([slot, label, max, shape, video]) => <MediaBox key={slot} slot={slot} label={label} max={max} shape={shape} video={video} />)}
       </div>
+      {user.profile.card.layout !== 'banner' && <p className="mt-3 text-xs text-muted-foreground">Banner media appears here only when <strong>Banner</strong> is selected in the Card tab.</p>}
     </Panel>
   );
 }

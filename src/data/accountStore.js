@@ -11,7 +11,7 @@ export class UsernameAlreadyClaimedError extends Error {
   constructor(username) { super(`This account already owns user.pet/${username}.`); this.name = 'UsernameAlreadyClaimedError'; }
 }
 
-export async function claimUsername(user, rawUsername) {
+export async function claimUsername(user, rawUsername, role = 'member') {
   if (!firestore) throw new Error('Username claiming is not configured yet.');
   if (!user?.uid) throw new Error('Sign in before claiming a username.');
   const username = normalizeUsername(rawUsername);
@@ -32,7 +32,7 @@ export async function claimUsername(user, rawUsername) {
         const accountRepair = {
           uid: user.uid,
           email: String(user.email || '').toLowerCase(),
-          role: 'founder',
+          role: role === 'founder' ? 'founder' : 'member',
           updatedAt: serverTimestamp(),
         };
         if (!accountSnapshot.data().createdAt) accountRepair.createdAt = serverTimestamp();
@@ -43,7 +43,7 @@ export async function claimUsername(user, rawUsername) {
     }
     if ((usernameSnapshot.exists() && usernameSnapshot.data().uid !== user.uid) || (profileSnapshot.exists() && (profileSnapshot.data().ownerUid || profileSnapshot.data().uid) !== user.uid)) throw new UsernameAlreadyTakenError(username);
     if (!usernameSnapshot.exists()) transaction.set(usernameRef, { uid: user.uid, username, createdAt: serverTimestamp() });
-    transaction.set(accountRef, { uid: user.uid, email: String(user.email || '').toLowerCase(), role: 'founder', username, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    transaction.set(accountRef, { uid: user.uid, email: String(user.email || '').toLowerCase(), role: role === 'founder' ? 'founder' : 'member', username, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     return { username, alreadyOwned: false };
   });
 }

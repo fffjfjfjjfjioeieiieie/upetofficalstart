@@ -1,11 +1,13 @@
-import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, startAfter, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { firestore } from '../../app/firebase';
+import { isApprovedFounder } from '../../app/FounderGate';
+import { boundedQueryLimit, firestorePage } from '../../shared/data/queryPolicy.js';
 
 const ticketRef = (id) => doc(firestore, 'supportTickets', id);
 const messagesRef = (id) => collection(ticketRef(id), 'messages');
 const auditRef = (id) => collection(ticketRef(id), 'audit');
 
-export const TICKET_CATEGORIES = ['Account access', 'Profile editor', 'Bugs', 'Safety/Abuse', 'Marketplace', 'Payment issue', 'Other'];
+export const TICKET_CATEGORIES = ['Account access', 'Profile editor', 'Bugs', 'Safety/Abuse', 'Other'];
 export const TICKET_STATUSES = ['open', 'in_progress', 'waiting_on_user', 'resolved', 'closed'];
 export const statusLabel = (status) => ({ open: 'Open', in_progress: 'In progress', waiting_on_user: 'Waiting on you', resolved: 'Resolved', closed: 'Closed' }[status] || status);
 
@@ -14,15 +16,16 @@ export async function ensureOwnerMembership(user) {
   const ref = doc(firestore, 'supportStaff', user.uid);
   const snapshot = await getDoc(ref);
   if (snapshot.exists()) return snapshot.data();
+  if (!isApprovedFounder(user)) return null;
   try {
     await setDoc(ref, { uid: user.uid, role: 'owner', capabilities: ['tickets:all', 'tickets:reply', 'tickets:assign', 'articles:publish', 'legal:manage', 'team:manage'], active: true, createdAt: serverTimestamp(), addedBy: user.uid });
     return (await getDoc(ref)).data();
-  } catch { return null; }
+  } catch (error) { console.error('Founder support membership could not be created:', error); return null; }
 }
 
 export function subscribeStaffMembership(uid, onChange) {
   if (!firestore || !uid) return () => {};
-  return onSnapshot(doc(firestore, 'supportStaff', uid), (snapshot) => onChange(snapshot.exists() ? snapshot.data() : null), () => onChange(null));
+  return onSnapshot(doc(firestore, 'supportStaff', uid), (snapshot) => onChange(snapshot.exists() ? snapshot.data() : null), (error) => { console.error('Staff membership subscription failed:', error); onChange(null); });
 }
 
 export async function createTicket(user, input) {
@@ -37,29 +40,61 @@ export async function createTicket(user, input) {
   return { id: ref.id, reference };
 }
 
-export function subscribeMyTickets(uid, onChange, onError) {
-  return onSnapshot(query(collection(firestore, 'supportTickets'), where('requesterUid', '==', uid), orderBy('updatedAt', 'desc')), (snapshot) => onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))), onError);
+function ticketPageQuery({ uid = '', cursor = null, pageSize } = {}) {
+  const size = boundedQueryLimit('supportTickets', pageSize);
+  const constraints = [];
+  if (uid) constraints.push(where('requesterUid', '==', uid));
+  constraints.push(orderBy('updatedAt', 'desc'));
+  if (cursor) constraints.push(startAfter(cursor));
+  constraints.push(limit(size + 1));
+  return { source: query(collection(firestore, 'supportTickets'), ...constraints), size };
 }
 
-export function subscribeStaffTickets(onChange, onError) {
-  return onSnapshot(query(collection(firestore, 'supportTickets'), orderBy('updatedAt', 'desc')), (snapshot) => onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))), onError);
+export function subscribeMyTickets(uid, onChange, onError, pageSize) {
+  const pageQuery = ticketPageQuery({ uid, pageSize });
+  return onSnapshot(pageQuery.source, (snapshot) => { const page = firestorePage(snapshot, pageQuery.size); onChange(page.items, page); }, onError);
+}
+
+export function subscribeStaffTickets(onChange, onError, pageSize) {
+  const pageQuery = ticketPageQuery({ pageSize });
+  return onSnapshot(pageQuery.source, (snapshot) => { const page = firestorePage(snapshot, pageQuery.size); onChange(page.items, page); }, onError);
+}
+
+export async function getOlderTickets({ uid = '', cursor, pageSize } = {}) {
+  const pageQuery = ticketPageQuery({ uid, cursor, pageSize });
+  return firestorePage(await getDocs(pageQuery.source), pageQuery.size);
 }
 
 export function subscribeTicket(id, onChange, onError) {
   return onSnapshot(ticketRef(id), (snapshot) => onChange(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null), onError);
 }
 
-export function subscribeMessages(id, staff, onChange, onError) {
-  const source = staff ? query(messagesRef(id), orderBy('createdAt', 'asc')) : query(messagesRef(id), where('visibility', '==', 'public'), orderBy('createdAt', 'asc'));
-  return onSnapshot(source, (snapshot) => onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))), onError);
+function messagePageQuery(id, staff, { cursor = null, pageSize } = {}) {
+  const size = boundedQueryLimit('ticketMessages', pageSize);
+  const constraints = [];
+  if (!staff) constraints.push(where('visibility', '==', 'public'));
+  constraints.push(orderBy('createdAt', 'desc'));
+  if (cursor) constraints.push(startAfter(cursor));
+  constraints.push(limit(size + 1));
+  return { source: query(messagesRef(id), ...constraints), size };
 }
 
-export async function sendTicketMessage(ticket, user, body, { staff = false, internal = false } = {}) {
+export function subscribeMessages(id, staff, onChange, onError, pageSize) {
+  const pageQuery = messagePageQuery(id, staff, { pageSize });
+  return onSnapshot(pageQuery.source, (snapshot) => { const page = firestorePage(snapshot, pageQuery.size, { reverse: true }); onChange(page.items, page); }, onError);
+}
+
+export async function getOlderMessages(id, staff, cursor, pageSize) {
+  const pageQuery = messagePageQuery(id, staff, { cursor, pageSize });
+  return firestorePage(await getDocs(pageQuery.source), pageQuery.size, { reverse: true });
+}
+
+export async function sendTicketMessage(ticket, user, body, { staff = false, internal = false, role = 'owner' } = {}) {
   const text = String(body || '').trim();
   if (!text) return;
   const batch = writeBatch(firestore);
   const now = serverTimestamp();
-  batch.set(doc(messagesRef(ticket.id)), { authorUid: user.uid, authorRole: staff ? 'owner' : 'user', visibility: internal ? 'internal' : 'public', body: text.slice(0, 5000), attachments: [], createdAt: now, editedAt: null });
+  batch.set(doc(messagesRef(ticket.id)), { authorUid: user.uid, authorRole: staff ? role : 'user', visibility: internal ? 'internal' : 'public', body: text.slice(0, 5000), attachments: [], createdAt: now, editedAt: null });
   const ticketUpdate = { updatedAt: now };
   if (!internal) ticketUpdate.lastPublicMessageAt = now;
   if (!staff && ticket.status === 'resolved') ticketUpdate.status = 'open';

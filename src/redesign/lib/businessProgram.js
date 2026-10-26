@@ -1,14 +1,21 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firestore } from '../../app/firebase.js';
 import { cleanBusinessApplication } from '../../shared/businessApplication.js';
+import { BUSINESS_PROGRAM_ENABLED } from '../../shared/featureFlags.js';
+
+const requireBusinessProgram = () => {
+  if (!BUSINESS_PROGRAM_ENABLED) throw new Error('The business programme is currently unavailable.');
+};
 
 export async function getBusinessApplication(uid) {
+  requireBusinessProgram();
   if (!firestore || !uid) return null;
   const snapshot = await getDoc(doc(firestore, 'businessApplications', uid));
   return snapshot.exists() ? snapshot.data() : null;
 }
 
 export async function submitBusinessApplication(authUser, username, input) {
+  requireBusinessProgram();
   if (!firestore || !authUser?.uid || !username) throw new Error('Sign in with a founder profile first.');
   const values = cleanBusinessApplication(input, username);
   const reference = doc(firestore, 'businessApplications', authUser.uid);
@@ -27,6 +34,7 @@ export async function submitBusinessApplication(authUser, username, input) {
 }
 
 export async function getVerifiedBusiness(username) {
+  requireBusinessProgram();
   if (!firestore || !username) return null;
   const snapshot = await getDoc(doc(firestore, 'verifiedBusinesses', username));
   const data = snapshot.exists() ? snapshot.data() : null;

@@ -1,12 +1,12 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { User, Sun, Moon, LayoutDashboard, ExternalLink, Repeat, LogOut, Check, BriefcaseBusiness } from "lucide-react";
+import { User, Sun, Moon, LayoutDashboard, ExternalLink, Repeat, LogOut, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useStore } from "../lib/store";
 import { Logo } from "./Logo";
 import { Avatar } from "./ProfileBits";
+import { SiteNavShell } from "./SitePrimitives";
 
-const TABS = [["Explore", "/explore"], ["Marketplace", "/marketplace"]];
+const TABS = [["Explore", "/explore"]];
 
 const AccountMenu = () => {
   const { user, session, db, logout, switchTo } = useStore();
@@ -26,7 +26,6 @@ const AccountMenu = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem data-testid="menu-dashboard" onClick={() => nav("/dashboard")} className="rounded-xl"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => nav("/business")} className="rounded-xl"><BriefcaseBusiness className="mr-2 h-4 w-4" />Business mode</DropdownMenuItem>
         <DropdownMenuItem data-testid="menu-go-to-page" onClick={() => nav(`/${user.username}`)} className="rounded-xl"><ExternalLink className="mr-2 h-4 w-4" />Go to page</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">Switch account</DropdownMenuLabel>
@@ -45,8 +44,8 @@ const AccountMenu = () => {
 export const Header = () => {
   const { user, theme, toggleTheme } = useStore();
   return (
-    <motion.header initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }} className="fixed inset-x-0 top-5 z-50 flex justify-center px-4">
-      <nav data-testid="header-pill" className="glass flex w-full max-w-4xl items-center justify-between rounded-full py-2 pl-4 pr-2 shadow-[0_10px_40px_-12px_hsl(var(--primary)/.45)]">
+    <header className="fixed inset-x-0 top-5 z-50 flex justify-center px-4">
+      <SiteNavShell data-testid="header-pill">
         <Link to="/" data-testid="header-logo"><Logo /></Link>
         <div className="hidden items-center gap-1 sm:flex">
           {TABS.map(([label, to]) => (
@@ -57,15 +56,15 @@ export const Header = () => {
         </div>
         <div className="flex items-center gap-1.5">
           {user ? <AccountMenu /> : (
-            <Link to="/login" data-testid="header-login-button" className="flex h-9 items-center gap-2 rounded-full bg-primary/15 px-3 text-xs font-semibold transition-colors hover:bg-primary/30"><User className="h-4 w-4" />Admin login</Link>
+            <Link to="/login" data-testid="header-login-button" className="flex h-9 items-center gap-2 rounded-full bg-primary/15 px-3 text-xs font-semibold transition-colors hover:bg-primary/30"><User className="h-4 w-4" />Log in</Link>
           )}
           <button data-testid="theme-toggle" onClick={toggleTheme} className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-primary/15" aria-label="Toggle theme">
-            <motion.span key={theme} initial={{ rotate: -90, scale: 0.4, opacity: 0 }} animate={{ rotate: 0, scale: 1, opacity: 1 }} transition={{ duration: 0.35 }}>
+            <span key={theme}>
               {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </motion.span>
+            </span>
           </button>
         </div>
-      </nav>
-    </motion.header>
+      </SiteNavShell>
+    </header>
   );
 };

@@ -1,8 +1,8 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Eye, Link2, Award, CalendarDays, CheckCircle2, Circle, Upload, Copy } from "lucide-react";
+import { Eye, Link2, Award, CalendarDays, CheckCircle2, Circle, Upload, Copy, GalleryVerticalEnd, ArrowRight } from "lucide-react";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useStore, fileToDataUrl } from "../../lib/store";
 import { Panel, Field, inputCls, PageTitle } from "../../components/Controls";
@@ -16,7 +16,8 @@ const Stat = ({ icon: Icon, label, value, i }) => (
 );
 
 export default function Overview() {
-  const { user, setProfile } = useStore();
+  const { user, setProfile, refreshProfileAnalytics } = useStore();
+  useEffect(() => { refreshProfileAnalytics().catch(() => {}); }, [refreshProfileAnalytics]);
   const nav = useNavigate();
   const file = useRef(null);
   const p = user.profile;
@@ -25,7 +26,7 @@ export default function Overview() {
     ["Upload a profile picture", !!p.media.avatar.src, "editor"],
     ["Write a bio", !!p.bio, "editor"],
     ["Add your first link", p.links.length > 0, "editor"],
-    ["Add background audio", !!p.audio.src, "editor"],
+    ["Add music", !!(p.audio.src || p.audio.embedUrl), "editor"],
     ["Pick an avatar decoration", !!p.effects.decoration, "editor"],
     ["Enable a widget", p.widgets.discord.enabled || p.widgets.tiktok.enabled, "editor"],
     ["Turn on 2FA", user.twofa.enabled, "settings"],
@@ -54,7 +55,7 @@ export default function Overview() {
         <Stat i={3} icon={CalendarDays} label="Days active" value={days} />
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Panel title="Views" desc="Last 30 days" testid="overview-chart">
+        <Panel title="Views" desc="Recent activity sample" testid="overview-chart">
           <div className="h-56">
             {history.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -82,6 +83,11 @@ export default function Overview() {
           </ul>
         </Panel>
       </div>
+      <button type="button" onClick={() => nav('/dashboard/profiles')} className="glass group mt-4 flex w-full items-center gap-4 rounded-2xl border border-primary/20 p-4 text-left transition-colors hover:bg-primary/[.07] sm:p-5">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary"><GalleryVerticalEnd className="h-5 w-5" /></span>
+        <span className="min-w-0 flex-1"><strong className="block font-display">Your profile presets</strong><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Save up to five complete looks and choose which one is live.</span></span>
+        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" />
+      </button>
       <Panel title="Basics" className="mt-4" testid="overview-basics">
         <div className="grid gap-6 md:grid-cols-[auto_1fr_1fr]">
           <div className="flex flex-col items-center gap-3">

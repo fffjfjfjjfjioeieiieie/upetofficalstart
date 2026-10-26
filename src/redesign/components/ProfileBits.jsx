@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BADGES } from "../lib/catalog";
-import { ShieldCheck, Crown, Star, Sparkles, Zap, Bug, Heart, ShoppingBag, Gem } from "lucide-react";
+import { ShieldCheck, Crown, Star, Sparkles, Zap, Bug, Heart, ShoppingBag, Award } from "lucide-react";
 
 export const mediaStyle = (m) => ({
   backgroundImage: m && m.src ? `url(${m.src})` : undefined,
@@ -37,7 +37,7 @@ export const Avatar = ({ media, name = "", size = 96, decoration, hue = 0, decoS
   );
 };
 
-const BADGE_ICON = { owner: Gem, staff: ShieldCheck, verified: Sparkles, premium: Crown, og: Star, booster: Zap, bughunter: Bug, donor: Heart, seller: ShoppingBag };
+const BADGE_ICON = { founder: Crown, staff: ShieldCheck, verified: Sparkles, premium: Award, og: Star, booster: Zap, bughunter: Bug, donor: Heart, seller: ShoppingBag };
 
 const alphaHex = (a) => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, "0");
 
@@ -120,7 +120,7 @@ export const Tip = ({ cfg, label, children }) => {
   );
 };
 
-const useCanvasFx = (kind) => {
+const useCanvasFx = (kind, amount, color) => {
   const ref = useRef(null);
   useEffect(() => {
     const c = ref.current;
@@ -129,12 +129,15 @@ const useCanvasFx = (kind) => {
     let raf;
     const resize = () => { c.width = c.offsetWidth; c.height = c.offsetHeight; };
     resize();
-    const count = Math.max(30, Math.round((c.width * c.height) / (kind === "snow" ? 6000 : 3500)));
+    const strength = Math.max(0, Math.min(1, Number(amount) / 100));
+    const available = Math.round((c.width * c.height) / (kind === "snow" ? 5000 : 3000));
+    const count = Math.min(Math.round(available * strength), 400);
     const parts = Array.from({ length: Math.min(count, 400) }, () => ({ x: Math.random() * c.width, y: Math.random() * c.height, v: kind === "snow" ? 0.4 + Math.random() : 6 + Math.random() * 6, r: 1 + Math.random() * 2.2, d: Math.random() * Math.PI * 2 }));
     const tick = () => {
       ctx.clearRect(0, 0, c.width, c.height);
-      ctx.strokeStyle = "rgba(200,230,255,.55)";
-      ctx.fillStyle = "rgba(255,255,255,.85)";
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.8;
       ctx.lineWidth = 1;
       for (const p of parts) {
         if (kind === "snow") {
@@ -152,18 +155,28 @@ const useCanvasFx = (kind) => {
     tick();
     window.addEventListener("resize", resize);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
-  }, [kind]);
+  }, [kind, amount, color]);
   return ref;
 };
 
-export const BackgroundFx = ({ kind }) => {
-  const ref = useCanvasFx(kind);
+export const BackgroundFx = ({ kind, amount = 50, color = "#ffffff" }) => {
+  const strength = Math.max(0, Math.min(1, Number(amount) / 100));
+  const ref = useCanvasFx(kind, amount, color);
   if (!kind || kind === "none") return null;
+  const particleCount = strength === 0 ? 0 : Math.max(3, Math.round(42 * strength));
+  const particles = Array.from({ length: particleCount }, (_, index) => index);
+  const stars = Array.from({ length: strength === 0 ? 0 : Math.max(5, Math.round(72 * strength)) }, (_, index) => index);
+  const columns = Array.from({ length: strength === 0 ? 0 : Math.max(3, Math.round(18 * strength)) }, (_, index) => index);
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {kind === "spotlight" && <div className="absolute inset-0 float-y" style={{ background: "radial-gradient(40% 55% at 50% 0%, rgba(190,230,255,.45), transparent 70%)" }} />}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ color, opacity: strength === 0 ? 0 : .35 + strength * .65, "--fx-color": color, "--fx-strength": strength }}>
+      {kind === "spotlight" && <div className="absolute inset-0 float-y" style={{ opacity: strength, background: "radial-gradient(40% 55% at 50% 0%, color-mix(in srgb, currentColor 55%, transparent), transparent 70%)" }} />}
       {["rain", "snow", "thunder"].includes(kind) && <canvas ref={ref} className="absolute inset-0 h-full w-full" />}
-      {kind === "thunder" && <div className="bg-thunder-flash absolute inset-0 bg-white" />}
+      {kind === "thunder" && <div className="bg-thunder-flash absolute inset-0" style={{ opacity: strength, backgroundColor: color }} />}
+      {kind === "aurora" && <div className="bg-fx-aurora absolute -inset-[25%]" style={{ opacity: .25 + strength * .75 }} />}
+      {kind === "stars" && <div className="bg-fx-stars absolute inset-0">{stars.map((index) => <i key={index} style={{ "--x": `${(index * 47 + 13) % 98}%`, "--y": `${(index * 67 + 7) % 96}%`, "--size": `${2 + (index % 5) * 1.15}px`, "--delay": `${-((index * .37) % 4.5)}s`, "--duration": `${1.6 + (index % 6) * .42}s` }} />)}</div>}
+      {["fireflies", "bubbles", "embers", "sakura"].includes(kind) && <div className={`bg-fx-particles bg-fx-${kind} absolute inset-0`}>{particles.map((index) => <i key={index} style={{ "--i": index, "--x": `${(index * 37 + 11) % 96}%`, "--delay": `${-((index * 0.47) % 7)}s`, "--duration": `${5 + (index % 6) * 0.7}s`, "--size": `${7 + (index % 4) * 4}px`, "--drift": `${(index % 3 - 1) * 24}px` }} />)}</div>}
+      {kind === "hearts" && <div className="bg-fx-particles bg-fx-hearts absolute inset-0">{particles.slice(0, Math.max(3, Math.round(particleCount * .7))).map((index) => <i key={index} style={{ "--i": index, "--x": `${(index * 41 + 7) % 94}%`, "--delay": `${-((index * 0.61) % 8)}s`, "--duration": `${6 + (index % 5) * 0.8}s`, "--font-size": `${8 + (index % 4) * 3}px`, "--drift": `${(index % 3 - 1) * 24}px` }}>♥</i>)}</div>}
+      {kind === "matrix" && <div className="bg-fx-matrix absolute inset-0">{columns.map((index) => <span key={index} style={{ "--i": index, "--delay": `${-(index % 5) * 0.7}s` }}>01<br />10<br />11<br />00<br />10<br />01</span>)}</div>}
     </div>
   );
 };
