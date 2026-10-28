@@ -1,13 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+export { STRIPE_ESTIMATE_RATE, STRIPE_ESTIMATE_FIXED, PLATFORM_MARGIN_RATE, calculateDonationFee, calculateDonationCharge } from '../src/shared/donationFees.js';
 
-export const PLATFORM_FEE_RATE = 0.02;
 export const DONATION_MIN_PENCE = 300;
 export const DONATION_MAX_PENCE = 500000;
-
-export function calculatePlatformFee(amount) {
-  if (!Number.isInteger(amount) || amount < 0) throw new TypeError('Amount must be a non-negative integer.');
-  return Math.round(amount * PLATFORM_FEE_RATE);
-}
 
 export function cleanText(value, maxLength) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength);

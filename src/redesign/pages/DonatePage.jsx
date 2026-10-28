@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { subscribePublicRedesign } from '../lib/firebaseStore.js';
 import { defaultProfile } from '../lib/profileModel.js';
 import { ProfileScene } from '../components/ProfileCard.jsx';
+import { calculateDonationCharge } from '../../shared/donationFees.js';
 
 const money = (pence) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format((Number(pence) || 0) / 100);
 const field = 'w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40';
@@ -18,7 +19,7 @@ export default function DonatePage() {
   const [state, setState] = useState('loading');
   const [amount, setAmount] = useState(1000);
   const [custom, setCustom] = useState('');
-  const [form, setForm] = useState({ donorName: '', message: '', anonymous: false });
+  const [form, setForm] = useState({ donorName: '', message: '', anonymous: false, coverFees: false });
   const [submitting, setSubmitting] = useState(false);
   useEffect(() => {
     let active = true;
@@ -46,6 +47,8 @@ export default function DonatePage() {
   if (state === 'not-found') return <div className="grid min-h-screen place-items-center px-6 text-center"><div><h1 className="font-display text-4xl font-black">Donation page not found</h1><Link className="mt-4 inline-block text-primary" to={`/${slug}`}>Back to profile</Link></div></div>;
   const themed = profile || defaultProfile(slug);
   const progress = page.goalAmount ? Math.min(100, page.totalRaised / page.goalAmount * 100) : 0;
+  const pledgedAmount = custom === '' ? amount : Math.round(Number(custom || 0) * 100);
+  const estimate = calculateDonationCharge(Math.max(0, Number.isInteger(pledgedAmount) ? pledgedAmount : 0), { charityApproved: page.charityApproved, coverFees: form.coverFees });
   return <ProfileScene p={themed} scrollable className="min-h-[100dvh] w-full py-10">
     <main className="mx-auto w-full max-w-2xl px-4 text-white">
       <section className="rounded-[28px] border border-white/15 bg-black/50 p-5 shadow-2xl backdrop-blur-xl sm:p-8" style={{ color: themed.card.textColor }}>
@@ -57,7 +60,9 @@ export default function DonatePage() {
           <label className="block text-xs opacity-70">Name (optional)<input className={`${field} mt-1.5`} maxLength={80} disabled={form.anonymous} value={form.donorName} onChange={(event) => setForm((value) => ({ ...value, donorName: event.target.value }))} /></label>
           <label className="block text-xs opacity-70">Message (optional, {form.message.length}/200)<textarea className={`${field} mt-1.5 min-h-24 resize-y`} maxLength={200} value={form.message} onChange={(event) => setForm((value) => ({ ...value, message: event.target.value }))} /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={form.anonymous} onChange={(event) => setForm((value) => ({ ...value, anonymous: event.target.checked }))} />Donate anonymously</label>
-          <button disabled={submitting} className="w-full rounded-full px-5 py-3 text-sm font-bold text-black disabled:opacity-50" style={{ background: themed.card.accent }}>{submitting ? 'Opening secure checkout…' : `Donate ${money(custom === '' ? amount : Math.round(Number(custom || 0) * 100))}`}</button>
+          <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.coverFees} onChange={(event) => setForm((value) => ({ ...value, coverFees: event.target.checked }))} /><span>Cover the fees{form.coverFees ? ` · total ${money(estimate.chargeAmount)}` : ''}</span></label>
+          <p className="text-xs opacity-60">Estimated fees: {money(estimate.fee)}{page.charityApproved ? ' (Stripe estimate only; platform margin waived)' : ''}. {form.coverFees ? `The creator receives the full ${money(pledgedAmount)} pledge.` : `The creator receives about ${money(Math.max(0, pledgedAmount - estimate.fee))}.`}</p>
+          <button disabled={submitting} className="w-full rounded-full px-5 py-3 text-sm font-bold text-black disabled:opacity-50" style={{ background: themed.card.accent }}>{submitting ? 'Opening secure checkout…' : `Donate ${money(estimate.chargeAmount)}`}</button>
         </form>
       </section>
       {page.recentSupporters.length > 0 && <section className="mt-4 rounded-[24px] border border-white/15 bg-black/40 p-5 backdrop-blur-xl"><h2 className="font-display text-lg font-bold">Recent supporters</h2><div className="mt-3 space-y-3">{page.recentSupporters.map((supporter, index) => <div key={`${supporter.name}-${index}`} className="border-t border-white/10 pt-3 first:border-0 first:pt-0"><div className="flex justify-between text-sm font-semibold"><span>{supporter.name}</span><span>{money(supporter.amount)}</span></div>{supporter.message && <p className="mt-1 text-xs opacity-60">{supporter.message}</p>}</div>)}</div></section>}

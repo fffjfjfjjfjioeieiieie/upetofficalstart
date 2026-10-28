@@ -34,6 +34,7 @@ export default async function handler(request, response) {
       story: cleanText(data.story, 2000),
       goalAmount: Number.isInteger(data.goalAmount) ? data.goalAmount : null,
       totalRaised: Number(aggregate.data().total) || 0,
+      charityApproved: user.data()?.donations?.charityApproved === true,
       recentSupporters: recent.docs.map((document) => ({
         name: cleanText(document.data().donorName, 80) || 'Supporter',
         message: cleanText(document.data().message, 200),

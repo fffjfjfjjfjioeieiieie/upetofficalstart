@@ -20,8 +20,10 @@ export default async function handler(request, response) {
         if (!metadata.pageUid || !Number.isInteger(Number(session.amount_total))) throw new Error('Checkout metadata is incomplete.');
         transaction.set(db.collection('donations').doc(session.id), {
           pageUid: metadata.pageUid,
-          amount: Number(session.amount_total),
+          amount: Number(metadata.pledgedAmount) || Number(session.amount_total),
+          chargedAmount: Number(session.amount_total),
           fee: Number(metadata.fee) || 0,
+          feeCovered: metadata.feeCovered === 'true',
           currency: String(session.currency || 'gbp').toLowerCase(),
           status: 'paid',
           donorName: cleanText(metadata.donorName, 80) || null,

@@ -1,6 +1,6 @@
 import { database } from '../../server/visitorStore.js';
 import { checkDonationCheckoutBurst, RateLimitError } from '../../server/rateLimit.js';
-import { calculatePlatformFee, cleanText, DONATION_MAX_PENCE, DONATION_MIN_PENCE, publicSiteUrl, stripeRequest } from '../../server/donations.js';
+import { calculateDonationCharge, cleanText, DONATION_MAX_PENCE, DONATION_MIN_PENCE, publicSiteUrl, stripeRequest } from '../../server/donations.js';
 
 const usernamePattern = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 
@@ -22,6 +22,7 @@ export default async function handler(request, response) {
     const donorName = cleanText(request.body?.donorName, 80);
     const message = cleanText(request.body?.message, 200);
     const anonymous = request.body?.anonymous === true;
+    const coverFees = request.body?.coverFees === true;
     const db = database();
     const username = await db.collection('usernames').doc(slug).get();
     if (!username.exists) return response.status(404).json({ error: 'Donation page not found.' });
@@ -34,7 +35,8 @@ export default async function handler(request, response) {
     if (!page.exists || page.data().published !== true || page.data().slug !== slug || account?.stripeStatus !== 'ready' || !account?.stripeAccountId) {
       return response.status(404).json({ error: 'Donation page not found.' });
     }
-    const fee = calculatePlatformFee(amount);
+    const charityApproved = account.charityApproved === true;
+    const { chargeAmount, fee } = calculateDonationCharge(amount, { charityApproved, coverFees });
     const base = publicSiteUrl();
     const session = await stripeRequest('checkout/sessions', {
       method: 'POST',
@@ -42,9 +44,9 @@ export default async function handler(request, response) {
         mode: 'payment',
         success_url: `${base}/${encodeURIComponent(slug)}/donate?thanks=1`,
         cancel_url: `${base}/${encodeURIComponent(slug)}/donate`,
-        line_items: { 0: { price_data: { currency: 'gbp', unit_amount: amount, product_data: { name: `Donation to @${slug}` } }, quantity: 1 } },
+        line_items: { 0: { price_data: { currency: 'gbp', unit_amount: chargeAmount, product_data: { name: `Donation to @${slug}` } }, quantity: 1 } },
         payment_intent_data: { application_fee_amount: fee, transfer_data: { destination: account.stripeAccountId } },
-        metadata: { pageUid, donorName, message, anonymous: String(anonymous), fee: String(fee) },
+        metadata: { pageUid, donorName, message, anonymous: String(anonymous), pledgedAmount: String(amount), fee: String(fee), feeCovered: String(coverFees) },
       },
     });
     return response.status(200).json({ url: session.url });

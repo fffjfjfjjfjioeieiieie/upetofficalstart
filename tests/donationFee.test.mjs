@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculatePlatformFee, PLATFORM_FEE_RATE } from '../server/donations.js';
+import { calculateDonationCharge, calculateDonationFee, PLATFORM_MARGIN_RATE, STRIPE_ESTIMATE_FIXED, STRIPE_ESTIMATE_RATE } from '../src/shared/donationFees.js';
 
-test('donation platform fee is rounded to the nearest penny at the configured rate', () => {
-  assert.equal(PLATFORM_FEE_RATE, 0.02);
-  assert.equal(calculatePlatformFee(300), 6);
-  assert.equal(calculatePlatformFee(999), 20);
-  assert.equal(calculatePlatformFee(500000), 10000);
+test('donation fees include the Stripe estimate, margin, charity override, and fee coverage', () => {
+  assert.equal(STRIPE_ESTIMATE_RATE, 0.015);
+  assert.equal(STRIPE_ESTIMATE_FIXED, 20);
+  assert.equal(PLATFORM_MARGIN_RATE, 0.02);
+  assert.equal(calculateDonationFee(1000), 55);
+  assert.equal(calculateDonationFee(1000, { charityApproved: true }), 35);
+  assert.deepEqual(calculateDonationCharge(1000, { coverFees: true }), { chargeAmount: 1057, fee: 57 });
+  assert.deepEqual(calculateDonationCharge(1000, { charityApproved: true, coverFees: true }), { chargeAmount: 1036, fee: 36 });
 });

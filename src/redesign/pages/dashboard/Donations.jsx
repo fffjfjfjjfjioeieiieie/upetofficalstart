@@ -79,7 +79,7 @@ export default function Donations() {
         </form>
       </Panel>
       <Panel title="Donations" desc="Your latest 10 paid donations.">
-        <div className="mb-4 rounded-xl border bg-primary/10 p-4"><p className="text-xs text-muted-foreground">Total raised</p><p className="mt-1 font-display text-3xl font-black">{money(data?.totalRaised)}</p></div>
+        <div className="mb-4 rounded-xl border bg-primary/10 p-4"><p className="text-xs text-muted-foreground">Total raised</p><p className="mt-1 font-display text-3xl font-black">{money(data?.totalRaised)}</p><p className="mt-2 text-xs text-muted-foreground">Estimated fees: {money(data?.estimatedFees)}{data?.charityApproved ? ' · 0% platform margin for approved charity' : ''}</p></div>
         <div className="space-y-2">{data?.donations?.map((donation) => <div key={donation.id} className="rounded-xl border bg-background/40 p-3"><div className="flex justify-between gap-3 text-sm"><span className="font-semibold">{donation.anonymous ? 'Anonymous' : donation.donorName || 'Supporter'}</span><span>{money(donation.amount)}</span></div>{donation.message && <p className="mt-1 text-xs text-muted-foreground">{donation.message}</p>}</div>)}{!busy && !data?.donations?.length && <p className="text-sm text-muted-foreground">No donations yet.</p>}</div>
       </Panel>
     </div>

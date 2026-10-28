@@ -57,13 +57,15 @@ export default async function handler(request, response) {
     const [page, recent, aggregate] = await Promise.all([
       pageRef.get(),
       db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').orderBy('createdAt', 'desc').limit(10).get(),
-      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount') }).get(),
+      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount'), fees: AggregateField.sum('fee') }).get(),
     ]);
     const data = page.data() || {};
     return response.status(200).json({
       stripeStatus,
       page: { slug: username, title: data.title || '', story: data.story || '', goalAmount: Number.isInteger(data.goalAmount) ? data.goalAmount : null, published: data.published === true },
       totalRaised: Number(aggregate.data().total) || 0,
+      estimatedFees: Number(aggregate.data().fees) || 0,
+      charityApproved: storedDonations.charityApproved === true,
       donations: recent.docs.map(donationJson),
     });
   } catch (error) {
