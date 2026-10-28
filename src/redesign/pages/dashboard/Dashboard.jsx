@@ -1,6 +1,6 @@
 import { NavLink, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Suspense, useState } from 'react';
-import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, LogOut, ExternalLink, ChartNoAxesCombined, Menu, ShieldCheck, X, GalleryVerticalEnd } from "lucide-react";
+import { LayoutGrid, PenTool, Award, Trophy, Settings as Cog, LogOut, ExternalLink, ChartNoAxesCombined, Menu, ShieldCheck, X, GalleryVerticalEnd, HandHeart } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { useHelpAuth } from '../../../help/context/HelpAuth.jsx';
 import { Logo } from "../../components/Logo";
@@ -9,6 +9,7 @@ import { lazyWithRetry } from '../../lib/lazyWithRetry';
 import { RouteLoading } from '../../components/RouteState';
 const Overview = lazyWithRetry(() => import('./Overview'), 'dashboard-overview');
 const Editor = lazyWithRetry(() => import('./Editor'), 'dashboard-editor');
+const Donations = lazyWithRetry(() => import('./Donations'), 'dashboard-donations');
 const Badges = lazyWithRetry(() => import('./Badges'), 'dashboard-badges');
 const Leaderboard = lazyWithRetry(() => import('./Leaderboard'), 'dashboard-leaderboard');
 const Settings = lazyWithRetry(() => import('./Settings'), 'dashboard-settings');
@@ -16,12 +17,13 @@ const VisitorAnalytics = lazyWithRetry(() => import('./VisitorAnalytics'), 'dash
 const Modview = lazyWithRetry(() => import('./Modview'), 'dashboard-modview');
 const Presets = lazyWithRetry(() => import('./Presets'), 'dashboard-profiles');
 
-const DASHBOARD_PAGES = { overview: Overview, editor: Editor, profiles: Presets, badges: Badges, leaderboard: Leaderboard, settings: Settings, visitors: VisitorAnalytics, modview: Modview };
+const DASHBOARD_PAGES = { overview: Overview, editor: Editor, donations: Donations, profiles: Presets, badges: Badges, leaderboard: Leaderboard, settings: Settings, visitors: VisitorAnalytics, modview: Modview };
 const warm = (path) => DASHBOARD_PAGES[path]?.preload?.().catch(() => {});
 
 const NAV = [
   ["overview", "Overview", LayoutGrid],
   ["editor", "Editor", PenTool],
+  ["donations", "Donations", HandHeart],
   ["profiles", "Profiles", GalleryVerticalEnd],
   ["badges", "Badges", Award],
   ["leaderboard", "Leaderboard", Trophy],
@@ -107,6 +109,7 @@ export default function Dashboard() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<Overview />} />
           <Route path="editor" element={<Editor />} />
+          <Route path="donations" element={<Donations />} />
           <Route path="shop" element={<Navigate to="/dashboard/editor" replace />} />
           <Route path="premium" element={<Navigate to="/dashboard/editor" replace />} />
           <Route path="notifications/*" element={<Navigate to="/dashboard/overview" replace />} />

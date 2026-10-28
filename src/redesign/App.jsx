@@ -13,6 +13,7 @@ import { RouteErrorBoundary, RouteLoading } from './components/RouteState';
 
 const Explore = lazyWithRetry(() => import('./pages/Explore'), 'explore');
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'), 'profile');
+const DonatePage = lazyWithRetry(() => import('./pages/DonatePage'), 'donate');
 const Dashboard = lazyWithRetry(() => import('./pages/dashboard/DashboardRoute'), 'dashboard');
 const ComingSoon = lazyWithRetry(() => import('./pages/ComingSoon'), 'coming-soon');
 const Login = lazyWithRetry(() => import('./pages/Login'), 'login');
@@ -22,6 +23,7 @@ const Privacy = lazyWithRetry(() => import('./pages/Privacy'), 'privacy');
 const dashboardImports = {
   overview: () => import('./pages/dashboard/Overview'),
   editor: () => import('./pages/dashboard/Editor'),
+  donations: () => import('./pages/dashboard/Donations'),
   profiles: () => import('./pages/dashboard/Presets'),
   badges: () => import('./pages/dashboard/Badges'),
   leaderboard: () => import('./pages/dashboard/Leaderboard'),
@@ -122,6 +124,7 @@ function App() {
             <Route path="/biz/:id" element={<Navigate to="/" replace />} />
             <Route path="/:username/shop/chat/:threadId" element={<RetiredProfilePage />} />
             <Route path="/:username/shop" element={<RetiredProfilePage />} />
+            <Route path="/:username/donate" element={<DonatePage />} />
             <Route path="/:username" element={<ProfilePage />} />
           </Routes></Suspense></RouteErrorBoundary>
         </BrowserRouter>

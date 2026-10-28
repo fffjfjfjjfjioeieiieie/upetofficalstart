@@ -1,0 +1,54 @@
+import { database, now } from '../../server/visitorStore.js';
+import { cleanText, readRawBody, stripeAccountStatus, verifyStripeSignature } from '../../server/donations.js';
+
+export const config = { api: { bodyParser: false } };
+
+export default async function handler(request, response) {
+  if (request.method !== 'POST') return response.status(405).send('Method not allowed');
+  let event;
+  try {
+    const rawBody = await readRawBody(request);
+    if (!verifyStripeSignature(rawBody, request.headers['stripe-signature'])) return response.status(400).send('Invalid signature');
+    event = JSON.parse(rawBody.toString('utf8'));
+    const db = database();
+    const eventRef = db.collection('stripeEvents').doc(event.id);
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      await db.runTransaction(async (transaction) => {
+        if ((await transaction.get(eventRef)).exists) return;
+        const metadata = session.metadata || {};
+        if (!metadata.pageUid || !Number.isInteger(Number(session.amount_total))) throw new Error('Checkout metadata is incomplete.');
+        transaction.set(db.collection('donations').doc(session.id), {
+          pageUid: metadata.pageUid,
+          amount: Number(session.amount_total),
+          fee: Number(metadata.fee) || 0,
+          currency: String(session.currency || 'gbp').toLowerCase(),
+          status: 'paid',
+          donorName: cleanText(metadata.donorName, 80) || null,
+          message: cleanText(metadata.message, 200) || null,
+          anonymous: metadata.anonymous === 'true',
+          stripeSessionId: session.id,
+          createdAt: now(),
+        });
+        transaction.set(eventRef, { processedAt: now() });
+      });
+    } else if (event.type === 'account.updated') {
+      const account = event.data.object;
+      const users = await db.collection('users').where('donations.stripeAccountId', '==', account.id).limit(1).get();
+      await db.runTransaction(async (transaction) => {
+        if ((await transaction.get(eventRef)).exists) return;
+        if (!users.empty) transaction.set(users.docs[0].ref, { donations: { stripeAccountId: account.id, stripeStatus: stripeAccountStatus(account) } }, { merge: true });
+        transaction.set(eventRef, { processedAt: now() });
+      });
+    } else {
+      await db.runTransaction(async (transaction) => {
+        if ((await transaction.get(eventRef)).exists) return;
+        transaction.set(eventRef, { processedAt: now() });
+      });
+    }
+    return response.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Donation webhook failed:', event?.id || 'unparsed', error?.message || error);
+    return response.status(500).send('Webhook processing failed');
+  }
+}

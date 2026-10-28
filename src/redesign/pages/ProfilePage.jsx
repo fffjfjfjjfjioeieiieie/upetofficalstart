@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [entered, setEntered] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [donationReady, setDonationReady] = useState(false);
   const viewRecorded = useRef('');
 
   useEffect(() => {
@@ -48,6 +49,18 @@ export default function ProfilePage() {
     return () => { active = false; unsubscribe(); };
   }, [normalized, recordView]);
 
+  useEffect(() => {
+    if (!profile?.links?.some((link) => link.type === 'donate')) {
+      setDonationReady(false);
+      return undefined;
+    }
+    let active = true;
+    fetch(`/api/donations/page?slug=${encodeURIComponent(normalized)}&availability=1`)
+      .then((response) => { if (active) setDonationReady(response.ok); })
+      .catch(() => { if (active) setDonationReady(false); });
+    return () => { active = false; };
+  }, [normalized, profile?.links]);
+
   const cursorSrc = profile?.media.cursor?.src;
 
   if (loading) return <div className="grid min-h-screen place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
@@ -73,7 +86,7 @@ export default function ProfilePage() {
         ) : (
           <motion.div initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6 }} className="w-full" style={{ perspective: 1000 }}>
             <div style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`, transition: 'transform .15s ease-out' }}>
-              <ProfileCard p={profile} />
+              <ProfileCard p={{ ...profile, links: profile.links.filter((link) => link.type !== 'donate' || donationReady) }} />
             </div>
           </motion.div>
         )}

@@ -69,6 +69,11 @@ export default function LinksTab() {
     setUrl(""); setLabel("");
     toast.success("Link added");
   };
+  const addDonate = () => {
+    if (links.some((item) => item.type === 'donate')) return toast.error('A Donate link is already on your profile.');
+    setProfile('links', [...links, { id: `donate-${Date.now().toString(36)}`, url: `https://user.pet/${user.username}/donate`, label: 'Donate', platform: 'website', type: 'donate' }]);
+    toast.success('Donate link added');
+  };
   const move = (i, d) => {
     const next = [...links];
     [next[i], next[i + d]] = [next[i + d], next[i]];
@@ -90,6 +95,7 @@ export default function LinksTab() {
             <button data-testid="link-add-button" className={`${btnCls} h-11 justify-center px-5`}><Plus className="h-4 w-4" />Add link</button>
           </form>
           {url && <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><PlatformIcon platform={detected} color={`#${BRAND[detected][0]}`} size={15} /><span>Detected as {platformLabel(detected)}</span></div>}
+          <div className="mt-3 border-t pt-3"><button type="button" onClick={addDonate} disabled={links.some((item) => item.type === 'donate')} className="rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary disabled:opacity-50">Add Donate link</button><p className="mt-2 text-xs text-muted-foreground">Shown publicly only while your donation page is published and Stripe is ready.</p></div>
         </div>
         <div className="mt-4" data-testid="link-presets">
           <div className="mb-2 flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">Quick start</span><button type="button" onClick={() => setShowAllPlatforms((value) => !value)} className="flex items-center gap-1 text-xs font-semibold text-primary">{showAllPlatforms ? "Show less" : "More platforms"}<ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAllPlatforms ? "rotate-180" : ""}`} /></button></div>

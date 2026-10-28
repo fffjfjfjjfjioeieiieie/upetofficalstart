@@ -89,6 +89,7 @@ export function sanitizeRedesignProfile(source = {}, username = '') {
     label: text(item?.label, 80),
     url: externalUrl(item?.url),
     platform: text(item?.platform || 'website', 32).toLowerCase(),
+    type: item?.type === 'donate' ? 'donate' : 'link',
   })).filter((item) => item.url) : [];
   const lyricLines = Array.isArray(source.audio?.lyrics?.lines) ? source.audio.lyrics.lines.slice(0, 150).map((line, index) => ({
     id: text(line?.id || `lyric-${index}`, 80),

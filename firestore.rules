@@ -136,6 +136,42 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validDonationPage(uid, data) {
+      return data.keys().hasOnly(['slug', 'title', 'story', 'goalAmount', 'published', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['slug', 'title', 'story', 'published', 'createdAt', 'updatedAt'])
+        && data.slug == get(/databases/$(database)/documents/users/$(uid)).data.username
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.story is string && data.story.size() <= 2000
+        && (!('goalAmount' in data) || (data.goalAmount is int && data.goalAmount >= 100))
+        && data.published is bool
+        && (!data.published || get(/databases/$(database)/documents/users/$(uid)).data.donations.stripeStatus == 'ready');
+    }
+
+    match /donationPages/{uid} {
+      allow get: if resource.data.published == true || (siteMember() && request.auth.uid == uid);
+      allow list: if resource.data.published == true;
+      allow create: if siteMember() && request.auth.uid == uid
+        && validDonationPage(uid, request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if siteMember() && request.auth.uid == uid
+        && validDonationPage(uid, request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if siteMember() && request.auth.uid == uid;
+    }
+
+    match /donations/{id} {
+      allow get: if siteMember() && resource.data.pageUid == request.auth.uid;
+      allow list: if siteMember() && request.query.limit != null && request.query.limit <= 10
+        && resource.data.pageUid == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /stripeEvents/{eventId} {
+      allow read, write: if false;
+    }
+
     match /profiles/{username} {
       // Drafts now live in owner-only profileDrafts. Legacy documents that still
       // contain a draft stay private until their owner republishes them.
