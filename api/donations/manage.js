@@ -1,7 +1,7 @@
 import { AggregateField } from 'firebase-admin/firestore';
 import { bearerToken, verifyFirebaseIdentity } from '../../server/firebaseAuth.js';
 import { database, now } from '../../server/visitorStore.js';
-import { cleanText, stripeAccountStatus, stripeRequest } from '../../server/donations.js';
+import { cleanText, STRIPE_MODE, stripeAccountStatus, stripeRequest } from '../../server/donations.js';
 
 const donationJson = (document) => {
   const value = document.data();
@@ -29,12 +29,13 @@ export default async function handler(request, response) {
     if (!user.exists || !user.data().username) return response.status(409).json({ error: 'Claim a username first.' });
     const username = String(user.data().username).toLowerCase();
     const storedDonations = user.data().donations || {};
-    let stripeStatus = storedDonations.stripeAccountId ? 'pending' : 'none';
-    if (storedDonations.stripeAccountId) {
+    const hasLiveAccount = storedDonations.stripeMode === STRIPE_MODE && Boolean(storedDonations.stripeAccountId);
+    let stripeStatus = hasLiveAccount ? 'pending' : 'none';
+    if (hasLiveAccount) {
       const account = await stripeRequest(`accounts/${encodeURIComponent(storedDonations.stripeAccountId)}`);
       stripeStatus = stripeAccountStatus(account);
       if (stripeStatus !== storedDonations.stripeStatus) {
-        await userRef.set({ donations: { stripeAccountId: storedDonations.stripeAccountId, stripeStatus } }, { merge: true });
+        await userRef.set({ donations: { stripeAccountId: storedDonations.stripeAccountId, stripeMode: STRIPE_MODE, stripeStatus } }, { merge: true });
       }
     }
 
@@ -57,7 +58,7 @@ export default async function handler(request, response) {
     const [page, recent, aggregate] = await Promise.all([
       pageRef.get(),
       db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').orderBy('createdAt', 'desc').limit(10).get(),
-      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount'), fees: AggregateField.sum('fee') }).get(),
+      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount'), fees: AggregateField.sum('fee'), count: AggregateField.count() }).get(),
     ]);
     const data = page.data() || {};
     return response.status(200).json({
@@ -65,6 +66,7 @@ export default async function handler(request, response) {
       page: { slug: username, title: data.title || '', story: data.story || '', goalAmount: Number.isInteger(data.goalAmount) ? data.goalAmount : null, published: data.published === true },
       totalRaised: Number(aggregate.data().total) || 0,
       estimatedFees: Number(aggregate.data().fees) || 0,
+      donationCount: Number(aggregate.data().count) || 0,
       charityApproved: storedDonations.charityApproved === true,
       donations: recent.docs.map(donationJson),
     });

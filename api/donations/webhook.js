@@ -1,5 +1,5 @@
 import { database, now } from '../../server/visitorStore.js';
-import { cleanText, readRawBody, stripeAccountStatus, verifyStripeSignature } from '../../server/donations.js';
+import { cleanText, readRawBody, STRIPE_MODE, stripeAccountStatus, verifyStripeSignature } from '../../server/donations.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -8,8 +8,11 @@ export default async function handler(request, response) {
   let event;
   try {
     const rawBody = await readRawBody(request);
-    if (!verifyStripeSignature(rawBody, request.headers['stripe-signature'])) return response.status(400).send('Invalid signature');
+    const webhookSecrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_CONNECT_WEBHOOK_SECRET].filter(Boolean);
+    if (!webhookSecrets.length) throw new Error('Stripe webhooks are not configured.');
+    if (!webhookSecrets.some((secret) => verifyStripeSignature(rawBody, request.headers['stripe-signature'], secret))) return response.status(400).send('Invalid signature');
     event = JSON.parse(rawBody.toString('utf8'));
+    if (event.livemode !== true) return response.status(400).send('Live Stripe events only');
     const db = database();
     const eventRef = db.collection('stripeEvents').doc(event.id);
     if (event.type === 'checkout.session.completed') {
@@ -39,7 +42,7 @@ export default async function handler(request, response) {
       const users = await db.collection('users').where('donations.stripeAccountId', '==', account.id).limit(1).get();
       await db.runTransaction(async (transaction) => {
         if ((await transaction.get(eventRef)).exists) return;
-        if (!users.empty) transaction.set(users.docs[0].ref, { donations: { stripeAccountId: account.id, stripeStatus: stripeAccountStatus(account) } }, { merge: true });
+        if (!users.empty) transaction.set(users.docs[0].ref, { donations: { stripeAccountId: account.id, stripeMode: STRIPE_MODE, stripeStatus: stripeAccountStatus(account) } }, { merge: true });
         transaction.set(eventRef, { processedAt: now() });
       });
     } else {

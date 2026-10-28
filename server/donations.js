@@ -3,6 +3,7 @@ export { STRIPE_ESTIMATE_RATE, STRIPE_ESTIMATE_FIXED, PLATFORM_MARGIN_RATE, calc
 
 export const DONATION_MIN_PENCE = 300;
 export const DONATION_MAX_PENCE = 500000;
+export const STRIPE_MODE = 'live';
 
 export function cleanText(value, maxLength) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -23,7 +24,7 @@ function appendParams(target, value, prefix) {
 
 export async function stripeRequest(path, { method = 'GET', params, idempotencyKey } = {}) {
   const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret || !secret.startsWith('sk_test_')) throw new Error('Stripe test mode is not configured.');
+  if (!secret || !/^(?:sk|rk)_live_/.test(secret)) throw new Error('Stripe live mode is not configured.');
   const body = new URLSearchParams();
   if (params) appendParams(body, params, '');
   const query = method === 'GET' && body.size ? `?${body}` : '';
@@ -42,6 +43,7 @@ export async function stripeRequest(path, { method = 'GET', params, idempotencyK
     error.statusCode = response.status;
     throw error;
   }
+  if (result?.livemode === false) throw new Error('Stripe returned a non-live object while live mode is required.');
   return result;
 }
 

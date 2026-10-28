@@ -1,6 +1,6 @@
 import { database } from '../../server/visitorStore.js';
 import { checkDonationCheckoutBurst, RateLimitError } from '../../server/rateLimit.js';
-import { calculateDonationCharge, cleanText, DONATION_MAX_PENCE, DONATION_MIN_PENCE, publicSiteUrl, stripeRequest } from '../../server/donations.js';
+import { calculateDonationCharge, cleanText, DONATION_MAX_PENCE, DONATION_MIN_PENCE, publicSiteUrl, STRIPE_MODE, stripeRequest } from '../../server/donations.js';
 
 const usernamePattern = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 
@@ -32,7 +32,7 @@ export default async function handler(request, response) {
       db.collection('users').doc(pageUid).get(),
     ]);
     const account = creator.data()?.donations;
-    if (!page.exists || page.data().published !== true || page.data().slug !== slug || account?.stripeStatus !== 'ready' || !account?.stripeAccountId) {
+    if (!page.exists || page.data().published !== true || page.data().slug !== slug || account?.stripeMode !== STRIPE_MODE || account?.stripeStatus !== 'ready' || !account?.stripeAccountId) {
       return response.status(404).json({ error: 'Donation page not found.' });
     }
     const charityApproved = account.charityApproved === true;

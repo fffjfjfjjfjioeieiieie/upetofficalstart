@@ -1,6 +1,6 @@
 import { bearerToken, verifyFirebaseIdentity } from '../../server/firebaseAuth.js';
 import { database } from '../../server/visitorStore.js';
-import { publicSiteUrl, stripeAccountStatus, stripeRequest } from '../../server/donations.js';
+import { publicSiteUrl, STRIPE_MODE, stripeAccountStatus, stripeRequest } from '../../server/donations.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -13,7 +13,8 @@ export default async function handler(request, response) {
     const userRef = db.collection('users').doc(identity.uid);
     const user = await userRef.get();
     if (!user.exists || !user.data().username) return response.status(409).json({ error: 'Claim a username first.' });
-    let accountId = user.data().donations?.stripeAccountId;
+    const storedDonations = user.data().donations || {};
+    let accountId = storedDonations.stripeMode === STRIPE_MODE ? storedDonations.stripeAccountId : null;
     let account;
     if (accountId) account = await stripeRequest(`accounts/${encodeURIComponent(accountId)}`);
     else {
@@ -24,7 +25,7 @@ export default async function handler(request, response) {
       });
       accountId = account.id;
     }
-    await userRef.set({ donations: { stripeAccountId: accountId, stripeStatus: stripeAccountStatus(account) } }, { merge: true });
+    await userRef.set({ donations: { stripeAccountId: accountId, stripeMode: STRIPE_MODE, stripeStatus: stripeAccountStatus(account) } }, { merge: true });
     const base = publicSiteUrl();
     const link = await stripeRequest('account_links', {
       method: 'POST',

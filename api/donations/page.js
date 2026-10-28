@@ -1,6 +1,6 @@
 import { AggregateField } from 'firebase-admin/firestore';
 import { database } from '../../server/visitorStore.js';
-import { cleanText } from '../../server/donations.js';
+import { cleanText, STRIPE_MODE } from '../../server/donations.js';
 
 const usernamePattern = /^[a-z0-9][a-z0-9._-]{2,19}$/;
 
@@ -22,7 +22,7 @@ export default async function handler(request, response) {
       db.collection('users').doc(uid).get(),
     ]);
     const data = page.data();
-    if (!page.exists || data.published !== true || user.data()?.donations?.stripeStatus !== 'ready') return response.status(404).json({ error: 'Donation page not found.' });
+    if (!page.exists || data.published !== true || user.data()?.donations?.stripeMode !== STRIPE_MODE || user.data()?.donations?.stripeStatus !== 'ready') return response.status(404).json({ error: 'Donation page not found.' });
     if (request.query?.availability === '1') return response.status(200).json({ available: true });
     const [recent, aggregate] = await Promise.all([
       db.collection('donations').where('pageUid', '==', uid).where('status', '==', 'paid').where('anonymous', '==', false).orderBy('createdAt', 'desc').limit(5).get(),
