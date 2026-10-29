@@ -9,6 +9,30 @@ export function cleanText(value, maxLength) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength);
 }
 
+export function nextDonationStats(current = {}, donation) {
+  const recentDonation = {
+    id: donation.id,
+    amount: Number(donation.amount) || 0,
+    fee: Number(donation.fee) || 0,
+    donorName: donation.donorName || null,
+    message: donation.message || null,
+    anonymous: donation.anonymous === true,
+    createdAt: donation.createdAt,
+  };
+  const recentDonations = [recentDonation, ...(Array.isArray(current.recentDonations) ? current.recentDonations : [])].slice(0, 10);
+  const recentSupporters = donation.anonymous === true
+    ? (Array.isArray(current.recentSupporters) ? current.recentSupporters : []).slice(0, 5)
+    : [{ name: donation.donorName || 'Supporter', message: donation.message || null, amount: recentDonation.amount }, ...(Array.isArray(current.recentSupporters) ? current.recentSupporters : [])].slice(0, 5);
+  return {
+    totalRaised: (Number(current.totalRaised) || 0) + recentDonation.amount,
+    estimatedFees: (Number(current.estimatedFees) || 0) + recentDonation.fee,
+    donationCount: (Number(current.donationCount) || 0) + 1,
+    recentDonations,
+    recentSupporters,
+    updatedAt: donation.createdAt,
+  };
+}
+
 export function stripeAccountStatus(account) {
   return account?.charges_enabled === true && account?.details_submitted === true ? 'ready' : 'pending';
 }

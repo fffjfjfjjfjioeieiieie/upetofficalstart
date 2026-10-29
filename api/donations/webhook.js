@@ -1,5 +1,5 @@
 import { database, now } from '../../server/visitorStore.js';
-import { cleanText, readRawBody, STRIPE_MODE, stripeAccountStatus, verifyStripeSignature } from '../../server/donations.js';
+import { cleanText, nextDonationStats, readRawBody, STRIPE_MODE, stripeAccountStatus, verifyStripeSignature } from '../../server/donations.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -18,10 +18,15 @@ export default async function handler(request, response) {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       await db.runTransaction(async (transaction) => {
-        if ((await transaction.get(eventRef)).exists) return;
         const metadata = session.metadata || {};
         if (!metadata.pageUid || !Number.isInteger(Number(session.amount_total))) throw new Error('Checkout metadata is incomplete.');
-        transaction.set(db.collection('donations').doc(session.id), {
+        const statsRef = db.collection('donationStats').doc(metadata.pageUid);
+        const eventSnapshot = await transaction.get(eventRef);
+        if (eventSnapshot.exists) return;
+        const statsSnapshot = await transaction.get(statsRef);
+        const createdAt = now();
+        const donation = {
+          id: session.id,
           pageUid: metadata.pageUid,
           amount: Number(metadata.pledgedAmount) || Number(session.amount_total),
           chargedAmount: Number(session.amount_total),
@@ -33,9 +38,11 @@ export default async function handler(request, response) {
           message: cleanText(metadata.message, 200) || null,
           anonymous: metadata.anonymous === 'true',
           stripeSessionId: session.id,
-          createdAt: now(),
-        });
-        transaction.set(eventRef, { processedAt: now() });
+          createdAt,
+        };
+        transaction.set(db.collection('donations').doc(session.id), donation);
+        transaction.set(statsRef, nextDonationStats(statsSnapshot.data(), donation));
+        transaction.set(eventRef, { processedAt: createdAt });
       });
     } else if (event.type === 'account.updated') {
       const account = event.data.object;

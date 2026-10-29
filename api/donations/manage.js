@@ -1,12 +1,10 @@
-import { AggregateField } from 'firebase-admin/firestore';
 import { bearerToken, verifyFirebaseIdentity } from '../../server/firebaseAuth.js';
 import { database, now } from '../../server/visitorStore.js';
 import { cleanText, STRIPE_MODE, stripeAccountStatus, stripeRequest } from '../../server/donations.js';
 
-const donationJson = (document) => {
-  const value = document.data();
+const donationJson = (value) => {
   return {
-    id: document.id,
+    id: cleanText(value.id, 255),
     amount: Number(value.amount) || 0,
     donorName: value.anonymous ? '' : cleanText(value.donorName, 80),
     message: cleanText(value.message, 200),
@@ -55,20 +53,20 @@ export default async function handler(request, response) {
       await pageRef.set(page);
     }
 
-    const [page, recent, aggregate] = await Promise.all([
+    const [page, stats] = await Promise.all([
       pageRef.get(),
-      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').orderBy('createdAt', 'desc').limit(10).get(),
-      db.collection('donations').where('pageUid', '==', identity.uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount'), fees: AggregateField.sum('fee'), count: AggregateField.count() }).get(),
+      db.collection('donationStats').doc(identity.uid).get(),
     ]);
     const data = page.data() || {};
+    const statsData = stats.data() || {};
     return response.status(200).json({
       stripeStatus,
       page: { slug: username, title: data.title || '', story: data.story || '', goalAmount: Number.isInteger(data.goalAmount) ? data.goalAmount : null, published: data.published === true },
-      totalRaised: Number(aggregate.data().total) || 0,
-      estimatedFees: Number(aggregate.data().fees) || 0,
-      donationCount: Number(aggregate.data().count) || 0,
+      totalRaised: Number(statsData.totalRaised) || 0,
+      estimatedFees: Number(statsData.estimatedFees) || 0,
+      donationCount: Number(statsData.donationCount) || 0,
       charityApproved: storedDonations.charityApproved === true,
-      donations: recent.docs.map(donationJson),
+      donations: (Array.isArray(statsData.recentDonations) ? statsData.recentDonations : []).slice(0, 10).map(donationJson),
     });
   } catch (error) {
     console.error('Donation dashboard failed:', error?.message || error);

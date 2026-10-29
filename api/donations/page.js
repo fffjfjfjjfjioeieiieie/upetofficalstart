@@ -1,4 +1,3 @@
-import { AggregateField } from 'firebase-admin/firestore';
 import { database } from '../../server/visitorStore.js';
 import { cleanText, STRIPE_MODE } from '../../server/donations.js';
 
@@ -24,21 +23,19 @@ export default async function handler(request, response) {
     const data = page.data();
     if (!page.exists || data.published !== true || user.data()?.donations?.stripeMode !== STRIPE_MODE || user.data()?.donations?.stripeStatus !== 'ready') return response.status(404).json({ error: 'Donation page not found.' });
     if (request.query?.availability === '1') return response.status(200).json({ available: true });
-    const [recent, aggregate] = await Promise.all([
-      db.collection('donations').where('pageUid', '==', uid).where('status', '==', 'paid').where('anonymous', '==', false).orderBy('createdAt', 'desc').limit(5).get(),
-      db.collection('donations').where('pageUid', '==', uid).where('status', '==', 'paid').aggregate({ total: AggregateField.sum('amount') }).get(),
-    ]);
+    const stats = await db.collection('donationStats').doc(uid).get();
+    const statsData = stats.data() || {};
     return response.status(200).json({
       slug,
       title: cleanText(data.title, 100),
       story: cleanText(data.story, 2000),
       goalAmount: Number.isInteger(data.goalAmount) ? data.goalAmount : null,
-      totalRaised: Number(aggregate.data().total) || 0,
+      totalRaised: Number(statsData.totalRaised) || 0,
       charityApproved: user.data()?.donations?.charityApproved === true,
-      recentSupporters: recent.docs.map((document) => ({
-        name: cleanText(document.data().donorName, 80) || 'Supporter',
-        message: cleanText(document.data().message, 200),
-        amount: Number(document.data().amount) || 0,
+      recentSupporters: (Array.isArray(statsData.recentSupporters) ? statsData.recentSupporters : []).slice(0, 5).map((supporter) => ({
+        name: cleanText(supporter.name, 80) || 'Supporter',
+        message: cleanText(supporter.message, 200),
+        amount: Number(supporter.amount) || 0,
       })),
     });
   } catch (error) {
