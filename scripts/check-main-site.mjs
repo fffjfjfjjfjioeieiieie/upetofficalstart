@@ -55,7 +55,7 @@ try {
     assert.equal(await page.locator('a[href="/marketplace"],a[href="/dashboard/shop"]').count(), 0);
     assert.equal(await page.locator('body').evaluate((el) => el.scrollWidth <= innerWidth + 1), true, `Homepage overflow at ${width}px`);
     await page.locator('#features-title').scrollIntoViewIfNeeded();
-    await page.locator('#discovery-title').scrollIntoViewIfNeeded();
+    await page.locator('#editor-title').scrollIntoViewIfNeeded();
     // Render offscreen content for the screenshot only; production keeps its containment optimization.
     await page.addStyleTag({ content: 'section { content-visibility: visible !important; }' });
     await page.evaluate(() => scrollTo(0, 0));

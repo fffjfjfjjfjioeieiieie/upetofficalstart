@@ -1,28 +1,15 @@
-import { Link } from "react-router-dom";
-import { Logo } from "./Logo";
-import { iconUrl } from "../lib/catalog";
+import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
 
-const SOCIALS = [["discord", "https://discord.gg/"], ["x", "https://x.com/"], ["tiktok", "https://tiktok.com/"], ["instagram", "https://instagram.com/"], ["github", "https://github.com/"]];
-const LINKS = [["Explore", "/explore"], ["Legal", "https://help.user.pet/legal/terms"], ["Privacy", "/privacy"], ["Terms", "https://help.user.pet/legal/terms"], ["Support", "https://help.user.pet"]];
+const GROUPS = [
+  ['Product', [['Features', '/#features'], ['Explore', '/explore'], ['Log in', '/login']]],
+  ['Legal', [['Terms', 'https://help.user.pet/legal/terms'], ['Privacy', '/privacy']]],
+  ['Contact', [['Help centre', 'https://help.user.pet'], ['Email', 'mailto:support@user.pet']]],
+];
 
-export const Footer = ({ links = LINKS, socials = SOCIALS, className = '' }) => (
-  <footer data-testid="site-footer" className={`mx-auto mt-32 w-full max-w-5xl border-t px-6 py-10 ${className}`}>
-    <div className="flex flex-wrap items-center justify-between gap-6">
-      <Logo />
-      <nav className="flex flex-wrap gap-5">
-        {links.map(([l, to]) => to.startsWith('http') ? <a key={l} href={to} data-testid={`footer-link-${l.toLowerCase()}`} className="text-sm text-muted-foreground transition-colors hover:text-foreground">{l}</a> : <Link key={l} to={to} data-testid={`footer-link-${l.toLowerCase()}`} className="text-sm text-muted-foreground transition-colors hover:text-foreground">{l}</Link>)}
-      </nav>
-      <div className="flex gap-2">
-        {socials.map(([p, href]) => (
-          <a key={p} href={href} target="_blank" rel="noreferrer" data-testid={`footer-social-${p}`} className="grid h-9 w-9 place-items-center rounded-lg border bg-card/60 transition-colors hover:bg-card">
-            <img src={iconUrl(p, "8fd3ff")} alt={p} className="h-4 w-4" />
-          </a>
-        ))}
-      </div>
-    </div>
-    <div className="mt-8 flex justify-between font-mono text-[11px] text-muted-foreground">
-      <span>© {new Date().getFullYear()} user.pet</span>
-      <span>v0.1.01</span>
-    </div>
-  </footer>
-);
+export function Footer({ className = '' }) {
+  return <footer className={`mx-auto mt-32 w-[min(calc(100%_-_2rem),76rem)] border-t border-border px-1 py-12 ${className}`}>
+    <div className="grid gap-10 sm:grid-cols-[1.5fr_2fr]"><div><Logo /><p className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground">One composed link for everything you are and everything you make.</p></div><div className="grid grid-cols-3 gap-5">{GROUPS.map(([group, links]) => <nav aria-label={group} key={group}><h2 className="text-xs font-bold uppercase tracking-[.14em] text-foreground">{group}</h2><div className="mt-4 grid gap-3">{links.map(([label, href]) => href.startsWith('http') || href.startsWith('mailto:') ? <a key={label} href={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</a> : <Link key={label} to={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link>)}</div></nav>)}</div></div>
+    <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground"><span>© {new Date().getFullYear()} user.pet</span><span>Built for expressive people.</span></div>
+  </footer>;
+}

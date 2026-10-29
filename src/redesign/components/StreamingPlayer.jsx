@@ -12,7 +12,7 @@ const providerArtwork = (audio, parsed) => {
   return '';
 };
 
-export default function StreamingPlayer({ audio, accent = '#6cc4ff', preview = false }) {
+export default function StreamingPlayer({ audio, accent = '#a69dd2', preview = false }) {
   const [open, setOpen] = useState(false);
   const host = useRef(null);
   const [overlayRoot, setOverlayRoot] = useState(null);

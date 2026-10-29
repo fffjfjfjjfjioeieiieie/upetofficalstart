@@ -53,3 +53,7 @@ export function checkPublicAnalyticsBurst(request, at = Date.now()) {
 export function checkPublicProfileEventBurst(request, at = Date.now()) {
   return checkAnonymousBurst(request, 'publicProfileEvents', at);
 }
+
+export function checkSignupBurst(request, at = Date.now()) {
+  return checkAnonymousBurst(request, 'signup', at);
+}

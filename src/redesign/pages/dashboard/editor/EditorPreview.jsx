@@ -32,7 +32,7 @@ export default function EditorPreview({ tab }) {
 
   const status = saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Could not save' : 'Live edits';
 
-  return <div className="order-last rounded-2xl border border-primary/15 bg-background/40 p-3 xl:fixed xl:right-8 xl:top-8 xl:z-30 xl:w-[460px] xl:border-0 xl:bg-transparent xl:p-0" data-testid="editor-preview">
+  return <div className="order-last rounded-2xl border border-primary/15 bg-background/40 p-3 xl:fixed xl:right-8 xl:top-24 xl:z-20 xl:w-[460px] xl:border-0 xl:bg-transparent xl:p-0" data-testid="editor-preview">
     <button type="button" onClick={() => setMobileOpen((open) => !open)} className="flex w-full items-center gap-3 text-left xl:hidden" aria-expanded={mobileOpen}>
       <span className="min-w-0 flex-1"><span className="block text-xs font-bold uppercase tracking-[.2em]">Live preview</span><span className="mt-1 block truncate font-mono text-[11px] text-muted-foreground">user.pet/{user.username}</span></span>
       <span role="status" className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${saveState === 'error' ? 'bg-red-500/15 text-red-400' : 'bg-primary/10 text-primary'}`}>{status}</span>

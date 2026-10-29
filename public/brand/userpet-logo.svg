@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">user.pet layered U mark</title>
+  <rect width="64" height="64" rx="18" fill="#181526"/>
+  <path d="M15 16h10v23c0 6 2 9 7 9s7-3 7-9V16h10v24c0 12-6 18-17 18S15 52 15 40V16Z" fill="#716A9E" opacity=".52"/>
+  <path d="M20 12h10v25c0 5 1 7 5 7s5-2 5-7V12h10v26c0 10-5 15-15 15S20 48 20 38V12Z" fill="#A69DD2"/>
+</svg>

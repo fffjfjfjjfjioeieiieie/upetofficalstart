@@ -129,7 +129,7 @@ export default function LinksTab() {
             <SliderRow testid="link-radius" label="Rounding" value={ls.radius} min={0} max={24} unit="px" onChange={setL("radius")} />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <ColorRow testid="link-glow-color" label="Glow color (custom)" value={ls.glowColor || "#6cc4ff"} onChange={setL("glowColor")} />
+            <ColorRow testid="link-glow-color" label="Glow color (custom)" value={ls.glowColor || "#a69dd2"} onChange={setL("glowColor")} />
             <button data-testid="link-glow-brand" onClick={() => setL("glowColor")("")} className={`rounded-xl border px-3 py-2 text-xs ${!ls.glowColor ? "border-primary bg-primary/15" : "bg-background/40"}`}>Use brand colors for glow</button>
           </div>
         </div>

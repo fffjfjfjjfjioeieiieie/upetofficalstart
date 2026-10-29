@@ -23,7 +23,7 @@ export const Avatar = ({ media, name = "", size = 96, decoration, hue = 0, decoS
   const s = Math.round(size * ((media?.size ?? 100) / 100));
   return (
     <div className={`relative shrink-0 ${className}`} style={{ width: s, height: s }}>
-      <div className="h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-sky-300 to-sky-600">
+      <div className="h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-violet-300 to-violet-700">
         {media?.src ? (
           <MediaLayer media={media} className="h-full w-full" style={isVideoMedia(media) ? { transform: `scale(${media.zoom || 1}) rotate(${media.rotate || 0}deg)` } : { backgroundSize: `${(media.zoom || 1) * 100}%` }} />
         ) : (

@@ -9,4 +9,5 @@ export const RATE_LIMITS = Object.freeze({
   audioUploads: { max: 3, windowMs: 10 * 60 * 1000 },
   publicAnalytics: { max: 600, windowMs: 60 * 1000 },
   publicProfileEvents: { max: 120, windowMs: 60 * 1000 },
+  signup: { max: 8, windowMs: 15 * 60 * 1000 },
 });

@@ -1,110 +1,60 @@
-import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
-import { Eye, Link2, Award, CalendarDays, CheckCircle2, Circle, Upload, Copy, GalleryVerticalEnd, ArrowRight } from "lucide-react";
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { useStore, fileToDataUrl } from "../../lib/store";
-import { Panel, Field, inputCls, PageTitle } from "../../components/Controls";
-import { Avatar } from "../../components/ProfileBits";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Check, Circle, Copy, Eye, ExternalLink, Image, Link2, MousePointerClick, Palette, RefreshCw, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { useStore } from '../../lib/store';
 
-const Stat = ({ icon: Icon, label, value, i }) => (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }} className="glass rounded-2xl p-5" data-testid={`stat-${label.toLowerCase().replace(/\s/g, "-")}`}>
-    <div className="flex items-center justify-between text-xs text-muted-foreground">{label}<Icon className="h-4 w-4 text-primary" /></div>
-    <div className="mt-3 font-display text-3xl font-black">{value}</div>
-  </motion.div>
-);
+const number = new Intl.NumberFormat('en-GB');
+
+function StatCard({ icon: Icon, label, value, detail, loading }) {
+  return <article className="glass rounded-2xl p-5">{loading ? <><div className="h-3 w-24 animate-pulse rounded-full bg-foreground/10" /><div className="mt-4 h-8 w-20 animate-pulse rounded-lg bg-primary/15" /><div className="mt-3 h-2 w-32 animate-pulse rounded-full bg-foreground/[.06]" /></> : <><div className="flex items-center justify-between text-xs font-semibold text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4 text-primary" /></div><strong className="mt-3 block font-display text-3xl tracking-tight">{value}</strong><p className="mt-2 text-xs text-muted-foreground">{detail}</p></>}</article>;
+}
 
 export default function Overview() {
-  const { user, setProfile, refreshProfileAnalytics } = useStore();
-  useEffect(() => { refreshProfileAnalytics().catch(() => {}); }, [refreshProfileAnalytics]);
-  const nav = useNavigate();
-  const file = useRef(null);
-  const p = user.profile;
-  const days = Math.max(1, Math.floor((Date.now() - user.createdAt) / 86400000));
-  const tasks = [
-    ["Upload a profile picture", !!p.media.avatar.src, "editor"],
-    ["Write a bio", !!p.bio, "editor"],
-    ["Add your first link", p.links.length > 0, "editor"],
-    ["Add music", !!(p.audio.src || p.audio.embedUrl), "editor"],
-    ["Pick an avatar decoration", !!p.effects.decoration, "editor"],
-    ["Enable a widget", p.widgets.discord.enabled || p.widgets.tiktok.enabled, "editor"],
-    ["Turn on 2FA", user.twofa.enabled, "settings"],
-    ["Connect Discord", !!user.connections.discord, "settings"],
-  ];
-  const done = tasks.filter((t) => t[1]).length;
-  const history = (p.viewHistory || []).map((h) => ({ day: h.day.slice(5), views: h.count }));
-  const upload = async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    try {
-      setProfile("media.avatar.src", await fileToDataUrl(f, 400, 'avatar'));
-      setProfile("media.avatar.type", f.type.startsWith('video/') ? 'video' : 'image');
-      toast.success("Profile picture updated");
-    } catch (error) {
-      toast.error(error?.message || 'Profile picture could not be uploaded');
-    }
+  const { user, refreshProfileAnalytics } = useStore();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const profile = user.profile;
+  const profileUrl = `${window.location.origin}/${user.username}`;
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try { await refreshProfileAnalytics(); setError(''); }
+    catch (exception) { setError(exception?.message || 'Analytics could not be loaded.'); }
+    finally { setLoading(false); }
+  }, [refreshProfileAnalytics]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const checklist = useMemo(() => [
+    { label: 'Add an avatar', done: Boolean(profile.media?.avatar?.src), icon: Image, to: '/dashboard/editor' },
+    { label: 'Add your first link', done: profile.links.length > 0, icon: Link2, to: '/dashboard/editor' },
+    { label: 'Pick a background', done: Boolean(profile.media?.background?.src) || profile.effects?.background !== 'none', icon: Palette, to: '/dashboard/editor' },
+  ], [profile]);
+  const completed = checklist.filter((item) => item.done).length;
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(profileUrl); toast.success('Profile link copied'); }
+    catch { toast.error('Copy failed. Select the link and copy it manually.'); }
   };
-  return (
-    <div data-testid="overview-page">
-      <PageTitle title={`Hey, ${p.alias}`} sub="Here is how your page is doing." />
-      <div className="grid gap-4 md:grid-cols-4">
-        <Stat i={0} icon={Eye} label="Profile views" value={p.views} />
-        <Stat i={1} icon={Link2} label="Links" value={p.links.length} />
-        <Stat i={2} icon={Award} label="Badges" value={p.badges.length} />
-        <Stat i={3} icon={CalendarDays} label="Days active" value={days} />
-      </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Panel title="Views" desc="Recent activity sample" testid="overview-chart">
-          <div className="h-56">
-            {history.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={history}>
-                  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6cc4ff" stopOpacity={0.6} /><stop offset="100%" stopColor="#6cc4ff" stopOpacity={0} /></linearGradient></defs>
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.4} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
-                  <Area type="monotone" dataKey="views" stroke="#38aaff" strokeWidth={2} fill="url(#g)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : <div className="grid h-full place-items-center text-sm text-muted-foreground">No views yet — share your link.</div>}
-          </div>
-        </Panel>
-        <Panel title="Suggestions" desc={`${done}/${tasks.length} complete`} testid="overview-suggestions">
-          <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-primary/15"><motion.div className="h-full bg-primary" initial={{ width: 0 }} animate={{ width: `${(done / tasks.length) * 100}%` }} /></div>
-          <ul className="space-y-1">
-            {tasks.map(([t, ok, to], i) => (
-              <li key={t}>
-                <button data-testid={`suggestion-${i}`} onClick={() => nav(`/dashboard/${to}`)} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-primary/10">
-                  {ok ? <CheckCircle2 className="h-4 w-4 fill-emerald-500 text-white dark:text-background" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
-                  <span className={ok ? "text-muted-foreground line-through" : ""}>{t}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
-      <button type="button" onClick={() => nav('/dashboard/profiles')} className="glass group mt-4 flex w-full items-center gap-4 rounded-2xl border border-primary/20 p-4 text-left transition-colors hover:bg-primary/[.07] sm:p-5">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary"><GalleryVerticalEnd className="h-5 w-5" /></span>
-        <span className="min-w-0 flex-1"><strong className="block font-display">Your profile presets</strong><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Save up to five complete looks and choose which one is live.</span></span>
-        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-1" />
-      </button>
-      <Panel title="Basics" className="mt-4" testid="overview-basics">
-        <div className="grid gap-6 md:grid-cols-[auto_1fr_1fr]">
-          <div className="flex flex-col items-center gap-3">
-            <Avatar media={p.media.avatar} name={p.username} size={84} decoration={p.effects.decoration} hue={p.effects.decoHue} decoSize={p.effects.decoSize} />
-            <input ref={file} type="file" accept="image/*,video/mp4,video/webm,video/quicktime" hidden onChange={upload} />
-            <button data-testid="overview-upload-pfp" onClick={() => file.current.click()} className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-primary/30"><Upload className="h-3.5 w-3.5" />Upload pfp</button>
-          </div>
-          <div className="space-y-3">
-            <Field label="Alias"><input data-testid="overview-alias" className={inputCls} value={p.alias} onChange={(e) => setProfile("alias", e.target.value)} /></Field>
-            <Field label="Display name"><input data-testid="overview-display-name" className={inputCls} value={p.displayName} onChange={(e) => setProfile("displayName", e.target.value)} /></Field>
-          </div>
-          <div className="space-y-3">
-            <Field label="Bio"><textarea data-testid="overview-bio" rows={3} className={inputCls} value={p.bio} onChange={(e) => setProfile("bio", e.target.value)} /></Field>
-            <button data-testid="overview-copy-link" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/${p.username}`); toast.success("Link copied"); }} className="flex items-center gap-2 text-xs text-primary"><Copy className="h-3.5 w-3.5" />{window.location.host}/{p.username}</button>
-          </div>
-        </div>
-      </Panel>
+
+  return <div className="mx-auto w-full max-w-7xl pb-10" data-testid="overview-page">
+    <section className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-xs font-semibold uppercase tracking-[.14em] text-primary">Overview</p><h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">Welcome back, {profile.alias || user.username}.</h1><p className="mt-2 text-sm text-muted-foreground">A clear view of your profile and the next useful move.</p></div><Link to="/dashboard/editor" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">Edit profile <ArrowRight className="h-4 w-4" /></Link></section>
+
+    <section className="glass mt-7 flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center" aria-label="Your public profile link"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><ExternalLink className="h-5 w-5" /></span><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-muted-foreground">Your public profile</p><p className="mt-1 truncate font-mono text-sm text-foreground">user.pet/{user.username}</p></div><div className="flex gap-2"><button type="button" onClick={copy} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold hover:bg-primary/[.08]"><Copy className="h-4 w-4" />Copy</button><Link to={`/${user.username}`} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold hover:bg-primary/[.08]">View <ExternalLink className="h-4 w-4" /></Link></div></section>
+
+    {error && <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-200"><span>{error}</span><button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 font-semibold"><RefreshCw className="h-4 w-4" />Retry</button></div>}
+
+    <section className="mt-4 grid gap-4 sm:grid-cols-3" aria-label="Profile statistics">
+      <StatCard loading={loading} icon={Eye} label="Profile views" value={number.format(profile.views || 0)} detail={profile.views ? 'All recorded profile views' : 'Share your profile to start collecting views'} />
+      <StatCard loading={loading} icon={MousePointerClick} label="Link clicks" value={number.format(profile.clicks || 0)} detail={profile.clicks ? 'Clicks across your profile links' : 'No link clicks recorded yet'} />
+      <StatCard loading={loading} icon={Link2} label="Live links" value={number.format(profile.links.length)} detail={profile.links.length ? 'Links currently on your profile' : 'Add a link in the Editor'} />
+    </section>
+
+    <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.15fr]">
+      <section className="glass rounded-3xl p-5 sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[.14em] text-primary">Finish setting up</p><h2 className="mt-2 font-display text-xl font-bold">Make the profile unmistakably yours.</h2></div><span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-bold text-primary">{completed}/{checklist.length}</span></div><div className="mt-5 h-1.5 overflow-hidden rounded-full bg-primary/10"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${completed / checklist.length * 100}%` }} /></div><ul className="mt-4 grid gap-2">{checklist.map(({ label, done, icon: Icon, to }) => <li key={label}><Link to={to} className="flex items-center gap-3 rounded-xl border border-border bg-background/30 p-3 hover:bg-primary/[.06]"><span className={`grid h-8 w-8 place-items-center rounded-lg ${done ? 'bg-emerald-500/15 text-emerald-300' : 'bg-primary/10 text-primary'}`}>{done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}</span><span className={`text-sm font-semibold ${done ? 'text-muted-foreground line-through' : ''}`}>{label}</span><Circle className="ml-auto h-3 w-3 text-muted-foreground" /></Link></li>)}</ul></section>
+
+      <section className="glass rounded-3xl p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[.14em] text-primary">Quick actions</p><h2 className="mt-2 font-display text-xl font-bold">Keep building momentum.</h2><div className="mt-5 grid gap-3 sm:grid-cols-2"><Link to="/dashboard/editor" className="group rounded-2xl border border-border bg-background/30 p-4 hover:border-primary/40 hover:bg-primary/[.06]"><span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/12 text-primary"><Sparkles className="h-4 w-4" /></span><strong className="mt-6 block text-sm">Open the Editor</strong><span className="mt-1 block text-xs leading-5 text-muted-foreground">Refine identity, links and effects.</span><ArrowRight className="mt-4 h-4 w-4 text-primary transition-transform group-hover:translate-x-1" /></Link><Link to={user.role === 'founder' ? '/dashboard/visitors' : '/dashboard/settings'} className="group rounded-2xl border border-border bg-background/30 p-4 hover:border-primary/40 hover:bg-primary/[.06]"><span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/12 text-primary">{user.role === 'founder' ? <Eye className="h-4 w-4" /> : <Palette className="h-4 w-4" />}</span><strong className="mt-6 block text-sm">{user.role === 'founder' ? 'Review analytics' : 'Account settings'}</strong><span className="mt-1 block text-xs leading-5 text-muted-foreground">{user.role === 'founder' ? 'See aggregate traffic and activity.' : 'Manage access and account details.'}</span><ArrowRight className="mt-4 h-4 w-4 text-primary transition-transform group-hover:translate-x-1" /></Link></div></section>
     </div>
-  );
+  </div>;
 }

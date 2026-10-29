@@ -17,7 +17,7 @@ const GROUPS = [
 const Preview = ({ group, kind, amount = 50, color = "#ffffff" }) => (
   <div className="relative grid h-20 place-items-center overflow-hidden rounded-xl bg-[#0b1626]">
     {group === "background" && <BackgroundFx kind={kind} amount={amount} color={color} />}
-    {group === "overlay" && <div className="absolute inset-3 rounded-lg bg-gradient-to-br from-sky-400/60 to-indigo-500/50" />}
+    {group === "overlay" && <div className="absolute inset-3 rounded-lg bg-gradient-to-br from-violet-400/50 to-slate-500/40" />}
     {group === "overlay" && <OverlayFx kind={kind} />}
     {group === "text" ? <FxText fx={kind} text="user.pet" className="relative font-display text-base font-bold" style={{ color, '--fx-color': color }} /> : group === "background" && <span className="relative text-[10px] uppercase tracking-widest text-white/40">{kind}</span>}
   </div>
@@ -124,7 +124,7 @@ const EffectMenu = ({ group, onClose }) => {
   const founder = user.role === "founder";
   const backgroundAmount = user.profile.effects.backgroundAmount ?? 50;
   const backgroundColor = user.profile.effects.backgroundColor || "#ffffff";
-  const textColor = user.profile.effects.textColor || user.profile.card.accent || "#6cc4ff";
+  const textColor = user.profile.effects.textColor || user.profile.card.accent || "#a69dd2";
   const list = kinds.filter((k) => k.includes(q.toLowerCase()));
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>

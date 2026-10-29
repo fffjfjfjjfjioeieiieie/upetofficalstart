@@ -38,8 +38,18 @@ const TitleSync = () => {
     const [first = "", second] = pathname.split("/").filter(Boolean);
     const cap = (w) => w[0].toUpperCase() + w.slice(1);
     const name = first === "dashboard" ? `Dashboard - ${cap(second || "overview")}` : first === 'business' ? 'Business mode' : NAMES[first] || `@${first}`;
-    document.title = `user.pet | ${name}`;
+    document.title = first ? `user.pet | ${name}` : 'user.pet — One link for everything you are';
   }, [pathname]);
+  return null;
+};
+
+const HashSync = () => {
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = window.setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }), 0);
+    return () => window.clearTimeout(id);
+  }, [hash]);
   return null;
 };
 
@@ -76,7 +86,7 @@ const RetiredProfilePage = () => {
 const Shell = ({ children }) => (
   <>
     <Header />
-    <main className="min-h-screen pt-36">{children}</main>
+    <main className="min-h-screen pt-28">{children}</main>
     <Footer />
   </>
 );
@@ -86,7 +96,7 @@ const Guard = ({ children }) => {
   const loc = useLocation();
   if (!ready) return <RouteLoading label="Loading your account…" />;
   if (needsClaim) return <Navigate to="/claim" replace />;
-  return user ? children : <Navigate to={`/login?next=${loc.pathname}`} replace />;
+  return user ? children : <Navigate to={`/login?next=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`} replace />;
 };
 
 const Themed = () => {
@@ -101,6 +111,7 @@ function App() {
         <WaveBackground />
         <BrowserRouter>
           <TitleSync />
+          <HashSync />
           <RoutePreloader />
           <VisitorTracking />
           <RouteErrorBoundary><Suspense fallback={<RouteLoading />}><Routes>

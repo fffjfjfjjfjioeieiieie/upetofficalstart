@@ -23,9 +23,15 @@ export default function ClaimUsername() {
       return;
     }
     setBusy(true);
-    if (await isTaken(normalized)) {
+    try {
+      if (await isTaken(normalized)) {
+        setBusy(false);
+        toast.error('That username is already taken.');
+        return;
+      }
+    } catch {
       setBusy(false);
-      toast.error('That username is already taken.');
+      toast.error('Username availability could not be checked. Try again.');
       return;
     }
     const result = await claimUsername(normalized);

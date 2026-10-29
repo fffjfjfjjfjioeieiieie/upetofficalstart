@@ -5,27 +5,31 @@
     color-scheme: light;
 
     /* Semantic colour roles. Values remain HSL channels for Tailwind compatibility. */
-    --upet-color-canvas: 208 100% 98%;
-    --upet-color-text: 214 45% 14%;
+    --upet-color-canvas: 252 24% 97%;
+    --upet-color-text: 247 24% 13%;
     --upet-color-surface: 0 0% 100%;
-    --upet-color-surface-text: 214 45% 14%;
+    --upet-color-surface-text: 247 24% 13%;
     --upet-color-popover: 0 0% 100%;
-    --upet-color-popover-text: 214 45% 14%;
-    --upet-color-accent: 203 100% 66%;
-    --upet-color-accent-text: 214 60% 10%;
-    --upet-color-secondary: 205 100% 94%;
-    --upet-color-secondary-text: 214 45% 18%;
-    --upet-color-muted: 207 60% 94%;
-    --upet-color-muted-text: 213 18% 44%;
-    --upet-color-highlight: 199 100% 88%;
-    --upet-color-highlight-text: 214 45% 14%;
+    --upet-color-popover-text: 247 24% 13%;
+    --upet-color-accent: 250 29% 52%;
+    --upet-color-accent-strong: 250 32% 43%;
+    --upet-color-accent-text: 252 30% 98%;
+    --upet-color-secondary: 252 20% 91%;
+    --upet-color-secondary-text: 247 24% 18%;
+    --upet-color-muted: 252 17% 92%;
+    --upet-color-muted-text: 248 10% 42%;
+    --upet-color-highlight: 251 22% 88%;
+    --upet-color-highlight-text: 247 24% 14%;
     --upet-color-danger: 0 80% 60%;
     --upet-color-danger-text: 0 0% 100%;
-    --upet-color-line: 206 60% 87%;
-    --upet-color-control: 206 60% 87%;
-    --upet-color-focus: 203 100% 66%;
-    --upet-color-wave: 203 100% 66%;
+    --upet-color-line: 250 16% 84%;
+    --upet-color-control: 250 16% 84%;
+    --upet-color-focus: 250 29% 52%;
+    --upet-color-wave: 250 29% 52%;
     --upet-color-glass: 0 0% 100%;
+    --upet-color-surface-raised: 252 22% 95%;
+    --upet-color-violet-deep: 249 27% 18%;
+    --upet-color-success: 151 43% 40%;
 
     /* Compatibility aliases used by the active application. */
     --background: var(--upet-color-canvas);
@@ -35,6 +39,7 @@
     --popover: var(--upet-color-popover);
     --popover-foreground: var(--upet-color-popover-text);
     --primary: var(--upet-color-accent);
+    --primary-strong: var(--upet-color-accent-strong);
     --primary-foreground: var(--upet-color-accent-text);
     --secondary: var(--upet-color-secondary);
     --secondary-foreground: var(--upet-color-secondary-text);
@@ -49,6 +54,9 @@
     --ring: var(--upet-color-focus);
     --wave: var(--upet-color-wave);
     --glass: var(--upet-color-glass);
+    --surface-raised: var(--upet-color-surface-raised);
+    --violet-deep: var(--upet-color-violet-deep);
+    --success: var(--upet-color-success);
 
     /* Typography. */
     --upet-font-body: "Onest", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -57,6 +65,11 @@
     --upet-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
     --upet-leading-tight: 1.15;
     --upet-leading-body: 1.65;
+    --upet-type-xs: 0.75rem;
+    --upet-type-sm: 0.875rem;
+    --upet-type-base: 1rem;
+    --upet-type-lg: 1.125rem;
+    --upet-type-xl: 1.5rem;
 
     /* Four-pixel spatial rhythm with named composition steps. */
     --upet-space-1: 0.25rem;
@@ -73,11 +86,15 @@
     --upet-radius-control: 0.75rem;
     --upet-radius-panel: 1rem;
     --upet-radius-card: 1.5rem;
+    --upet-radius-hero: 2rem;
     --upet-radius-pill: 999px;
     --radius: var(--upet-radius-panel);
 
     --upet-shadow-low: 0 10px 30px -18px hsl(var(--upet-color-text) / 0.28);
     --upet-shadow-panel: 0 24px 70px -34px hsl(var(--upet-color-text) / 0.38);
+    --upet-shadow-accent: 0 14px 38px -18px hsl(var(--upet-color-accent) / .7);
+    --upet-shadow-hero: 0 36px 100px -42px hsl(var(--upet-color-accent) / .48);
+    --upet-layout-max: 76rem;
     --upet-focus-width: 2px;
     --upet-focus-offset: 3px;
 
@@ -98,29 +115,33 @@
   .dark,
   [data-upet-theme="dark"] {
     color-scheme: dark;
-    --upet-color-canvas: 225 14% 4%;
-    --upet-color-text: 210 20% 96%;
-    --upet-color-surface: 225 12% 7%;
-    --upet-color-surface-text: 210 20% 96%;
-    --upet-color-popover: 225 12% 7%;
-    --upet-color-popover-text: 210 20% 96%;
-    --upet-color-accent: 203 100% 68%;
-    --upet-color-accent-text: 225 30% 6%;
-    --upet-color-secondary: 225 10% 11%;
-    --upet-color-secondary-text: 210 20% 96%;
-    --upet-color-muted: 225 10% 10%;
-    --upet-color-muted-text: 220 8% 58%;
-    --upet-color-highlight: 225 10% 12%;
-    --upet-color-highlight-text: 210 20% 96%;
+    --upet-color-canvas: 250 18% 4%;
+    --upet-color-text: 248 20% 95%;
+    --upet-color-surface: 249 16% 7%;
+    --upet-color-surface-text: 248 20% 95%;
+    --upet-color-popover: 249 16% 7%;
+    --upet-color-popover-text: 248 20% 95%;
+    --upet-color-accent: 249 28% 67%;
+    --upet-color-accent-strong: 249 31% 74%;
+    --upet-color-accent-text: 250 24% 8%;
+    --upet-color-secondary: 249 13% 12%;
+    --upet-color-secondary-text: 248 20% 95%;
+    --upet-color-muted: 249 12% 11%;
+    --upet-color-muted-text: 247 9% 63%;
+    --upet-color-highlight: 249 12% 14%;
+    --upet-color-highlight-text: 248 20% 95%;
     --upet-color-danger: 0 70% 50%;
     --upet-color-danger-text: 0 0% 100%;
-    --upet-color-line: 225 9% 14%;
-    --upet-color-control: 225 9% 14%;
-    --upet-color-focus: 203 100% 68%;
-    --upet-color-wave: 203 100% 68%;
-    --upet-color-glass: 225 12% 7%;
-    --upet-shadow-low: 0 12px 34px -18px hsl(225 60% 1% / 0.72);
-    --upet-shadow-panel: 0 28px 80px -34px hsl(225 60% 1% / 0.9);
+    --upet-color-line: 249 11% 18%;
+    --upet-color-control: 249 11% 18%;
+    --upet-color-focus: 249 28% 67%;
+    --upet-color-wave: 249 28% 67%;
+    --upet-color-glass: 249 16% 7%;
+    --upet-color-surface-raised: 249 14% 10%;
+    --upet-color-violet-deep: 250 24% 9%;
+    --upet-color-success: 151 43% 52%;
+    --upet-shadow-low: 0 12px 34px -18px hsl(250 60% 1% / 0.72);
+    --upet-shadow-panel: 0 28px 80px -34px hsl(250 60% 1% / 0.9);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -176,6 +197,9 @@
 .font-display { font-family: "Unbounded", sans-serif; }
 .font-mono { font-family: "JetBrains Mono", monospace; }
 
+.upet-logo { display: inline-flex; align-items: center; gap: .65rem; color: hsl(var(--foreground)); font-family: var(--upet-font-display); font-size: 1rem; font-weight: 800; letter-spacing: -.045em; }
+.upet-logo img { width: 2.125rem; height: 2.125rem; display: block; }
+
 .glass {
   background: hsl(var(--glass) / .62);
   backdrop-filter: blur(18px) saturate(1.4);
@@ -185,23 +209,10 @@
 
 .text-3d {
   color: hsl(var(--foreground));
-  text-shadow:
-    0 1px 0 hsl(var(--primary) / .9),
-    0 2px 0 hsl(var(--primary) / .8),
-    0 3px 0 hsl(var(--primary) / .7),
-    0 4px 0 hsl(var(--primary) / .6),
-    0 5px 0 hsl(var(--primary) / .5),
-    0 6px 1px hsl(var(--primary) / .3),
-    0 10px 24px hsl(var(--primary) / .45);
-  transform: perspective(600px) rotateX(14deg);
-  transform-origin: bottom;
+  text-shadow: 0 8px 30px hsl(var(--primary) / .16);
 }
 .text-3d-accent {
-  background: linear-gradient(180deg, hsl(199 100% 78%), hsl(206 100% 58%));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 4px 0 hsl(208 90% 40% / .55)) drop-shadow(0 12px 18px hsl(203 100% 60% / .45));
+  color: hsl(var(--primary));
 }
 
 .wave-line { animation: wave-move linear infinite; }
@@ -323,11 +334,11 @@
 .fx-blurin .fx-l { animation: fx-blurin 3s ease-out infinite; animation-delay: calc(var(--i) * 0.08s); }
 @keyframes fx-blurin { 0% { filter: blur(8px); opacity: 0; } 30%,85% { filter: blur(0); opacity: 1; } 100% { filter: blur(8px); opacity: 0; } }
 .fx-rainbow { background: linear-gradient(90deg,#ff5f6d,#ffc371,#47e891,#3ec7ff,#a78bfa,#ff5f6d); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: fx-pan 3s linear infinite; }
-.fx-gradient { background: linear-gradient(90deg,#ffffff,color-mix(in srgb,var(--fx-color,#6cc4ff),white 35%),var(--fx-color,#3ba7ff),#ffffff); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: fx-pan 4s linear infinite; }
+.fx-gradient { background: linear-gradient(90deg,#ffffff,color-mix(in srgb,var(--fx-color,#a69dd2),white 35%),var(--fx-color,#716a9e),#ffffff); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: fx-pan 4s linear infinite; }
 .fx-sparkle { background: linear-gradient(110deg,currentColor 40%,#fff 50%,currentColor 60%); background-size: 250% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: fx-pan 2.4s linear infinite; }
 @keyframes fx-pan { to { background-position: -200% center; } }
-.fx-neon { color:var(--fx-color,#6cc4ff);text-shadow:0 0 4px #fff,0 0 10px var(--fx-color,#6cc4ff),0 0 22px var(--fx-color,#3ba7ff),0 0 40px var(--fx-color,#3ba7ff);animation:fx-neon 2s ease-in-out infinite alternate; }
-@keyframes fx-neon { to { text-shadow: 0 0 2px #fff, 0 0 6px #6cc4ff, 0 0 12px #3ba7ff; } }
+.fx-neon { color:var(--fx-color,#a69dd2);text-shadow:0 0 4px #fff,0 0 10px var(--fx-color,#a69dd2),0 0 22px var(--fx-color,#716a9e),0 0 40px var(--fx-color,#716a9e);animation:fx-neon 2s ease-in-out infinite alternate; }
+@keyframes fx-neon { to { text-shadow: 0 0 2px #fff, 0 0 6px #a69dd2, 0 0 12px #716a9e; } }
 .fx-shake { display: inline-block; animation: fx-shake .35s linear infinite; }
 @keyframes fx-shake { 0%,100% { transform: translate(0,0) rotate(0); } 25% { transform: translate(-1px,1px) rotate(-1deg); } 75% { transform: translate(1px,-1px) rotate(1deg); } }
 .fx-rgb { animation: fx-rgb 1.2s steps(3) infinite; }
@@ -338,10 +349,10 @@
 @keyframes fx-pulse { 50% { transform: scale(1.07); } }
 .fx-fire { color: var(--fx-color,#ffd8a8) !important; animation: fx-fire 1s ease-in-out infinite alternate; }
 @keyframes fx-fire { 0% { text-shadow: 0 -2px 4px #fff, 0 -4px 10px #ff3, 0 -10px 20px #f90, 0 -18px 40px #c33; } 100% { text-shadow: 0 -2px 6px #fff, 0 -6px 12px #fd3, 0 -12px 24px #f60, 0 -22px 44px #c20; } }
-.fx-ice { color: color-mix(in srgb,var(--fx-color,#dff4ff),white 40%) !important; text-shadow:0 0 6px var(--fx-color,#9fdcff),0 0 18px var(--fx-color,#6cc4ff);animation:fx-ice 3s ease-in-out infinite; }
+.fx-ice { color: color-mix(in srgb,var(--fx-color,#eeeaf8),white 40%) !important; text-shadow:0 0 6px var(--fx-color,#b9b2d8),0 0 18px var(--fx-color,#a69dd2);animation:fx-ice 3s ease-in-out infinite; }
 @keyframes fx-ice { 50% { text-shadow: 0 0 2px #fff, 0 0 10px #bfe8ff; letter-spacing: .03em; } }
 .fx-float { display: inline-block; animation: float-y 3s ease-in-out infinite; }
-.fx-chroma { color: var(--fx-color,#6cc4ff) !important; animation: fx-chroma 4s linear infinite; }
+.fx-chroma { color: var(--fx-color,#a69dd2) !important; animation: fx-chroma 4s linear infinite; }
 @keyframes fx-chroma { to { filter: hue-rotate(360deg); } }
 .fx-3d { text-shadow:1px 1px 0 var(--fx-color,#3ba7ff),2px 2px 0 color-mix(in srgb,var(--fx-color,#2f8fe0),black 15%),3px 3px 0 color-mix(in srgb,var(--fx-color,#2577c0),black 30%),4px 4px 8px rgba(0,0,0,.5); }
 .fx-swing { display: inline-block; transform-origin: top center; animation: fx-swing 2s ease-in-out infinite; }

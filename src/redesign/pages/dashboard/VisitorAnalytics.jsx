@@ -4,7 +4,7 @@ import { Activity, ArrowDownRight, ArrowUpRight, CalendarDays, Compass, Eye, Glo
 import { auth } from '../../../app/firebase';
 import { PageTitle } from '../../components/Controls';
 
-const COLORS = ['#6cc4ff', '#8b7cff', '#35d399', '#f7b955', '#ff6fae', '#59e3e3'];
+const COLORS = ['#a69dd2', '#716a9e', '#78a78e', '#c4a36f', '#b77f9f', '#8f8aa8'];
 const number = new Intl.NumberFormat('en-GB');
 
 async function loadSummary(days) {
@@ -16,8 +16,8 @@ async function loadSummary(days) {
   return result.summary;
 }
 
-const tooltipStyle = { background: '#0a111c', border: '1px solid rgba(108,196,255,.25)', borderRadius: 12, color: '#fff', fontSize: 12 };
-const panel = 'rounded-2xl border border-primary/20 bg-[#090d14]/80 p-5 shadow-[0_22px_70px_-50px_rgba(108,196,255,.65)]';
+const tooltipStyle = { background: '#121019', border: '1px solid rgba(166,157,210,.25)', borderRadius: 12, color: '#fff', fontSize: 12 };
+const panel = 'rounded-2xl border border-primary/20 bg-[#0f0d15]/80 p-5 shadow-[0_22px_70px_-50px_rgba(166,157,210,.55)]';
 
 function Trend({ value }) {
   const positive = value >= 0;
@@ -25,7 +25,7 @@ function Trend({ value }) {
   return <span className={`inline-flex items-center gap-1 text-xs font-semibold ${positive ? 'text-emerald-400' : 'text-rose-400'}`}><Icon className="h-3.5 w-3.5" />{Math.abs(value || 0)}% vs previous period</span>;
 }
 
-function Metric({ icon: Icon, label, value, detail, trend, accent = '#6cc4ff' }) {
+function Metric({ icon: Icon, label, value, detail, trend, accent = '#a69dd2' }) {
   return <article className={`${panel} relative overflow-hidden`}><span className="absolute -right-8 -top-10 h-28 w-28 rounded-full blur-3xl" style={{ background: `${accent}20` }} /><div className="relative flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground">{label}</p><strong className="mt-3 block text-3xl font-bold tracking-tight text-white">{value}</strong><div className="mt-2 min-h-5">{trend !== undefined ? <Trend value={trend} /> : <span className="text-xs text-muted-foreground">{detail}</span>}</div></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ color: accent, background: `${accent}18`, boxShadow: `inset 0 0 0 1px ${accent}25` }}><Icon className="h-5 w-5" /></span></div></article>;
 }
 
@@ -46,7 +46,7 @@ function RankedList({ rows = [], names = false, limit = 8 }) {
   const shown = rows.slice(0, limit);
   const total = rows.reduce((sum, row) => sum + row.value, 0) || 1;
   if (!shown.length) return <p className="text-sm text-muted-foreground">No data in this period yet.</p>;
-  return <div className="space-y-3">{shown.map((row) => { const percent = Math.round((row.value / total) * 100); return <div key={row.name}><div className="mb-1.5 flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate text-white/85">{names && <span className="mr-2">{flag(row.name)}</span>}{names ? countryName(row.name) : row.name}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{number.format(row.value)} · {percent}%</span></div><div className="h-1.5 overflow-hidden rounded-full bg-white/[.06]"><div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-violet-400" style={{ width: `${Math.max(2, percent)}%` }} /></div></div>; })}</div>;
+  return <div className="space-y-3">{shown.map((row) => { const percent = Math.round((row.value / total) * 100); return <div key={row.name}><div className="mb-1.5 flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate text-white/85">{names && <span className="mr-2">{flag(row.name)}</span>}{names ? countryName(row.name) : row.name}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{number.format(row.value)} · {percent}%</span></div><div className="h-1.5 overflow-hidden rounded-full bg-white/[.06]"><div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-slate-400" style={{ width: `${Math.max(2, percent)}%` }} /></div></div>; })}</div>;
 }
 
 export default function VisitorAnalytics() {
@@ -81,7 +81,7 @@ export default function VisitorAnalytics() {
     </div>
 
     <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,.7fr)]">
-      <Section title="Traffic over time" subtitle={`Daily page views and feature clicks · ${days}-day range`}><div className="h-72"><ResponsiveContainer width="100%" height="100%"><AreaChart data={daily} margin={{ left: -18, right: 8, top: 8 }}><defs><linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#6cc4ff" stopOpacity=".42" /><stop offset="1" stopColor="#6cc4ff" stopOpacity="0" /></linearGradient></defs><CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} /><XAxis dataKey="label" tick={{ fill: '#7f8997', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={22} /><YAxis tick={{ fill: '#7f8997', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={tooltipStyle} /><Area type="monotone" dataKey="value" name="Views" stroke="#6cc4ff" strokeWidth={2.5} fill="url(#viewsFill)" /><Area type="monotone" dataKey="featureClicks" name="Feature clicks" stroke="#35d399" strokeWidth={1.5} fill="transparent" /></AreaChart></ResponsiveContainer></div></Section>
+      <Section title="Traffic over time" subtitle={`Daily page views and feature clicks · ${days}-day range`}><div className="h-72"><ResponsiveContainer width="100%" height="100%"><AreaChart data={daily} margin={{ left: -18, right: 8, top: 8 }}><defs><linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a69dd2" stopOpacity=".42" /><stop offset="1" stopColor="#a69dd2" stopOpacity="0" /></linearGradient></defs><CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} /><XAxis dataKey="label" tick={{ fill: '#8f899d', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={22} /><YAxis tick={{ fill: '#8f899d', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={tooltipStyle} /><Area type="monotone" dataKey="value" name="Views" stroke="#a69dd2" strokeWidth={2.5} fill="url(#viewsFill)" /><Area type="monotone" dataKey="featureClicks" name="Feature clicks" stroke="#78a78e" strokeWidth={1.5} fill="transparent" /></AreaChart></ResponsiveContainer></div></Section>
       <Section title="Highlights" subtitle="What stood out in this period"><div className="space-y-3">{[[Globe2, 'Top country', topCountry ? countryName(topCountry.name) : 'No data', topCountry ? `${number.format(topCountry.value)} views` : '—'], [MousePointerClick, 'Most clicked feature', topFeature?.name || 'Collecting now', topFeature ? `${number.format(topFeature.value)} clicks` : '—'], [CalendarDays, 'Best day', bestDay?.label || 'No data', bestDay ? `${number.format(bestDay.value)} views` : '—']].map(([Icon, label, value, detail]) => <div key={label} className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.025] p-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span><div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">{label}</p><p className="truncate text-sm font-semibold text-white">{value}</p></div><span className="text-xs text-muted-foreground">{detail}</span></div>)}</div></Section>
     </div>
 

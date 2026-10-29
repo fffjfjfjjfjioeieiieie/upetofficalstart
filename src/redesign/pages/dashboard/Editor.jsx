@@ -25,7 +25,7 @@ export default function Editor() {
           {TABS.map(([id, label]) => <option key={id} value={id} className="bg-background text-foreground">{label}</option>)}
         </select>
       </label>
-      <div className="glass mb-6 hidden flex-wrap gap-1 rounded-full p-1.5 md:inline-flex">
+      <div className="glass mb-6 hidden flex-wrap gap-1 rounded-full p-1.5 md:sticky md:top-20 md:z-30 md:inline-flex">
         {TABS.map(([id, label, Icon]) => (
           <button key={id} data-testid={`editor-tab-${id}`} onClick={() => setTab(id)} className={`relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${tab === id ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {tab === id && <motion.span layoutId="editor-tab" className="absolute inset-0 rounded-full bg-primary" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}

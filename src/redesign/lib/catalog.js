@@ -32,7 +32,7 @@ export const useDecorations = () => {
 
 export const BADGES = [
   { id: "founder", label: "Founder", color: "#fbbf24", desc: "Founder of user.pet", lockedVisible: true },
-  { id: "staff", label: "Staff", color: "#6cc4ff", desc: "user.pet team member" },
+  { id: "staff", label: "Staff", color: "#a69dd2", desc: "user.pet team member" },
   { id: "verified", label: "Verified", color: "#3ba7ff", desc: "Verified identity" },
   { id: "premium", label: "Premium", color: "#ffd166", desc: "Supports user.pet" },
   { id: "og", label: "OG", color: "#c4b5fd", desc: "Joined in the first wave" },

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">user.pet</title><desc id="desc">One link for everything you are.</desc>
+  <rect width="1200" height="630" fill="#0b0a10"/><circle cx="1040" cy="80" r="360" fill="#a69dd2" opacity=".09"/><circle cx="110" cy="650" r="310" fill="#716a9e" opacity=".08"/>
+  <g transform="translate(90 90)"><rect width="92" height="92" rx="26" fill="#181526"/><path d="M22 23h15v33c0 9 3 13 10 13s10-4 10-13V23h15v35c0 17-9 26-25 26S22 75 22 58V23Z" fill="#716A9E" opacity=".52"/><path d="M29 17h15v36c0 7 2 10 7 10s7-3 7-10V17h15v38c0 14-8 22-22 22S29 69 29 55V17Z" fill="#A69DD2"/></g>
+  <text x="205" y="150" fill="#f2f0f8" font-family="Arial,sans-serif" font-size="50" font-weight="700">user.pet</text>
+  <text x="90" y="350" fill="#f2f0f8" font-family="Arial,sans-serif" font-size="76" font-weight="700">One link for</text><text x="90" y="438" fill="#a69dd2" font-family="Georgia,serif" font-size="86" font-style="italic">everything you are.</text>
+  <text x="92" y="525" fill="#aaa5b7" font-family="Arial,sans-serif" font-size="26">Profiles, links, music and identity—composed.</text>
+</svg>

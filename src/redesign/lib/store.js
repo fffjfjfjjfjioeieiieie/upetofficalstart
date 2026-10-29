@@ -2,8 +2,6 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  deleteUser,
   onAuthStateChanged,
   reauthenticateWithCredential,
   sendPasswordResetEmail,
@@ -81,7 +79,6 @@ export function StoreProvider({ children }) {
   const dirty = useRef(false);
   const editVersion = useRef(0);
   const saveTimer = useRef(null);
-  const registeringRef = useRef(false);
   const directoryRequest = useRef(null);
   const directoryLoadedAt = useRef(0);
   const accountLoad = useRef(null);
@@ -173,7 +170,6 @@ export function StoreProvider({ children }) {
         setReady(true);
         return;
       }
-      if (registeringRef.current) return;
       let access = null;
       try { access = await getSiteAccess(authUser); } catch { access = null; }
       if (!access) {
@@ -304,23 +300,18 @@ export function StoreProvider({ children }) {
   }, [loadAccount]);
 
   const register = useCallback(async (email, password) => {
-    if (!auth || !firebaseConfigured) return { ok: false, error: 'Firebase is not configured.' };
     try {
-      registeringRef.current = true;
-      await persistAuthLocally();
-      const credential = await createUserWithEmailAndPassword(auth, String(email).trim().toLowerCase(), password || '');
-      const access = await getSiteAccess(credential.user);
-      if (!access) {
-        await deleteUser(credential.user).catch(() => signOut(auth));
-        return { ok: false, error: 'There is no active invitation for this email. Ask a founder to grant member access first.' };
-      }
-      await signOut(auth);
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: String(email || '').trim().toLowerCase(), password: password || '' }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return { ok: false, error: result.error || 'Account creation failed.' };
       return { ok: true };
     } catch (error) {
-      if (registeringRef.current && auth?.currentUser) await signOut(auth).catch(() => {});
       return { ok: false, error: friendlyAuthError(error) };
     }
-    finally { registeringRef.current = false; }
   }, []);
 
   const logout = useCallback(async () => {
@@ -407,8 +398,7 @@ export function StoreProvider({ children }) {
 
   const isTaken = useCallback(async (name) => {
     if (RESERVED.includes(String(name).toLowerCase())) return true;
-    try { return !(await isUsernameAvailable(name, firebaseUser)); }
-    catch { return true; }
+    return !(await isUsernameAvailable(name, firebaseUser));
   }, [firebaseUser]);
 
   const recordView = useCallback((username) => recordProfileEvent(username, 'view'), []);
@@ -424,6 +414,7 @@ export function StoreProvider({ children }) {
         profile: {
           ...current.profile,
           views: analytics.views,
+          clicks: analytics.clicks,
           viewHistory: Object.entries(analytics.byDay || {}).map(([day, count]) => ({ day, count })),
         },
       } : current);

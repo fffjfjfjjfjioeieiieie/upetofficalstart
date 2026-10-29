@@ -19,7 +19,7 @@ const AudioSeek = ({ audio, value, max, onChange, className = "" }) => {
   const safeMax = seekable ? max : 1;
   const progress = Math.max(0, Math.min(100, ((Number(value) || 0) / safeMax) * 100));
   const height = audio.playerProgressHeight ?? 4;
-  const color = audio.playerProgressColor || "#6cc4ff";
+  const color = audio.playerProgressColor || "#a69dd2";
   const rounded = audio.playerProgressStyle !== "line";
   const glow = audio.playerProgressStyle === "glow" || audio.playerProgressGlow;
   return <label className={`relative block cursor-pointer py-2 ${className}`} style={{ minHeight: Math.max(16, height + 8) }}>
@@ -286,7 +286,7 @@ const Body = ({ p }) => {
     <div className="space-y-4">
       {layout === "banner" && (
         <div className="-mx-6 -mt-6 mb-[-52px] h-36 isolate overflow-hidden" style={{ borderTopLeftRadius: p.card.radius, borderTopRightRadius: p.card.radius, contain: "paint", clipPath: `inset(0 round ${p.card.radius}px ${p.card.radius}px 0 0)` }}>
-          {p.media.banner.src ? <MediaLayer media={p.media.banner} className="h-full w-full" /> : <div className="h-full w-full bg-gradient-to-br from-sky-400/60 to-indigo-500/40" />}
+          {p.media.banner.src ? <MediaLayer media={p.media.banner} className="h-full w-full" /> : <div className="h-full w-full bg-gradient-to-br from-violet-400/45 to-slate-500/35" />}
         </div>
       )}
       <Identity p={p} />
