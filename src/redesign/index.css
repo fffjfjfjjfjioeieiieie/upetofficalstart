@@ -1,4 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Unbounded:wght@400;600;800;900&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+@font-face { font-family: Onest; src: url('/fonts/onest-latin-wght-normal.woff2') format('woff2'); font-style: normal; font-weight: 300 700; font-display: swap; }
+@font-face { font-family: Unbounded; src: url('/fonts/unbounded-latin-wght-normal.woff2') format('woff2'); font-style: normal; font-weight: 400 900; font-display: swap; }
+@font-face { font-family: Inter; src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2'); font-style: normal; font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Inter Tight'; src: url('/fonts/inter-tight-latin-wght-normal.woff2') format('woff2'); font-style: normal; font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-italic.woff2') format('woff2'); font-style: italic; font-weight: 400; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin-600-normal.woff2') format('woff2'); font-style: normal; font-weight: 600; font-display: swap; }
 @layer base {
   :root,
   [data-upet-theme="light"] {
@@ -70,6 +76,9 @@
     --upet-type-base: 1rem;
     --upet-type-lg: 1.125rem;
     --upet-type-xl: 1.5rem;
+    --upet-type-home-h1: clamp(2.75rem, 6.2vw, 5.5rem);
+    --upet-type-home-h2: clamp(2rem, 4vw, 3.5rem);
+    --upet-home-section-space: clamp(4.5rem, 9vw, 8rem);
 
     /* Four-pixel spatial rhythm with named composition steps. */
     --upet-space-1: 0.25rem;
@@ -198,6 +207,24 @@
 .font-mono { font-family: "JetBrains Mono", monospace; }
 
 .upet-logo { display: inline-flex; align-items: center; gap: .65rem; color: hsl(var(--foreground)); font-family: var(--upet-font-display); font-size: 1rem; font-weight: 800; letter-spacing: -.045em; }
+
+/* Landing-only navigation and decoration. */
+body:has([data-home-page]) [data-testid="wave-background"] { display: none; }
+body:has([data-home-page]) > #root header > div:first-child,
+body:has([data-home-page]) > #root header > nav {
+  border: 1px solid hsl(var(--primary) / .18);
+  background: rgba(10, 9, 16, .78);
+  color: #f6f4fb;
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+body:has([data-home-page]) > #root header[data-scrolled="true"] > div:first-child { box-shadow: 0 14px 38px -22px rgba(0, 0, 0, .65); }
+body:has([data-home-page]) > #root header :is(a, button) { color: inherit; }
+body:has([data-home-page]) > #root header :is(a, button):hover { color: #fff; }
+body:has([data-home-page]) [id] { scroll-margin-top: 7.5rem; }
+body:has([data-home-page]) footer a { color: hsl(var(--foreground) / .78); }
+body:has([data-home-page]) footer a:hover { color: hsl(var(--foreground)); }
+body:has([data-home-page]) footer { margin-top: var(--upet-home-section-space); }
 .upet-logo img { width: 2.125rem; height: 2.125rem; display: block; }
 
 .glass {

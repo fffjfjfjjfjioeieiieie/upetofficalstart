@@ -30,9 +30,16 @@ export function Header() {
   const { user, theme, toggleTheme } = useStore();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   useEffect(() => setOpen(false), [location.pathname, location.hash]);
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 12);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
 
-  return <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-5">
+  return <header data-scrolled={scrolled} className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-5">
     <div className="glass mx-auto flex h-16 w-full max-w-[76rem] items-center justify-between rounded-2xl px-3 shadow-[var(--upet-shadow-low)] sm:px-4">
       <Link to="/" aria-label="user.pet home"><Logo /></Link>
       <nav aria-label="Primary navigation" className="hidden items-center gap-1 md:flex">{NAV_ITEMS.map(([label, href]) => <Link key={label} to={href} className="rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{label}</Link>)}</nav>
