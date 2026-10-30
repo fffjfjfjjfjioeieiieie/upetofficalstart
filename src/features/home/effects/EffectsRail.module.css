@@ -1,0 +1,184 @@
+.section {
+  overflow: hidden;
+  padding: 145px 0 150px;
+  background: #120d18;
+}
+.head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 40px;
+  width: min(calc(100% - 48px), 1420px);
+  margin: 0 auto 55px;
+}
+.head > p {
+  max-width: 250px;
+  color: #9e95a7;
+  font-size: 14px;
+}
+.rail {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 15px max(24px, calc((100vw - 1420px) / 2)) 50px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.rail:active {
+  cursor: grabbing;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.tile {
+  flex: 0 0 300px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 6px;
+  background: #08070b;
+  scroll-snap-align: center;
+  transition:
+    width 0.5s var(--ease),
+    transform 0.5s var(--ease),
+    border-color 0.3s;
+}
+.tile:focus-within,
+.tile:hover,
+.tile[aria-selected="true"] {
+  flex-basis: 410px;
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-9px);
+}
+.scene {
+  position: relative;
+  height: 270px;
+  overflow: hidden;
+  background: linear-gradient(140deg, #27163b, #080811);
+}
+.scene:after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
+}
+.scene i {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  filter: blur(2px);
+  animation: float 5s ease-in-out infinite;
+}
+.scene i:nth-child(1) {
+  top: 15%;
+  left: 14%;
+  width: 65px;
+  height: 65px;
+  color: #b799ff;
+}
+.scene i:nth-child(2) {
+  right: 10%;
+  bottom: 15%;
+  width: 110px;
+  height: 110px;
+  color: #5b49b3;
+  animation-delay: -1.7s;
+}
+.scene i:nth-child(3) {
+  right: 22%;
+  top: 9%;
+  width: 23px;
+  height: 23px;
+  color: #d7fb7b;
+  animation-delay: -3s;
+}
+.tile[data-effect="underwater"] .scene {
+  background: linear-gradient(#0d94bf, #032b5c 55%, #001128);
+}
+.tile[data-effect="rain"] .scene {
+  background:
+    repeating-linear-gradient(
+      105deg,
+      transparent 0 17px,
+      rgba(180, 210, 255, 0.2) 18px 19px
+    ),
+    #071226;
+}
+.tile[data-effect="grain"] .scene {
+  background: radial-gradient(circle, #f3e8d0 0 1px, #8d7f70 1px 3px);
+  background-size: 6px 6px;
+}
+.tile[data-effect="gradient"] .scene {
+  background: linear-gradient(135deg, #ff735d, #8739a9, #19365c);
+}
+.tile[data-effect="image"] .scene {
+  background: url("/lamp-saved/background.jpg") center/cover;
+}
+.tile[data-effect="video"] .scene {
+  background: linear-gradient(160deg, #132747, #6b4b8c, #0a121f);
+  background-size: 200% 200%;
+  animation: tide 5s ease infinite;
+}
+.tile > div:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+}
+.tile h3 {
+  margin: 0;
+  font-size: 22px;
+}
+.tile button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: none;
+  color: var(--cream);
+  font-weight: 800;
+}
+.tile button svg {
+  width: 16px;
+}
+@keyframes float {
+  50% {
+    transform: translate(18px, -12px) scale(1.14);
+  }
+}
+@keyframes tide {
+  50% {
+    background-position: 100% 80%;
+  }
+}
+@media (max-width: 650px) {
+  .section {
+    padding: 100px 0;
+  }
+  .head {
+    align-items: start;
+    flex-direction: column;
+  }
+  .tile,
+  .tile:hover,
+  .tile:focus-within,
+  .tile[aria-selected="true"] {
+    flex-basis: 82vw;
+  }
+  .scene {
+    height: 230px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene i,
+  .tile[data-effect="video"] .scene {
+    animation: none;
+  }
+  .tile {
+    transition: none;
+  }
+}

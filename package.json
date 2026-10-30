@@ -8,8 +8,11 @@
     "test:main-site": "node scripts/check-main-site.mjs",
     "test:visitor": "node --test tests/visitor.test.js",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && node scripts/finalize-home-build.mjs",
+    "preview": "vite preview",
+    "home:bundle": "node scripts/home-bundle-sizes.mjs",
+    "home:test:preview": "node scripts/test-home-preview.mjs",
+    "home:deploy:preview": "npm test && npm run build && npx firebase-tools hosting:channel:deploy homepage-rethink --project upet-c480b --expires 7d"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",

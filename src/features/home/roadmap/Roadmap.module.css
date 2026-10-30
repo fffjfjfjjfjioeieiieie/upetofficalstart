@@ -1,0 +1,113 @@
+.section {
+  overflow: hidden;
+  padding: 155px max(24px, calc((100vw - 1420px) / 2));
+  background: #0b0810;
+}
+.section > h2 {
+  max-width: 900px;
+  margin: 0;
+  font: 600 clamp(4rem, 8vw, 8.5rem) / 0.9 var(--sans);
+  letter-spacing: -0.065em;
+}
+.track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 120px;
+}
+.track:before {
+  content: "";
+  position: absolute;
+  top: 35px;
+  right: -20vw;
+  left: -20vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+.track article {
+  position: relative;
+  min-height: 250px;
+  padding: 0 25px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  transform: translateY(calc(var(--i) * 24px));
+}
+.track article > span {
+  color: #8f8597;
+  font-size: 14px;
+}
+.track article > i {
+  position: absolute;
+  top: 29px;
+  left: -6px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #0b0810;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+.track h3 {
+  margin: 70px 0 12px;
+  font-size: 28px;
+}
+.track p {
+  margin: 0;
+  color: var(--acid);
+  font-size: 14px;
+  font-weight: 800;
+}
+.section footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 90px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 25px;
+}
+.section footer p {
+  margin: 0;
+  color: #b5adbc;
+  font-size: 18px;
+}
+.section footer a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cream);
+  font-weight: 800;
+}
+.section footer svg {
+  width: 17px;
+}
+@media (max-width: 700px) {
+  .section {
+    padding-block: 100px;
+  }
+  .track {
+    grid-template-columns: 1fr;
+    margin-top: 70px;
+  }
+  .track:before {
+    display: none;
+  }
+  .track article {
+    min-height: 190px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    border-left: 0;
+    padding: 25px 0;
+    transform: none;
+  }
+  .track article > i {
+    top: 19px;
+    right: 0;
+    left: auto;
+  }
+  .track h3 {
+    margin: 35px 0 10px;
+  }
+  .section footer {
+    align-items: start;
+    flex-direction: column;
+    gap: 22px;
+  }
+}

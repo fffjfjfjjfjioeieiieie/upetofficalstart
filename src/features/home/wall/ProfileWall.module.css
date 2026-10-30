@@ -1,0 +1,125 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  min-height: 980px;
+  padding: 145px max(24px, calc((100vw - 1420px) / 2));
+  background: #09070c;
+}
+.type {
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.26em;
+  color: rgba(255, 255, 255, 0.035);
+  font: 800 min(28vw, 500px) / 1 var(--sans);
+  letter-spacing: -0.08em;
+}
+.type::before {
+  content: "people";
+}
+.head {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+.head p {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  padding: 8px 13px;
+  color: #bab2c2;
+  font-size: 14px;
+  transform: rotate(2deg);
+}
+.wall {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-height: 660px;
+  margin-top: 40px;
+  perspective: 1400px;
+}
+.card {
+  position: relative;
+  width: min(680px, 66vw);
+  height: 650px;
+  overflow: hidden;
+  border: 10px solid #c9b9e9;
+  border-radius: 38px;
+  box-shadow:
+    0 60px 130px rgba(0, 0, 0, 0.7),
+    -60px 20px 0 -30px #6d4c91,
+    70px -20px 0 -38px #d7ff72;
+  transform: perspective(1200px) rotateY(-5deg) rotateZ(1.5deg);
+}
+.overlay {
+  position: absolute;
+  z-index: 12;
+  inset: auto 18px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  background: rgba(6, 4, 8, 0.82);
+  backdrop-filter: blur(15px);
+}
+.overlay strong {
+  font-size: 18px;
+}
+.overlay > div {
+  display: flex;
+  gap: 8px;
+}
+.overlay a,
+.overlay button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9px;
+  background: #16101d;
+  padding: 9px 11px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+}
+.overlay a {
+  background: var(--cream);
+  color: var(--ink);
+}
+.overlay svg {
+  width: 14px;
+}
+@media (max-width: 700px) {
+  .section {
+    min-height: 820px;
+    padding-block: 100px;
+  }
+  .head {
+    align-items: start;
+    flex-direction: column;
+    gap: 25px;
+  }
+  .card {
+    width: 94vw;
+    height: 570px;
+    border-width: 6px;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+  }
+  .overlay {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .overlay > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .overlay a,
+  .overlay button {
+    justify-content: center;
+  }
+}

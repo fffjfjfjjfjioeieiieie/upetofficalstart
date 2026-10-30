@@ -1,0 +1,87 @@
+.home {
+  --ink: #08070b;
+  --cream: #eee7d9;
+  --acid: #d6ff6d;
+  --violet: #7a5ba0;
+  --violet-2: #c9b5e8;
+  --muted: #b2aaba;
+  --sans: InterTight, Inter, system-ui, sans-serif;
+  --serif: Iowan Old Style, Baskerville, Georgia, serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  min-height: 100svh;
+  overflow: clip;
+  background: var(--ink);
+  color: #f7f3fa;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.45;
+  isolation: isolate;
+}
+.home * {
+  box-sizing: border-box;
+}
+.home :is(h1, h2, h3, p) {
+  text-wrap: balance;
+}
+.home a {
+  color: inherit;
+  text-decoration: none;
+}
+.home button,
+.home input,
+.home textarea {
+  font: inherit;
+}
+.home button {
+  color: inherit;
+  cursor: pointer;
+}
+.home :focus-visible {
+  outline: 3px solid var(--acid);
+  outline-offset: 4px;
+}
+.fallback {
+  min-height: 50vh;
+  background: #0b0810;
+}
+.defer {
+  background: #0b0810;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+.konami:after {
+  content: "";
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0 7deg,
+    rgba(214, 255, 109, 0.35) 8deg 10deg
+  );
+  animation: ripple 0.9s ease-out both;
+}
+@keyframes ripple {
+  from {
+    opacity: 1;
+    clip-path: circle(0 at 50% 50%);
+  }
+  to {
+    opacity: 0;
+    clip-path: circle(100% at 50% 50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home {
+    scroll-behavior: auto;
+  }
+  .home *,
+  .home *:before,
+  .home *:after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

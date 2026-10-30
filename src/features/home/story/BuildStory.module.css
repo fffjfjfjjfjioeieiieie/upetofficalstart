@@ -1,0 +1,114 @@
+.section {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.8fr) 1.2fr;
+  gap: 8vw;
+  min-height: 3100px;
+  padding: 150px max(24px, calc((100vw - 1280px) / 2));
+  background: #100b16;
+}
+.sticky {
+  position: sticky;
+  top: 120px;
+  align-self: start;
+  height: calc(100vh - 160px);
+}
+.sticky > p {
+  margin: 0 0 25px;
+  color: #c4bacc;
+  font-size: 18px;
+}
+.phone {
+  width: min(100%, 480px);
+  height: min(69vh, 670px);
+  overflow: hidden;
+  border: 7px solid #2b2036;
+  border-radius: 42px;
+  box-shadow: 0 40px 100px #000;
+  transition:
+    border-color 0.5s,
+    transform 0.5s;
+}
+.phone[data-step="1"] {
+  border-color: #8e5949;
+  transform: rotate(-2deg);
+}
+.phone[data-step="2"] {
+  border-color: #9eb64c;
+  transform: rotate(2deg);
+}
+.phone[data-step="3"] {
+  border-color: #32708d;
+  transform: rotate(-1deg);
+}
+.arrow {
+  position: absolute;
+  right: -30px;
+  top: 60%;
+  color: var(--cream);
+  transform: rotate(-20deg);
+}
+.section ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.section li {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  align-items: center;
+  min-height: 710px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  opacity: 0.28;
+  transition: opacity 0.5s;
+}
+.section li[data-active="true"] {
+  opacity: 1;
+}
+.section li > span {
+  align-self: start;
+  margin-top: 55px;
+  color: var(--acid);
+  font-size: 18px;
+}
+.section h2 {
+  margin: 0;
+  font: 600 clamp(3.5rem, 7vw, 7rem) / 0.94 var(--sans);
+  letter-spacing: -0.06em;
+}
+.section li p {
+  max-width: 540px;
+  margin: 25px 0 0;
+  color: #b9b0c0;
+  font-size: 21px;
+  line-height: 1.55;
+}
+@media (max-width: 800px) {
+  .section {
+    display: block;
+    min-height: 0;
+    padding-block: 100px;
+  }
+  .sticky {
+    position: relative;
+    top: auto;
+    height: auto;
+  }
+  .phone {
+    height: 590px;
+    margin: auto;
+  }
+  .arrow {
+    display: none;
+  }
+  .section ol {
+    margin-top: 80px;
+  }
+  .section li {
+    min-height: 0;
+    padding: 65px 0;
+    opacity: 1;
+  }
+  .section h2 {
+    font-size: clamp(3.3rem, 14vw, 5.5rem);
+  }
+}

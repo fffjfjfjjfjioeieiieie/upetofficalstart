@@ -1,0 +1,89 @@
+.section {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 8vw;
+  padding: 155px max(24px, calc((100vw - 1320px) / 2));
+  background: #120e18;
+}
+.section > h2 {
+  position: sticky;
+  top: 140px;
+  align-self: start;
+  margin: 0;
+  font: 600 clamp(4rem, 7vw, 7rem) / 0.9 var(--sans);
+  letter-spacing: -0.06em;
+}
+.section article {
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.section article:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+.section h3 {
+  margin: 0;
+}
+.section button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 28px 0;
+  color: #fff;
+  text-align: left;
+}
+.section button span {
+  font-size: 22px;
+  font-weight: 750;
+}
+.section button svg {
+  width: 22px;
+  transition: transform 0.35s var(--ease);
+}
+.section article[data-open="true"] button svg {
+  transform: rotate(45deg);
+}
+.section article > div {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s var(--ease);
+}
+.section article[data-open="true"] > div {
+  grid-template-rows: 1fr;
+}
+.section article > div > p {
+  overflow: hidden;
+  max-width: 680px;
+  margin: 0;
+  color: #b5adbb;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.section article[data-open="true"] > div > p {
+  padding-bottom: 30px;
+}
+.section p a {
+  color: var(--cream);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 800px) {
+  .section {
+    grid-template-columns: 1fr;
+    padding-block: 100px;
+  }
+  .section > h2 {
+    position: relative;
+    top: auto;
+  }
+  .section button span {
+    font-size: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section article > div,
+  .section button svg {
+    transition: none;
+  }
+}

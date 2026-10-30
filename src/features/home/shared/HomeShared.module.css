@@ -1,0 +1,219 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 800 17px/1 var(--sans);
+  letter-spacing: -0.035em;
+}
+.mark {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+.mark i {
+  position: absolute;
+  inset: 4px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 7px 7px 10px 10px;
+  font-style: normal;
+  font-size: 11px;
+  transition: transform 0.42s var(--ease);
+}
+.mark i:nth-child(1) {
+  background: #21152f;
+  transform: translate(-4px, -3px) rotate(-5deg);
+}
+.mark i:nth-child(2) {
+  background: #593f7c;
+}
+.mark i:nth-child(3) {
+  background: var(--cream);
+  color: var(--ink);
+  transform: translate(4px, 3px) rotate(5deg);
+}
+.brand:hover .mark i:nth-child(1) {
+  transform: translate(-7px, -5px) rotate(-10deg);
+}
+.brand:hover .mark i:nth-child(3) {
+  transform: translate(7px, 5px) rotate(10deg);
+}
+.profile {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: #020207;
+}
+.profile[data-font="sora"] {
+  font-family: Sora, sans-serif;
+}
+.profile[data-font="space"] {
+  font-family: "Space Grotesk", sans-serif;
+}
+.profile[data-font="serif"] {
+  font-family: Georgia, serif;
+}
+.profile[data-font="pixel"] {
+  font-family: "Pixelify Sans", sans-serif;
+}
+.profile[data-font="orbitron"] {
+  font-family: Orbitron, sans-serif;
+}
+.profile[data-card="cream"] {
+  filter: sepia(0.12) brightness(1.08);
+}
+.profile[data-card="outline"] {
+  outline: 2px solid
+    color-mix(in srgb, var(--design-accent, #fff), transparent 35%);
+  outline-offset: -8px;
+}
+.profile[data-avatar="square"] img {
+  border-radius: 5px !important;
+}
+.profile[data-avatar="squircle"] img {
+  border-radius: 26% !important;
+}
+.tilt {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  position: relative;
+  transform: perspective(1100px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transform-style: preserve-3d;
+  transition: transform 0.12s linear;
+}
+.sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    rgba(255, 255, 255, 0.2),
+    transparent 28%
+  );
+  opacity: 0.65;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.underline {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+}
+.underline path,
+.arrow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.2s var(--ease);
+}
+:global(.is-visible) .underline path,
+:global(.is-visible) .arrow path {
+  stroke-dashoffset: 0;
+}
+.arrow {
+  width: 150px;
+  height: auto;
+}
+.cursor {
+  position: fixed;
+  z-index: 999;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--cream);
+  border-radius: 50%;
+  pointer-events: none;
+  transition:
+    width 0.2s,
+    height 0.2s,
+    background 0.2s;
+  mix-blend-mode: difference;
+}
+.cursor span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  white-space: nowrap;
+  color: #050407;
+  font: 800 12px/1 var(--sans);
+  transform: translate(-50%, -50%);
+}
+.cursor[data-active="true"] {
+  width: 72px;
+  height: 72px;
+  background: var(--cream);
+  mix-blend-mode: normal;
+}
+.cursor[data-active="true"] span {
+  opacity: 1;
+}
+.intro {
+  max-width: 700px;
+}
+.intro h2 {
+  margin: 0;
+  font: 600 clamp(3rem, 7vw, 7rem) / 0.92 var(--sans);
+  letter-spacing: -0.06em;
+}
+.intro p {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: var(--muted);
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.55;
+}
+.center {
+  margin-inline: auto;
+  text-align: center;
+}
+.right {
+  margin-left: auto;
+  text-align: right;
+}
+.localBadge {
+  display: inline-flex;
+  border: 1px solid currentColor;
+  border-radius: 100px;
+  padding: 7px 12px;
+  font-size: 14px;
+  font-weight: 750;
+  opacity: 0.72;
+}
+@media (pointer: coarse), (max-width: 800px) {
+  .cursor {
+    display: none;
+  }
+  .tilt {
+    transform: none;
+  }
+  .intro h2 {
+    font-size: clamp(3rem, 14vw, 5.4rem);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none;
+    transition: none;
+  }
+  .underline path,
+  .arrow path {
+    stroke-dashoffset: 0;
+  }
+  .cursor {
+    display: none;
+  }
+}

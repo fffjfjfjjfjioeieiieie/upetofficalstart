@@ -66,9 +66,9 @@ export default function ProfilePage() {
   if (loading) return <div className="grid min-h-screen place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
   if (!profile) return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center" data-testid="profile-not-found">
-      <h1 className="font-display text-4xl font-black"><span className="text-3d inline-block">user.pet/{username}</span></h1>
-      <p className="text-muted-foreground">This username is unclaimed.</p>
-      <Link to="/" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">Go home</Link>
+      <h1 className="font-display text-5xl font-black tracking-[-.05em]">That page wandered off.</h1>
+      <p className="text-muted-foreground">There is no public profile at user.pet/{username}.</p>
+      <Link to="/" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">Back to the homepage</Link>
     </div>
   );
 

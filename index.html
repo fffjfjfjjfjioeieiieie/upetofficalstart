@@ -3,21 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#09090F" />
+    <meta name="theme-color" content="#08070b" />
     <link rel="icon" href="/brand/userpet-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/brand/userpet-icon.svg" />
     <script>
       try {
-        if (localStorage.getItem('upet_theme_v2') === 'light') document.documentElement.classList.remove('dark');
+        if (localStorage.getItem("upet_theme_v2") === "light")
+          document.documentElement.classList.remove("dark");
       } catch {}
     </script>
-    <meta name="description" content="Build one expressive link for your profile, work, music and everything you want people to find." />
-    <meta property="og:title" content="user.pet — One link for everything you are" />
-    <meta property="og:description" content="Build one expressive link for your profile, work, music and everything you want people to find." />
-    <meta property="og:image" content="/brand/userpet-logo.svg" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:image" content="/brand/userpet-logo.svg" />
-    <title>user.pet — One link for everything you are</title>
+    <meta
+      name="description"
+      content="Build a personal page for your links, music and identity, and design it with the same controls the real thing uses. Invite-only."
+    />
+    <link rel="canonical" href="https://user.pet/" />
+    <meta property="og:url" content="https://user.pet/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="user.pet: your link, unmistakably you" />
+    <meta
+      property="og:description"
+      content="Build a personal page for your links, music and identity, and design it with the same controls the real thing uses. Invite-only."
+    />
+    <meta
+      property="og:image"
+      content="https://user.pet/brand/userpet-social.svg"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="user.pet: your link, unmistakably you"
+    />
+    <meta
+      name="twitter:description"
+      content="Build a personal page for your links, music and identity, and design it with the same controls the real thing uses. Invite-only."
+    />
+    <meta
+      name="twitter:image"
+      content="https://user.pet/brand/userpet-social.svg"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "user.pet",
+        "url": "https://user.pet/",
+        "description": "A personal page for links, music and identity."
+      }
+    </script>
+    <title>user.pet: your link, unmistakably you</title>
   </head>
   <body>
     <div id="root"></div>

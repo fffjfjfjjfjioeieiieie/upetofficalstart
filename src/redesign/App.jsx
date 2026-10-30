@@ -19,6 +19,7 @@ const ComingSoon = lazyWithRetry(() => import('./pages/ComingSoon'), 'coming-soo
 const Login = lazyWithRetry(() => import('./pages/Login'), 'login');
 const ClaimUsername = lazyWithRetry(() => import('./pages/ClaimUsername'), 'claim');
 const Privacy = lazyWithRetry(() => import('./pages/Privacy'), 'privacy');
+const NotFound = lazyWithRetry(() => import('./pages/NotFound'), 'not-found');
 
 const dashboardImports = {
   overview: () => import('./pages/dashboard/Overview'),
@@ -126,6 +127,7 @@ function App() {
             <Route path="/:username/shop" element={<RetiredProfilePage />} />
             <Route path="/:username/donate" element={<DonatePage />} />
             <Route path="/:username" element={<ProfilePage />} />
+            <Route path="*" element={<NotFound />} />
           </Routes></Suspense></RouteErrorBoundary>
         </BrowserRouter>
         <Themed />
