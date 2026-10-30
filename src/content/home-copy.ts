@@ -144,10 +144,12 @@ export const HOME_COPY = {
       ],
       [
         "What does it cost?",
+        // TODO-CONFIRM: replace when a public price list is approved.
         "There is no public price list yet. Request access and we will share what is confirmed before you sign up.",
       ],
       [
         "How do donations work?",
+        // TODO-CONFIRM: add fees and payout details only after they are approved for publication.
         "The donation tools are in development. The demo above is local and cannot take money. Details about fees and payouts will be confirmed before release.",
       ],
       [
@@ -156,6 +158,7 @@ export const HOME_COPY = {
       ],
       [
         "Can I be on the wall?",
+        // TODO-CONFIRM: replace the contact process when profile consent tooling exists.
         "The wall uses an allowlist and only shows public profiles with permission. Ask us if you want to take part.",
       ],
       [
